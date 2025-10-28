@@ -77,6 +77,36 @@ Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 - **Agentic AI**: Kotlin Koog
 - **Build Tool**: Maven
 - **Version Control**: Git
+- **Architektur**: Hexagonal Architecture (Ports & Adapters)
+
+---
+
+## Architektur: Hexagonal Architecture
+
+Das Projekt folgt dem **Hexagonal Architecture**-Pattern (Ports & Adapters), um:
+
+- **Domain-Logik zu isolieren**: Workflow-Engine, Memory und Vibe-Engineering-Logik sind framework-unabhängig
+- **Austauschbarkeit zu ermöglichen**: LLM-Provider, Persistence-Layer, Input-Interfaces sind austauschbar
+- **Testbarkeit zu maximieren**: Domain-Logik ohne externe Dependencies testbar
+- **Technologie-Unabhängigkeit**: Spring Boot, Kotlin Koog etc. sind austauschbare Implementierungsdetails
+
+### Schichten
+
+**Domain** (Kern):
+- `domain/model`: Entities, Value Objects (z.B. Workflow, Phase, Context)
+- `domain/port/input`: Use Case Interfaces (z.B. ExecuteWorkflowUseCase)
+- `domain/port/output`: Output Interfaces (z.B. MemoryRepository, AIProvider)
+- `domain/service`: Domain Services (Business-Logik)
+
+**Application**:
+- `application/workflow`: Workflow Orchestration (Use Case Implementierungen)
+
+**Adapter**:
+- `adapter/input`: Driving Adapters (CLI, MCP Protocol)
+- `adapter/output`: Driven Adapters (Kotlin Koog, File-Memory, Git)
+
+**Infrastructure**:
+- Spring Boot Configuration, Dependency Injection
 
 ---
 
@@ -84,28 +114,40 @@ Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 
 ```
 responsible-vibe-mcp/
-├── WARP.md                          # Diese Datei
-├── README.md                        # Projektübersicht
-├── pom.xml                          # Maven Configuration
+├── WARP.md                                    # Diese Datei
+├── README.md                                  # Projektübersicht
+├── pom.xml                                    # Maven Configuration
 ├── src/
 │   ├── main/
-│   │   ├── kotlin/
-│   │   │   └── ch/zuegi/rvmcp/
-│   │   │       ├── RvmcpApplication.kt
-│   │   │       ├── agent/           # Agent Setup & Configuration
-│   │   │       ├── memory/          # Long-Term Memory Implementation
-│   │   │       ├── workflow/        # Engineering Workflows
-│   │   │       └── vibe/            # Vibe Engineering Logic
+│   │   ├── kotlin/ch/zuegi/rvmcp/
+│   │   │   ├── RvmcpApplication.kt            # Spring Boot Application
+│   │   │   ├── domain/                        # 🔷 Domain Layer (Kern)
+│   │   │   │   ├── model/                     # Entities, Value Objects
+│   │   │   │   ├── port/
+│   │   │   │   │   ├── input/                 # Use Case Interfaces
+│   │   │   │   │   └── output/                # Repository/Provider Interfaces
+│   │   │   │   └── service/                   # Domain Services
+│   │   │   ├── application/                   # 🔷 Application Layer
+│   │   │   │   └── workflow/                  # Use Case Implementations
+│   │   │   ├── adapter/                       # 🔷 Adapter Layer
+│   │   │   │   ├── input/
+│   │   │   │   │   ├── cli/                   # CLI Interface
+│   │   │   │   │   └── mcp/                   # MCP Protocol Handler
+│   │   │   │   └── output/
+│   │   │   │       ├── ai/                    # Kotlin Koog Integration
+│   │   │   │       ├── memory/                # Persistence Implementations
+│   │   │   │       └── git/                   # Git Integration
+│   │   │   └── infrastructure/                # 🔷 Infrastructure
+│   │   │       └── config/                    # Spring Configuration
 │   │   └── resources/
 │   │       ├── application.yml
-│   │       └── workflows/           # Workflow Definitions (YAML/JSON)
+│   │       └── workflows/                     # Workflow Definitions (YAML/JSON)
 │   └── test/
-│       └── kotlin/
-│           └── ch/zuegi/rvmcp/
+│       └── kotlin/ch/zuegi/rvmcp/
 └── docs/
-    ├── architecture.md              # Architekturentscheidungen
-    ├── workflows.md                 # Detaillierte Workflow-Beschreibungen
-    └── tutorial.md                  # Getting Started Tutorial
+    ├── architecture.md                        # Architekturentscheidungen
+    ├── workflows.md                           # Detaillierte Workflow-Beschreibungen
+    └── tutorial.md                            # Getting Started Tutorial
 ```
 
 ---
@@ -113,10 +155,13 @@ responsible-vibe-mcp/
 ## Nächste Schritte
 
 ### Phase 1: Grundgerüst (MVP)
-- [ ] Maven Projekt aufsetzen (pom.xml)
+- [x] Maven Projekt aufsetzen (pom.xml)
+- [x] Hexagonale Architektur-Struktur erstellen
+- [ ] Domain Model definieren (Workflow, Phase, Context)
+- [ ] Port Interfaces definieren (input/output)
 - [ ] Spring Boot Basis-Applikation erstellen
-- [ ] Kotlin Koog Integration
-- [ ] Basis Memory-System (In-Memory)
+- [ ] Kotlin Koog Integration (Output Adapter)
+- [ ] Basis Memory-System (In-Memory Output Adapter)
 - [ ] Einfacher Workflow: "Neues Feature"
 
 ### Phase 2: Memory & Persistenz
@@ -176,8 +221,8 @@ responsible-vibe-mcp/
 
 ## Status
 
-**Aktueller Stand**: Projekt initialisiert, Konzept definiert  
-**Nächster Schritt**: Maven Projekt aufsetzen mit pom.xml
+**Aktueller Stand**: Maven Projekt mit hexagonaler Architektur aufgesetzt  
+**Nächster Schritt**: Domain Model definieren (Workflow, Phase, Context)
 
 ---
 
