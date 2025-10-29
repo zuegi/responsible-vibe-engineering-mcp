@@ -50,6 +50,7 @@ Die KI wird zum **aktiven Entwicklungspartner**, nicht bloß zum Code-Generator.
 Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 
 ### 1. Neues Projekt/Feature
+- definiere die Projekt-Sprache: Deutsch, Englisch,...
 - verbindliche Dokumentation definieren
 - Anforderungen definieren
 - Architektur entwerfen
