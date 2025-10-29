@@ -110,6 +110,178 @@ Das Projekt folgt dem **Hexagonal Architecture**-Pattern (Ports & Adapters), um:
 
 ---
 
+## Konzeptionelle Architektur
+
+### Workflow vs. Process - Klare Trennung
+
+**Problem**: Begriff "Workflow" hat zwei Bedeutungen
+- **Engineering-Prozess**: Methodisches Vorgehen (Planung → Architektur → Implementation)
+- **Kotlin Koog Workflow**: Ausführungs-Graph für Agent-Aktionen
+
+**Lösung**: Konzeptionelle Trennung
+
+#### EngineeringProcess (Domain)
+```
+EngineeringProcess "Feature Development"
+├─ ProcessPhase "Requirements Analysis"
+│  ├─ VibeChecks: ["Sind Requirements klar?", "Edge Cases?"]
+│  └─ KoogWorkflowTemplate: "requirements-analysis.yml"
+├─ ProcessPhase "Architecture Design"
+│  ├─ VibeChecks: ["Passt in bestehende Architektur?", "Testbar?"]
+│  └─ KoogWorkflowTemplate: "architecture-design.yml"
+└─ ProcessPhase "Implementation"
+   ├─ VibeChecks: ["Code-Qualität?", "Tests vorhanden?"]
+   └─ KoogWorkflowTemplate: "implementation.yml"
+```
+
+#### Kotlin Koog Workflow (Execution)
+```yaml
+# workflows/requirements-analysis.yml
+name: "Requirements Analysis"
+graph:
+  nodes:
+    - id: gather_requirements
+      type: llm
+    - id: clarify_ambiguities
+      type: conditional
+    - id: human_input
+      type: human_interaction
+    - id: vibe_checks
+      type: vibe_check
+```
+
+### Ablauf: Von User-Request zu strukturierter Entwicklung
+
+```
+[1] User Request: "Implementiere Feature X"
+    ↓
+[2] Process Selection
+    → EngineeringProcess auswählen (Feature Development)
+    → ProcessExecution erstellen
+    ↓
+[3] Phase-by-Phase Execution
+    → ProcessPhase "Requirements Analysis"
+    → Koog Workflow ausführen (requirements-analysis.yml)
+    → Vibe Checks durchführen
+    → Human-in-the-Loop (wenn nötig)
+    → Phase abschließen & dokumentieren
+    ↓
+[4] Memory & Kontext speichern
+    → ExecutionContext aktualisieren
+    → Architectural Decisions dokumentieren
+    → Nächste Phase starten
+```
+
+### Vibe Engineering Checks
+
+**Konzept**: Quality Gates pro Phase
+
+**Implementierung**: Eigene Domain-Objekte
+```kotlin
+VibeCheck {
+  question: "Passt das in die bestehende Architektur?"
+  type: ARCHITECTURE
+  required: true
+  validationCriteria: [...]
+}
+```
+
+**Trigger-Points**:
+- Nach jeder ProcessPhase (obligatorisch)
+- Bei kritischen Architektur-Entscheidungen
+- Wenn Vibe Check fehlschlägt
+- Bei erkannten Unklarheiten
+
+### Human-in-the-Loop
+
+**Strategie**: Hybrid-Ansatz
+
+**Obligatorisch**:
+- Nach jeder Phase: Zusammenfassung + Bestätigung
+- User behält Kontrolle
+
+**Automatisch**:
+- Kritische Architektur-Entscheidungen
+- Breaking Changes
+- Failed Vibe Checks
+- Erkannte Ambiguitäten
+
+**Balance**: User als Driver, aber nicht bei jedem LLM-Call unterbrochen
+
+### Memory-Architektur: Zwei Ebenen
+
+**Problem**: Wie integrieren wir Koog's Intelligent History Compression mit unserem Long-Term Memory?
+
+**Lösung**: Zwei komplementäre Memory-Ebenen
+
+#### Ebene 1: Koog's Intelligent History Compression (Kurzzeit)
+**Zweck**: Conversational Memory während eines Workflow-Runs
+- Komprimiert LLM-Konversationen innerhalb einer Phase
+- Reduziert Token-Kosten
+- Behält Kontext während der Ausführung
+
+**Lebensdauer**: Während einer ProcessPhase / Koog Workflow Execution
+
+**Beispiel**:
+```
+Phase: "Requirements Analysis"
+  → Koog Workflow läuft
+  → 50 LLM-Interaktionen
+  → Koog komprimiert zu: "User wants Feature X with constraints Y, Z"
+```
+
+#### Ebene 2: ExecutionContext Memory (Langzeit)
+**Zweck**: Persistent Memory über Sessions & Branches
+- Speichert Architectural Decisions
+- Projekt-Kontext (Git-Branch, Files)
+- Phase-übergreifendes Wissen
+
+**Lebensdauer**: Projekt-Lifetime (Tage, Wochen, Monate)
+
+**Beispiel**:
+```json
+{
+  "projectPath": "/path/to/project",
+  "gitBranch": "feature/new-endpoint",
+  "phaseHistory": [...],
+  "architecturalDecisions": [
+    {
+      "phase": "Architecture Design",
+      "decision": "Use Hexagonal Architecture",
+      "reasoning": "Better testability and maintainability",
+      "date": "2025-10-29"
+    }
+  ]
+}
+```
+
+#### Integration: Memory-Bridge
+
+```kotlin
+// Start Phase: Long-Term → Koog
+val context = memoryRepo.load(projectPath)
+val koogWorkflow = KoogWorkflowExecutor(
+    initialContext = context.toKoogContext()
+)
+
+// Ende Phase: Koog → Long-Term
+val phaseSummary = koogWorkflow.getSummary()
+context.addPhaseResult(
+    phase = "Requirements Analysis",
+    summary = phaseSummary.compressed,
+    decisions = phaseSummary.decisions
+)
+memoryRepo.save(context)
+```
+
+**Vorteile**:
+- ✅ Trennung der Verantwortlichkeiten
+- ✅ Koog bleibt austauschbar
+- ✅ Optimale Performance (komprimiert + persistent)
+- ✅ Git-Aware (Branch-spezifische Contexts)
+
+---
+
 ## Projektstruktur
 
 ```
@@ -157,12 +329,31 @@ responsible-vibe-mcp/
 ### Phase 1: Grundgerüst (MVP)
 - [x] Maven Projekt aufsetzen (pom.xml)
 - [x] Hexagonale Architektur-Struktur erstellen
-- [ ] Domain Model definieren (Workflow, Phase, Context)
-- [ ] Port Interfaces definieren (input/output)
-- [ ] Spring Boot Basis-Applikation erstellen
-- [ ] Kotlin Koog Integration (Output Adapter)
+- [x] Konzeptionelle Architektur definieren (Process vs. Workflow Trennung)
+- [ ] Domain Model implementieren:
+  - [ ] EngineeringProcess (Entity)
+  - [ ] ProcessPhase (Value Object)
+  - [ ] ProcessExecution (Entity)
+  - [ ] ExecutionContext (Entity)
+  - [ ] VibeCheck / VibeCheckResult (Value Objects)
+  - [ ] Supporting: ProcessId, ExecutionId, ExecutionStatus, Decision, Interaction, Artifact
+- [ ] Port Interfaces definieren:
+  - [ ] input: ExecuteProcessPhaseUseCase
+  - [ ] output: WorkflowExecutionPort, MemoryRepositoryPort
+- [ ] YAML Workflow Templates erstellen:
+  - [ ] requirements-analysis.yml
+  - [ ] architecture-design.yml
+  - [ ] implementation.yml
+- [ ] Kotlin Koog Integration (Output Adapter):
+  - [ ] KoogWorkflowExecutor (YAML → Koog Graph)
+  - [ ] YAML Parser
+- [ ] Application Layer:
+  - [ ] ExecuteProcessPhaseUseCase (Implementierung)
+  - [ ] VibeCheck Evaluation Logic
+  - [ ] Human-in-the-Loop Trigger Logic
 - [ ] Basis Memory-System (In-Memory Output Adapter)
-- [ ] Einfacher Workflow: "Neues Feature"
+- [ ] Spring Boot Basis-Applikation
+- [ ] CLI Adapter (Input) für Testing
 
 ### Phase 2: Memory & Persistenz
 - [ ] Persistentes Memory (Datei-basiert oder DB)
@@ -221,8 +412,52 @@ responsible-vibe-mcp/
 
 ## Status
 
-**Aktueller Stand**: Maven Projekt mit hexagonaler Architektur aufgesetzt  
-**Nächster Schritt**: Domain Model definieren (Workflow, Phase, Context)
+**Aktueller Stand**: Konzeptionelle Architektur definiert (Process vs. Workflow Trennung, Vibe Checks, Human-in-the-Loop)  
+**Nächster Schritt**: Domain Model implementieren (EngineeringProcess, ProcessPhase, ExecutionContext, VibeCheck)
+
+---
+
+## Architektur-Entscheidungen
+
+### ADR-001: Process vs. Workflow Trennung
+**Entscheidung**: Engineering-Prozesse (Domain) getrennt von Kotlin Koog Workflows (Execution)  
+**Begründung**: 
+- Klarheit der Konzepte
+- Domain bleibt framework-unabhängig
+- Koog-Workflows sind austauschbar
+
+### ADR-002: Vibe Checks als eigene Domain-Objekte
+**Entscheidung**: VibeCheck als separates Value Object mit eigener Validation-Logik  
+**Begründung**:
+- Zentral für das Konzept
+- Konfigurierbar pro ProcessPhase
+- Erweiterbar (AI-gestützte Evaluation)
+- Testbar
+
+### ADR-003: Hybrid Human-in-the-Loop
+**Entscheidung**: Obligatorisch nach jeder Phase + automatisch bei kritischen Entscheidungen  
+**Begründung**:
+- User behält Kontrolle
+- Nicht bei jedem LLM-Call unterbrechen
+- Balance zwischen Autonomie und Oversight
+
+### ADR-004: YAML für Koog Workflows
+**Entscheidung**: Workflow-Definitionen als YAML statt Kotlin DSL  
+**Begründung**:
+- Einfacher editierbar ohne Rebuild
+- Nicht-Entwickler können Workflows anpassen
+- Standard-Format für Workflow-Definitionen
+
+### ADR-005: Zwei-Ebenen-Memory-Architektur
+**Entscheidung**: Koog's Intelligent History Compression (Kurzzeit) + ExecutionContext (Langzeit)  
+**Begründung**:
+- **Trennung der Concerns**: Koog optimiert Conversational Memory, ExecutionContext speichert Projektwissen
+- **Framework-Unabhängigkeit**: ExecutionContext bleibt stabil, auch wenn Koog ausgetauscht wird
+- **Performance**: Koog komprimiert während Execution, nur Essentials landen im Long-Term Memory
+- **Git-Awareness**: Branch-spezifische Contexts für parallele Feature-Entwicklung
+- **Token-Effizienz**: Keine redundanten Informationen in LLM-Calls
+
+**Implementierung**: Memory-Adapter als Bridge zwischen beiden Ebenen
 
 ---
 
