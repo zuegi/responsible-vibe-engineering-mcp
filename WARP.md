@@ -16,6 +16,7 @@ Responsible Vibe MCP leitet die KI systematisch durch klar definierte Projektpha
 
 1. **Planung & Anforderungsanalyse**
 2. **Architekturentwurf**
+3. **Dokumentation des Projekts**
 3. **Implementierung**
 4. **Testing**
 5. **Integration & Review**
@@ -49,6 +50,7 @@ Die KI wird zum **aktiven Entwicklungspartner**, nicht bloß zum Code-Generator.
 Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 
 ### 1. Neues Projekt/Feature
+- verbindliche Dokumentation definieren
 - Anforderungen definieren
 - Architektur entwerfen
 - Technologie-Stack evaluieren
@@ -61,12 +63,14 @@ Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 - Lösung entwerfen
 - Tests schreiben
 - Fix implementieren
+- Dokumentation erweitern
 
 ### 3. Refactoring
 - Code-Smells identifizieren
 - Zielarchitektur definieren
 - Schrittweise Transformation
 - Tests sicherstellen Regressionssicherheit
+- Dokumentation erweitern
 
 ---
 
