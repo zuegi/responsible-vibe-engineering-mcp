@@ -24,11 +24,11 @@ class ProcessExecutionTest {
             vibeChecks = listOf(
                 VibeCheck(
                     question = "Are requirements clear?",
-                    type = VibeCheckType.REQUIREMENTS
-                )
+                    type = VibeCheckType.REQUIREMENTS,
+                ),
             ),
             koogWorkflowTemplate = "requirements-analysis.yml",
-            order = 0
+            order = 0,
         )
 
         val phase2 = ProcessPhase(
@@ -37,18 +37,18 @@ class ProcessExecutionTest {
             vibeChecks = listOf(
                 VibeCheck(
                     question = "Does architecture fit?",
-                    type = VibeCheckType.ARCHITECTURE
-                )
+                    type = VibeCheckType.ARCHITECTURE,
+                ),
             ),
             koogWorkflowTemplate = "architecture-design.yml",
-            order = 1
+            order = 1,
         )
 
         testProcess = EngineeringProcess(
             id = ProcessId.generate(),
             name = "Feature Development",
             description = "Standard feature development",
-            phases = listOf(phase1, phase2)
+            phases = listOf(phase1, phase2),
         )
     }
 
@@ -59,7 +59,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.IN_PROGRESS,
             currentPhaseIndex = 0,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         assertThat(execution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
@@ -75,7 +75,7 @@ class ProcessExecutionTest {
                 process = testProcess,
                 status = ExecutionStatus.IN_PROGRESS,
                 currentPhaseIndex = -1,
-                startedAt = Instant.now()
+                startedAt = Instant.now(),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Current phase index must be non-negative")
@@ -89,7 +89,7 @@ class ProcessExecutionTest {
                 process = testProcess,
                 status = ExecutionStatus.IN_PROGRESS,
                 currentPhaseIndex = 10,
-                startedAt = Instant.now()
+                startedAt = Instant.now(),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Current phase index must be within process phases")
@@ -104,7 +104,7 @@ class ProcessExecutionTest {
                 status = ExecutionStatus.COMPLETED,
                 currentPhaseIndex = 0,
                 startedAt = Instant.now(),
-                completedAt = null
+                completedAt = null,
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Completed execution must have completion timestamp")
@@ -117,7 +117,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.IN_PROGRESS,
             currentPhaseIndex = 0,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         val currentPhase = execution.currentPhase()
@@ -133,7 +133,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.PHASE_COMPLETED,
             currentPhaseIndex = 0,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         val nextExecution = execution.nextPhase()
@@ -150,7 +150,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.IN_PROGRESS,
             currentPhaseIndex = 1,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         assertThatThrownBy {
@@ -166,7 +166,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.IN_PROGRESS,
             currentPhaseIndex = 1,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         val completed = execution.complete()
@@ -182,7 +182,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.IN_PROGRESS,
             currentPhaseIndex = 0,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         val failed = execution.fail()
@@ -198,7 +198,7 @@ class ProcessExecutionTest {
             process = testProcess,
             status = ExecutionStatus.IN_PROGRESS,
             currentPhaseIndex = 0,
-            startedAt = Instant.now()
+            startedAt = Instant.now(),
         )
 
         val phaseCompleted = execution.completePhase()

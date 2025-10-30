@@ -11,7 +11,7 @@ data class ProcessExecution(
     val status: ExecutionStatus,
     val currentPhaseIndex: Int = 0,
     val startedAt: Instant,
-    val completedAt: Instant? = null
+    val completedAt: Instant? = null,
 ) {
     init {
         require(currentPhaseIndex >= 0) { "Current phase index must be non-negative" }
@@ -30,21 +30,21 @@ data class ProcessExecution(
         require(process.hasNextPhase(currentPhaseIndex)) { "No next phase available" }
         return copy(
             currentPhaseIndex = currentPhaseIndex + 1,
-            status = ExecutionStatus.IN_PROGRESS
+            status = ExecutionStatus.IN_PROGRESS,
         )
     }
 
     fun complete(): ProcessExecution = copy(
         status = ExecutionStatus.COMPLETED,
-        completedAt = Instant.now()
+        completedAt = Instant.now(),
     )
 
     fun fail(): ProcessExecution = copy(
         status = ExecutionStatus.FAILED,
-        completedAt = Instant.now()
+        completedAt = Instant.now(),
     )
 
     fun completePhase(): ProcessExecution = copy(
-        status = ExecutionStatus.PHASE_COMPLETED
+        status = ExecutionStatus.PHASE_COMPLETED,
     )
 }

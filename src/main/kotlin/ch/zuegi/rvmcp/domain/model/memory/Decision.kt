@@ -6,7 +6,7 @@ data class Decision(
     val phase: String,
     val decision: String,
     val reasoning: String,
-    val date: LocalDate = LocalDate.now()
+    val date: LocalDate = LocalDate.now(),
 ) {
     init {
         require(phase.isNotBlank()) { "Phase must not be blank" }

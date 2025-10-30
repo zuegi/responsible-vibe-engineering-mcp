@@ -7,7 +7,7 @@ data class ProcessPhase(
     val description: String,
     val vibeChecks: List<VibeCheck>,
     val koogWorkflowTemplate: String,
-    val order: Int
+    val order: Int,
 ) {
     init {
         require(name.isNotBlank()) { "Name must not be blank" }

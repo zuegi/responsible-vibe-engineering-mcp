@@ -6,5 +6,5 @@ data class VibeCheckResult(
     val check: VibeCheck,
     val passed: Boolean,
     val findings: String,
-    val timestamp: Instant = Instant.now()
+    val timestamp: Instant = Instant.now(),
 )

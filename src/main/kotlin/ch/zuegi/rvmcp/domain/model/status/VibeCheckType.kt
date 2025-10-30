@@ -5,5 +5,5 @@ enum class VibeCheckType {
     QUALITY,
     REQUIREMENTS,
     TESTING,
-    INTEGRATION
+    INTEGRATION,
 }

@@ -6,7 +6,7 @@ data class VibeCheck(
     val question: String,
     val type: VibeCheckType,
     val required: Boolean = true,
-    val validationCriteria: List<String> = emptyList()
+    val validationCriteria: List<String> = emptyList(),
 ) {
     init {
         require(question.isNotBlank()) { "Question must not be blank" }

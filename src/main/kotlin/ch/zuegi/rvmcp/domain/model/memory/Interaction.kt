@@ -7,7 +7,7 @@ data class Interaction(
     val timestamp: Instant,
     val type: InteractionType,
     val context: String,
-    val userResponse: String? = null
+    val userResponse: String? = null,
 ) {
     init {
         require(context.isNotBlank()) { "Context must not be blank" }

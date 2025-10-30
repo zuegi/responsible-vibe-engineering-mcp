@@ -13,7 +13,7 @@ data class ExecutionContext(
     val phaseResults: Map<String, PhaseResult> = emptyMap(),
     val architecturalDecisions: List<Decision> = emptyList(),
     val interactions: List<Interaction> = emptyList(),
-    val artifacts: List<Artifact> = emptyList()
+    val artifacts: List<Artifact> = emptyList(),
 ) {
     init {
         require(projectPath.isNotBlank()) { "Project path must not be blank" }
@@ -21,19 +21,19 @@ data class ExecutionContext(
     }
 
     fun addPhaseResult(result: PhaseResult): ExecutionContext = copy(
-        phaseResults = phaseResults + (result.phaseName to result)
+        phaseResults = phaseResults + (result.phaseName to result),
     )
 
     fun addDecision(decision: Decision): ExecutionContext = copy(
-        architecturalDecisions = architecturalDecisions + decision
+        architecturalDecisions = architecturalDecisions + decision,
     )
 
     fun addInteraction(interaction: Interaction): ExecutionContext = copy(
-        interactions = interactions + interaction
+        interactions = interactions + interaction,
     )
 
     fun addArtifact(artifact: Artifact): ExecutionContext = copy(
-        artifacts = artifacts + artifact
+        artifacts = artifacts + artifact,
     )
 
     fun getPhaseResult(phaseName: String): PhaseResult? = phaseResults[phaseName]

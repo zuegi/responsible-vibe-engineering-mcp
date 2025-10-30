@@ -5,5 +5,5 @@ enum class ArtifactType {
     DOCUMENTATION,
     TEST,
     CONFIGURATION,
-    DIAGRAM
+    DIAGRAM,
 }

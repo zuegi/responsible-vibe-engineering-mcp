@@ -8,9 +8,6 @@ import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import ch.zuegi.rvmcp.domain.model.status.ArtifactType
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.status.InteractionType
-import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
-import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
-import ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -24,7 +21,7 @@ class ExecutionContextTest {
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "feature/new-feature"
+            gitBranch = "feature/new-feature",
         )
 
         assertThat(context.projectPath).isEqualTo("/path/to/project")
@@ -41,7 +38,7 @@ class ExecutionContextTest {
             ExecutionContext(
                 executionId = ExecutionId.generate(),
                 projectPath = "",
-                gitBranch = "main"
+                gitBranch = "main",
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Project path must not be blank")
@@ -53,7 +50,7 @@ class ExecutionContextTest {
             ExecutionContext(
                 executionId = ExecutionId.generate(),
                 projectPath = "/path/to/project",
-                gitBranch = ""
+                gitBranch = "",
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Git branch must not be blank")
@@ -64,7 +61,7 @@ class ExecutionContextTest {
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         )
 
         val phaseResult = PhaseResult(
@@ -73,7 +70,7 @@ class ExecutionContextTest {
             summary = "Requirements gathered successfully",
             vibeCheckResults = emptyList(),
             startedAt = Instant.now(),
-            completedAt = Instant.now()
+            completedAt = Instant.now(),
         )
 
         val updatedContext = context.addPhaseResult(phaseResult)
@@ -87,14 +84,14 @@ class ExecutionContextTest {
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         )
 
         val decision = Decision(
             phase = "Architecture Design",
             decision = "Use Hexagonal Architecture",
             reasoning = "Better testability and maintainability",
-            date = LocalDate.now()
+            date = LocalDate.now(),
         )
 
         val updatedContext = context.addDecision(decision)
@@ -108,14 +105,14 @@ class ExecutionContextTest {
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         )
 
         val interaction = Interaction(
             timestamp = Instant.now(),
             type = InteractionType.PHASE_CONFIRMATION,
             context = "User confirmed requirements phase",
-            userResponse = "Approved"
+            userResponse = "Approved",
         )
 
         val updatedContext = context.addInteraction(interaction)
@@ -129,14 +126,14 @@ class ExecutionContextTest {
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         )
 
         val artifact = Artifact(
             name = "UserService.kt",
             type = ArtifactType.CODE,
             path = "src/main/kotlin/UserService.kt",
-            content = "class UserService { }"
+            content = "class UserService { }",
         )
 
         val updatedContext = context.addArtifact(artifact)
@@ -153,13 +150,13 @@ class ExecutionContextTest {
             summary = "Requirements gathered",
             vibeCheckResults = emptyList(),
             startedAt = Instant.now(),
-            completedAt = Instant.now()
+            completedAt = Instant.now(),
         )
 
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         ).addPhaseResult(phaseResult)
 
         val retrieved = context.getPhaseResult("Requirements Analysis")
@@ -176,13 +173,13 @@ class ExecutionContextTest {
             summary = "Requirements gathered",
             vibeCheckResults = emptyList(),
             startedAt = Instant.now(),
-            completedAt = Instant.now()
+            completedAt = Instant.now(),
         )
 
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         ).addPhaseResult(phaseResult)
 
         assertThat(context.hasCompletedPhase("Requirements Analysis")).isTrue()
@@ -194,25 +191,25 @@ class ExecutionContextTest {
         val decision1 = Decision(
             phase = "Architecture Design",
             decision = "Use Hexagonal Architecture",
-            reasoning = "Better testability"
+            reasoning = "Better testability",
         )
 
         val decision2 = Decision(
             phase = "Architecture Design",
             decision = "Use Kotlin Koog for AI",
-            reasoning = "Framework support"
+            reasoning = "Framework support",
         )
 
         val decision3 = Decision(
             phase = "Implementation",
             decision = "Use Spring Boot",
-            reasoning = "Enterprise ready"
+            reasoning = "Enterprise ready",
         )
 
         val context = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         )
             .addDecision(decision1)
             .addDecision(decision2)
@@ -230,13 +227,13 @@ class ExecutionContextTest {
         val originalContext = ExecutionContext(
             executionId = ExecutionId.generate(),
             projectPath = "/path/to/project",
-            gitBranch = "main"
+            gitBranch = "main",
         )
 
         val decision = Decision(
             phase = "Test",
             decision = "Test decision",
-            reasoning = "Test reasoning"
+            reasoning = "Test reasoning",
         )
 
         val updatedContext = originalContext.addDecision(decision)

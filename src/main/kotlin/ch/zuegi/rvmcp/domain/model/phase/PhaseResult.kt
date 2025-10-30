@@ -10,7 +10,7 @@ data class PhaseResult(
     val summary: String,
     val vibeCheckResults: List<VibeCheckResult>,
     val startedAt: Instant,
-    val completedAt: Instant? = null
+    val completedAt: Instant? = null,
 ) {
     init {
         require(phaseName.isNotBlank()) { "Phase name must not be blank" }

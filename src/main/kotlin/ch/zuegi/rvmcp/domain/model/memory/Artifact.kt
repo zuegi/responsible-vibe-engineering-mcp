@@ -6,7 +6,7 @@ data class Artifact(
     val name: String,
     val type: ArtifactType,
     val path: String,
-    val content: String? = null
+    val content: String? = null,
 ) {
     init {
         require(name.isNotBlank()) { "Name must not be blank" }

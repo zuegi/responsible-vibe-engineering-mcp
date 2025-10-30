@@ -16,11 +16,11 @@ class EngineeringProcessTest {
         vibeChecks = listOf(
             VibeCheck(
                 question = "Is everything ok?",
-                type = VibeCheckType.QUALITY
-            )
+                type = VibeCheckType.QUALITY,
+            ),
         ),
         koogWorkflowTemplate = "test-workflow.yml",
-        order = order
+        order = order,
     )
 
     @Test
@@ -32,7 +32,7 @@ class EngineeringProcessTest {
             id = ProcessId.generate(),
             name = "Feature Development",
             description = "Standard feature development process",
-            phases = listOf(phase1, phase2)
+            phases = listOf(phase1, phase2),
         )
 
         assertThat(process.name).isEqualTo("Feature Development")
@@ -47,7 +47,7 @@ class EngineeringProcessTest {
                 id = ProcessId.generate(),
                 name = "",
                 description = "Test",
-                phases = listOf(createTestPhase("Phase 1", 0))
+                phases = listOf(createTestPhase("Phase 1", 0)),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Name must not be blank")
@@ -60,7 +60,7 @@ class EngineeringProcessTest {
                 id = ProcessId.generate(),
                 name = "Test",
                 description = "",
-                phases = listOf(createTestPhase("Phase 1", 0))
+                phases = listOf(createTestPhase("Phase 1", 0)),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Description must not be blank")
@@ -73,7 +73,7 @@ class EngineeringProcessTest {
                 id = ProcessId.generate(),
                 name = "Test",
                 description = "Test description",
-                phases = emptyList()
+                phases = emptyList(),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Process must have at least one phase")
@@ -89,7 +89,7 @@ class EngineeringProcessTest {
                 id = ProcessId.generate(),
                 name = "Test",
                 description = "Test description",
-                phases = listOf(phase1, phase2)
+                phases = listOf(phase1, phase2),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Phase order must be sequential starting from 0")
@@ -104,7 +104,7 @@ class EngineeringProcessTest {
             id = ProcessId.generate(),
             name = "Test",
             description = "Test description",
-            phases = listOf(phase1, phase2)
+            phases = listOf(phase1, phase2),
         )
 
         assertThat(process.getPhase(0)).isEqualTo(phase1)
@@ -122,7 +122,7 @@ class EngineeringProcessTest {
             id = ProcessId.generate(),
             name = "Test",
             description = "Test description",
-            phases = listOf(phase1, phase2, phase3)
+            phases = listOf(phase1, phase2, phase3),
         )
 
         assertThat(process.hasNextPhase(0)).isTrue()
@@ -135,14 +135,14 @@ class EngineeringProcessTest {
         val phases = listOf(
             createTestPhase("Phase 1", 0),
             createTestPhase("Phase 2", 1),
-            createTestPhase("Phase 3", 2)
+            createTestPhase("Phase 3", 2),
         )
 
         val process = EngineeringProcess(
             id = ProcessId.generate(),
             name = "Test",
             description = "Test description",
-            phases = phases
+            phases = phases,
         )
 
         assertThat(process.totalPhases()).isEqualTo(3)

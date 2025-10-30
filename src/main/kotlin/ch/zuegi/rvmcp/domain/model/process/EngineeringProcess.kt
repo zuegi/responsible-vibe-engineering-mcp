@@ -7,7 +7,7 @@ data class EngineeringProcess(
     val id: ProcessId,
     val name: String,
     val description: String,
-    val phases: List<ProcessPhase>
+    val phases: List<ProcessPhase>,
 ) {
     init {
         require(name.isNotBlank()) { "Name must not be blank" }

@@ -5,5 +5,5 @@ enum class ExecutionStatus {
     IN_PROGRESS,
     PHASE_COMPLETED,
     COMPLETED,
-    FAILED
+    FAILED,
 }
