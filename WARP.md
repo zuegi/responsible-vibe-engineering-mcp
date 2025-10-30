@@ -335,13 +335,13 @@ responsible-vibe-mcp/
 - [x] Maven Projekt aufsetzen (pom.xml)
 - [x] Hexagonale Architektur-Struktur erstellen
 - [x] Konzeptionelle Architektur definieren (Process vs. Workflow Trennung)
-- [ ] Domain Model implementieren:
-  - [ ] EngineeringProcess (Entity)
-  - [ ] ProcessPhase (Value Object)
-  - [ ] ProcessExecution (Entity)
-  - [ ] ExecutionContext (Entity)
-  - [ ] VibeCheck / VibeCheckResult (Value Objects)
-  - [ ] Supporting: ProcessId, ExecutionId, ExecutionStatus, Decision, Interaction, Artifact
+- [x] Domain Model implementieren:
+  - [x] EngineeringProcess (Entity)
+  - [x] ProcessPhase (Value Object)
+  - [x] ProcessExecution (Entity)
+  - [x] ExecutionContext (Entity)
+  - [x] VibeCheck / VibeCheckResult (Value Objects)
+  - [x] Supporting: ProcessId, ExecutionId, ExecutionStatus, Decision, Interaction, Artifact
 - [ ] Port Interfaces definieren:
   - [ ] input: ExecuteProcessPhaseUseCase
   - [ ] output: WorkflowExecutionPort, MemoryRepositoryPort
