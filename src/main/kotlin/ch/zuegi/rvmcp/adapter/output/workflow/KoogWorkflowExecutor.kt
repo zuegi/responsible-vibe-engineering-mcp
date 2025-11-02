@@ -23,8 +23,27 @@ import java.time.Instant
  * 4. Executes with LLM calls
  * 5. Returns WorkflowExecutionResult
  *
- * TODO: Currently a simplified implementation.
- * Full Koog integration will be added in next phase.
+ * **Current Status**: Simplified Console-based Implementation
+ * 
+ * This implementation provides the workflow execution framework with:
+ * - YAML template loading and validation
+ * - Node-by-node execution (LLM, Conditional, Human, Aggregation, System)
+ * - Execution state management
+ * - Variable interpolation
+ * - Decision tracking
+ *
+ * **Next Step**: Real Kotlin Koog LLM Integration
+ * 
+ * To integrate real LLM calls:
+ * 1. Use Koog's Model/Agent API from `ai.koog.model`
+ * 2. Replace console prompts in `executeLLMNode` with `model.invoke(prompt)`
+ * 3. Configure API keys via application.yml or environment variables
+ * 4. Implement streaming responses for better UX
+ * 5. Add intelligent history compression via Koog
+ * 
+ * Dependencies already configured:
+ * - `koog-spring-boot-starter` (v0.5.1) in pom.xml
+ * - Configuration in `application.yml`
  */
 @Component
 class KoogWorkflowExecutor(
