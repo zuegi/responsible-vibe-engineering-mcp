@@ -47,16 +47,36 @@ Siehe [WARP.md](WARP.md) für detaillierte Informationen und nächste Schritte.
 ```
 src/
 ├── main/kotlin/ch/zuegi/rvmcp/
-│   ├── agent/        # Agent Setup & Configuration
-│   ├── memory/       # Long-Term Memory
-│   ├── workflow/     # Engineering Workflows
-│   └── vibe/         # Vibe Engineering Logic
-└── test/kotlin/ch/zuegi/rvmcp/
+│   ├── domain/                # ✅ Domain Layer (vollständig)
+│   │   ├── model/             # Entities & Value Objects
+│   │   │   ├── process/       # EngineeringProcess, ProcessExecution
+│   │   │   ├── phase/         # ProcessPhase, PhaseResult
+│   │   │   ├── context/       # ExecutionContext
+│   │   │   ├── vibe/          # VibeCheck, VibeCheckResult
+│   │   │   ├── memory/        # Decision, Interaction, Artifact
+│   │   │   ├── id/            # ProcessId, ExecutionId
+│   │   │   └── status/        # ExecutionStatus, VibeCheckType
+│   │   └── port/              # ✅ Port Interfaces (vollständig)
+│   │       ├── input/         # 3 Use Cases
+│   │       └── output/        # 4 Repositories/Providers
+│   ├── application/           # 🚧 Application Layer
+│   └── adapter/               # 🚧 Adapter Layer
+└── test/kotlin/ch/zuegi/rvmcp/  # ✅ 36 Unit Tests
 ```
 
 ## Status
 
 🚧 **In Entwicklung** – Phase 1: Grundgerüst (MVP)
+
+**Fertiggestellt**:
+- ✅ Domain Model (Entities, Value Objects)
+- ✅ Port Interfaces (Input & Output)
+- ✅ 36 Unit Tests (alle erfolgreich)
+
+**Nächste Schritte**:
+- YAML Workflow Templates
+- Kotlin Koog Integration (Output Adapter)
+- Application Layer (Use Case Implementierungen)
 
 ## Lizenz
 
