@@ -10,7 +10,6 @@ import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
  * Prompts user to answer quality gate questions.
  */
 class ConsoleVibeCheckEvaluator : VibeCheckEvaluatorPort {
-
     override fun evaluate(
         vibeCheck: VibeCheck,
         context: ExecutionContext,
@@ -32,12 +31,13 @@ class ConsoleVibeCheckEvaluator : VibeCheckEvaluatorPort {
         val input = readlnOrNull()?.lowercase()
         val passed = input == "j" || input == "y" || input == "yes" || input == "ja"
 
-        val feedback = if (!passed) {
-            print("Feedback/Begründung: ")
-            readlnOrNull() ?: ""
-        } else {
-            ""
-        }
+        val feedback =
+            if (!passed) {
+                print("Feedback/Begründung: ")
+                readlnOrNull() ?: ""
+            } else {
+                ""
+            }
 
         return VibeCheckResult(
             check = vibeCheck,

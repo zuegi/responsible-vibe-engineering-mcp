@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap
  * In-memory storage for engineering process definitions.
  */
 class InMemoryProcessRepository : ProcessRepositoryPort {
-
     private val storage = ConcurrentHashMap<ProcessId, EngineeringProcess>()
 
     override fun findById(processId: ProcessId): EngineeringProcess? {

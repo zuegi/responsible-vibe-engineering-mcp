@@ -23,7 +23,6 @@ class StartProcessExecutionService(
     private val processRepository: ProcessRepositoryPort,
     private val memoryRepository: MemoryRepositoryPort,
 ) {
-
     /**
      * Starts a new process execution.
      *
@@ -44,24 +43,27 @@ class StartProcessExecutionService(
         println("   Branch: $gitBranch")
 
         // 1. Load process definition
-        val process = processRepository.findById(processId)
-            ?: throw IllegalArgumentException("Process not found: ${processId.value}")
+        val process =
+            processRepository.findById(processId)
+                ?: throw IllegalArgumentException("Process not found: ${processId.value}")
 
         println("   Process: ${process.name}")
         println("   Phases: ${process.totalPhases()}")
 
         // 2. Create or load execution context
-        val executionContext = memoryRepository.load(projectPath, gitBranch)
-            ?: createNewExecutionContext(projectPath, gitBranch)
+        val executionContext =
+            memoryRepository.load(projectPath, gitBranch)
+                ?: createNewExecutionContext(projectPath, gitBranch)
 
         // 3. Create process execution
-        val processExecution = ProcessExecution(
-            id = ExecutionId(UUID.randomUUID().toString()),
-            process = process,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 0,
-            startedAt = Instant.now(),
-        )
+        val processExecution =
+            ProcessExecution(
+                id = ExecutionId(UUID.randomUUID().toString()),
+                process = process,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 0,
+                startedAt = Instant.now(),
+            )
 
         // 4. Persist initial state
         memoryRepository.save(executionContext)
