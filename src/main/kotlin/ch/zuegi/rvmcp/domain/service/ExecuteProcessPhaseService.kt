@@ -23,7 +23,6 @@ class ExecuteProcessPhaseService(
     private val vibeCheckEvaluator: VibeCheckEvaluatorPort,
     private val memoryRepository: MemoryRepositoryPort,
 ) {
-
     /**
      * Executes a single process phase with the given context.
      *
@@ -40,21 +39,24 @@ class ExecuteProcessPhaseService(
         println("  Description: ${phase.description}")
 
         // 1. Execute workflow
-        val workflowResult = workflowExecutor.executeWorkflow(
-            template = phase.koogWorkflowTemplate,
-            context = context,
-        )
+        val workflowResult =
+            workflowExecutor.executeWorkflow(
+                template = phase.koogWorkflowTemplate,
+                context = context,
+            )
 
         // 2. Add workflow decisions to context
-        var updatedContext = workflowResult.decisions.fold(context) { ctx, decision ->
-            ctx.addDecision(decision)
-        }
+        var updatedContext =
+            workflowResult.decisions.fold(context) { ctx, decision ->
+                ctx.addDecision(decision)
+            }
 
         // 4. Evaluate vibe checks
-        val vibeCheckResults = vibeCheckEvaluator.evaluateBatch(
-            vibeChecks = phase.vibeChecks,
-            context = updatedContext,
-        )
+        val vibeCheckResults =
+            vibeCheckEvaluator.evaluateBatch(
+                vibeChecks = phase.vibeChecks,
+                context = updatedContext,
+            )
 
         val allVibeChecksPassed = vibeCheckResults.all { it.passed }
 
@@ -81,14 +83,15 @@ class ExecuteProcessPhaseService(
         }
 
         // 6. Create phase result
-        val phaseResult = PhaseResult(
-            phaseName = phase.name,
-            status = if (allVibeChecksPassed) ExecutionStatus.PHASE_COMPLETED else ExecutionStatus.FAILED,
-            summary = workflowResult.summary,
-            vibeCheckResults = vibeCheckResults,
-            startedAt = startTime,
-            completedAt = Instant.now(),
-        )
+        val phaseResult =
+            PhaseResult(
+                phaseName = phase.name,
+                status = if (allVibeChecksPassed) ExecutionStatus.PHASE_COMPLETED else ExecutionStatus.FAILED,
+                summary = workflowResult.summary,
+                vibeCheckResults = vibeCheckResults,
+                startedAt = startTime,
+                completedAt = Instant.now(),
+            )
 
         // 7. Update context with phase result
         updatedContext = updatedContext.addPhaseResult(phaseResult)
@@ -107,14 +110,15 @@ class ExecuteProcessPhaseService(
         startTime: Instant,
         workflowSummary: String,
     ): ExecutionContext {
-        val phaseResult = PhaseResult(
-            phaseName = phase.name,
-            status = ExecutionStatus.FAILED,
-            summary = workflowSummary,
-            vibeCheckResults = vibeCheckResults,
-            startedAt = startTime,
-            completedAt = Instant.now(),
-        )
+        val phaseResult =
+            PhaseResult(
+                phaseName = phase.name,
+                status = ExecutionStatus.FAILED,
+                summary = workflowSummary,
+                vibeCheckResults = vibeCheckResults,
+                startedAt = startTime,
+                completedAt = Instant.now(),
+            )
 
         val updatedContext = context.addPhaseResult(phaseResult)
         memoryRepository.save(updatedContext)

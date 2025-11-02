@@ -12,7 +12,6 @@ import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
  * Prompts user via console to simulate workflow execution.
  */
 class ManualWorkflowExecutor : WorkflowExecutionPort {
-
     private var lastExecution: WorkflowExecutionResult? = null
 
     override fun executeWorkflow(
@@ -38,14 +37,15 @@ class ManualWorkflowExecutor : WorkflowExecutionPort {
         val artifacts = collectArtifacts()
         val output = collectOutput()
 
-        lastExecution = WorkflowExecutionResult(
-            success = true,
-            summary = output,
-            decisions = decisions,
-            vibeCheckResults = emptyList(),
-            startedAt = java.time.Instant.now().minusSeconds(300),
-            completedAt = java.time.Instant.now(),
-        )
+        lastExecution =
+            WorkflowExecutionResult(
+                success = true,
+                summary = output,
+                decisions = decisions,
+                vibeCheckResults = emptyList(),
+                startedAt = java.time.Instant.now().minusSeconds(300),
+                completedAt = java.time.Instant.now(),
+            )
 
         return lastExecution!!
     }
@@ -60,21 +60,24 @@ class ManualWorkflowExecutor : WorkflowExecutionPort {
 
     private fun getWorkflowSteps(template: String): List<String> {
         return when {
-            template.contains("requirements") -> listOf(
-                "Sammle Anforderungen vom User",
-                "Identifiziere Edge Cases",
-                "Dokumentiere Requirements in requirements.md",
-            )
-            template.contains("architecture") -> listOf(
-                "Analysiere bestehende Architektur",
-                "Entwerfe Komponenten",
-                "Dokumentiere Architektur-Entscheidungen",
-            )
-            template.contains("implementation") -> listOf(
-                "Implementiere Features",
-                "Schreibe Unit Tests",
-                "Code Review",
-            )
+            template.contains("requirements") ->
+                listOf(
+                    "Sammle Anforderungen vom User",
+                    "Identifiziere Edge Cases",
+                    "Dokumentiere Requirements in requirements.md",
+                )
+            template.contains("architecture") ->
+                listOf(
+                    "Analysiere bestehende Architektur",
+                    "Entwerfe Komponenten",
+                    "Dokumentiere Architektur-Entscheidungen",
+                )
+            template.contains("implementation") ->
+                listOf(
+                    "Implementiere Features",
+                    "Schreibe Unit Tests",
+                    "Code Review",
+                )
             else -> listOf("Führe Workflow-Schritte aus")
         }
     }

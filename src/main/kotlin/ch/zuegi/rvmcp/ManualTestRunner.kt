@@ -36,11 +36,12 @@ fun main() {
 
     // 2. Services initialisieren
     val startService = StartProcessExecutionService(processRepository, memoryRepository)
-    val executePhaseService = ExecuteProcessPhaseService(
-        workflowExecutor,
-        vibeCheckEvaluator,
-        memoryRepository,
-    )
+    val executePhaseService =
+        ExecuteProcessPhaseService(
+            workflowExecutor,
+            vibeCheckEvaluator,
+            memoryRepository,
+        )
     val completePhaseService = CompletePhaseService(memoryRepository)
 
     // 3. Sample Process erstellen: "Feature Development"
@@ -56,17 +57,19 @@ fun main() {
     print("\nBereit zum Starten? (Enter drücken)")
     readlnOrNull()
 
-    var processExecution = startService.execute(
-        processId = featureDevelopmentProcess.id,
-        projectPath = "/Users/groot/test-project",
-        gitBranch = "feature/new-feature",
-    )
+    var processExecution =
+        startService.execute(
+            processId = featureDevelopmentProcess.id,
+            projectPath = "/Users/groot/test-project",
+            gitBranch = "feature/new-feature",
+        )
 
     // 5. Context laden
-    var context = memoryRepository.load(
-        projectPath = "/Users/groot/test-project",
-        gitBranch = "feature/new-feature",
-    ) ?: throw IllegalStateException("Context not found")
+    var context =
+        memoryRepository.load(
+            projectPath = "/Users/groot/test-project",
+            gitBranch = "feature/new-feature",
+        ) ?: throw IllegalStateException("Context not found")
 
     // 6. Phasen durchlaufen
     while (processExecution.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.IN_PROGRESS ||
@@ -80,23 +83,24 @@ fun main() {
         readlnOrNull()
 
         // Phase ausführen
-        context = executePhaseService.execute(
-            phase = processExecution.currentPhase(),
-            context = context,
-        )
+        context =
+            executePhaseService.execute(
+                phase = processExecution.currentPhase(),
+                context = context,
+            )
 
         // Phase Result prüfen
         val phaseResult = context.phaseHistory.last()
-        
+
         // Wenn Phase fehlgeschlagen, frage ob wiederholen oder abbrechen
         if (phaseResult.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.FAILED) {
             println("\n⚠️  Phase ist fehlgeschlagen!")
             print("Wiederholen? (j/n): ")
             val retry = readlnOrNull()?.lowercase()
-            
+
             if (retry == "j" || retry == "y") {
                 println("↺ Phase wird wiederholt...")
-                continue  // Gleiche Phase nochmal
+                continue // Gleiche Phase nochmal
             } else {
                 println("⛔ Prozess abgebrochen")
                 processExecution = completePhaseService.fail(processExecution, context)
@@ -105,11 +109,12 @@ fun main() {
         }
 
         // Phase abschließen und zur nächsten
-        processExecution = completePhaseService.execute(
-            execution = processExecution,
-            context = context,
-            phaseResult = phaseResult,
-        )
+        processExecution =
+            completePhaseService.execute(
+                execution = processExecution,
+                context = context,
+                phaseResult = phaseResult,
+            )
     }
 
     // 7. Zusammenfassung
@@ -143,62 +148,68 @@ fun main() {
  * Erstellt einen Sample "Feature Development" Process.
  */
 private fun createFeatureDevelopmentProcess(): EngineeringProcess {
-    val requirementsPhase = ProcessPhase(
-        name = "Requirements Analysis",
-        description = "Sammle und dokumentiere Anforderungen",
-        vibeChecks = listOf(
-            VibeCheck(
-                question = "Sind die Requirements klar und vollständig?",
-                type = VibeCheckType.REQUIREMENTS,
-                required = true,
-            ),
-            VibeCheck(
-                question = "Wurden Edge Cases identifiziert?",
-                type = VibeCheckType.REQUIREMENTS,
-                required = false,
-            ),
-        ),
-        koogWorkflowTemplate = "requirements-analysis.yml",
-        order = 0,
-    )
+    val requirementsPhase =
+        ProcessPhase(
+            name = "Requirements Analysis",
+            description = "Sammle und dokumentiere Anforderungen",
+            vibeChecks =
+                listOf(
+                    VibeCheck(
+                        question = "Sind die Requirements klar und vollständig?",
+                        type = VibeCheckType.REQUIREMENTS,
+                        required = true,
+                    ),
+                    VibeCheck(
+                        question = "Wurden Edge Cases identifiziert?",
+                        type = VibeCheckType.REQUIREMENTS,
+                        required = false,
+                    ),
+                ),
+            koogWorkflowTemplate = "requirements-analysis.yml",
+            order = 0,
+        )
 
-    val architecturePhase = ProcessPhase(
-        name = "Architecture Design",
-        description = "Entwerfe die Architektur und Komponenten",
-        vibeChecks = listOf(
-            VibeCheck(
-                question = "Passt das Design in die bestehende Architektur?",
-                type = VibeCheckType.ARCHITECTURE,
-                required = true,
-            ),
-            VibeCheck(
-                question = "Ist das Design testbar?",
-                type = VibeCheckType.ARCHITECTURE,
-                required = true,
-            ),
-        ),
-        koogWorkflowTemplate = "architecture-design.yml",
-        order = 1,
-    )
+    val architecturePhase =
+        ProcessPhase(
+            name = "Architecture Design",
+            description = "Entwerfe die Architektur und Komponenten",
+            vibeChecks =
+                listOf(
+                    VibeCheck(
+                        question = "Passt das Design in die bestehende Architektur?",
+                        type = VibeCheckType.ARCHITECTURE,
+                        required = true,
+                    ),
+                    VibeCheck(
+                        question = "Ist das Design testbar?",
+                        type = VibeCheckType.ARCHITECTURE,
+                        required = true,
+                    ),
+                ),
+            koogWorkflowTemplate = "architecture-design.yml",
+            order = 1,
+        )
 
-    val implementationPhase = ProcessPhase(
-        name = "Implementation",
-        description = "Implementiere das Feature mit Tests",
-        vibeChecks = listOf(
-            VibeCheck(
-                question = "Entspricht der Code den Qualitätsstandards?",
-                type = VibeCheckType.QUALITY,
-                required = true,
-            ),
-            VibeCheck(
-                question = "Sind Tests vorhanden und aussagekräftig?",
-                type = VibeCheckType.TESTING,
-                required = true,
-            ),
-        ),
-        koogWorkflowTemplate = "implementation.yml",
-        order = 2,
-    )
+    val implementationPhase =
+        ProcessPhase(
+            name = "Implementation",
+            description = "Implementiere das Feature mit Tests",
+            vibeChecks =
+                listOf(
+                    VibeCheck(
+                        question = "Entspricht der Code den Qualitätsstandards?",
+                        type = VibeCheckType.QUALITY,
+                        required = true,
+                    ),
+                    VibeCheck(
+                        question = "Sind Tests vorhanden und aussagekräftig?",
+                        type = VibeCheckType.TESTING,
+                        required = true,
+                    ),
+                ),
+            koogWorkflowTemplate = "implementation.yml",
+            order = 2,
+        )
 
     return EngineeringProcess(
         id = ProcessId("feature-development"),

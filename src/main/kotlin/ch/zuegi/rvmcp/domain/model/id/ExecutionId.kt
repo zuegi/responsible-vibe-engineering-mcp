@@ -6,6 +6,7 @@ import java.util.UUID
 value class ExecutionId(val value: String) {
     companion object {
         fun generate(): ExecutionId = ExecutionId(UUID.randomUUID().toString())
+
         fun of(value: String): ExecutionId = ExecutionId(value)
     }
 }

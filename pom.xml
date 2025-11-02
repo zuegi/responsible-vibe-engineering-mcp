@@ -128,7 +128,7 @@
             <plugin>
                 <groupId>com.github.gantsign.maven</groupId>
                 <artifactId>ktlint-maven-plugin</artifactId>
-                <version>1.16.0</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>check</id>
@@ -136,14 +136,13 @@
                             <goal>check</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>format</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-stdlib</artifactId>
-                        <version>${kotlin.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <!-- Maven Surefire Plugin for Tests -->

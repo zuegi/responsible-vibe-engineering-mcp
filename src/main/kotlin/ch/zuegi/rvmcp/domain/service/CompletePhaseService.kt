@@ -17,7 +17,6 @@ import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 class CompletePhaseService(
     private val memoryRepository: MemoryRepositoryPort,
 ) {
-
     /**
      * Completes the current phase and transitions to the next phase if available.
      *
@@ -34,11 +33,12 @@ class CompletePhaseService(
         println("\n📋 Completing phase: ${phaseResult.phaseName}")
 
         // 1. Update context with phase result (if not already added)
-        val updatedContext = if (!context.hasCompletedPhase(phaseResult.phaseName)) {
-            context.addPhaseResult(phaseResult)
-        } else {
-            context
-        }
+        val updatedContext =
+            if (!context.hasCompletedPhase(phaseResult.phaseName)) {
+                context.addPhaseResult(phaseResult)
+            } else {
+                context
+            }
 
         // 2. Persist context
         memoryRepository.save(updatedContext)

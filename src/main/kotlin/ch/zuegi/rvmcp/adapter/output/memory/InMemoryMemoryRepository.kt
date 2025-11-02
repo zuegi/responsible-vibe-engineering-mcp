@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap
  * Data is lost on application restart.
  */
 class InMemoryMemoryRepository : MemoryRepositoryPort {
-
     private val storage = ConcurrentHashMap<String, ExecutionContext>()
 
     override fun save(context: ExecutionContext) {
