@@ -15,6 +15,8 @@ data class ExecutionContext(
     val interactions: List<Interaction> = emptyList(),
     val artifacts: List<Artifact> = emptyList(),
 ) {
+    val phaseHistory: List<PhaseResult>
+        get() = phaseResults.values.toList()
     init {
         require(projectPath.isNotBlank()) { "Project path must not be blank" }
         require(gitBranch.isNotBlank()) { "Git branch must not be blank" }

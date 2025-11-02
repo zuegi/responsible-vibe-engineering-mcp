@@ -56,27 +56,44 @@ src/
 │   │   │   ├── memory/        # Decision, Interaction, Artifact
 │   │   │   ├── id/            # ProcessId, ExecutionId
 │   │   │   └── status/        # ExecutionStatus, VibeCheckType
-│   │   └── port/              # ✅ Port Interfaces (vollständig)
-│   │       ├── input/         # 3 Use Cases
-│   │       └── output/        # 4 Repositories/Providers
-│   ├── application/           # 🚧 Application Layer
-│   └── adapter/               # 🚧 Adapter Layer
+│   │   ├── port/              # ✅ Port Interfaces (vollständig)
+│   │   │   ├── input/         # 3 Use Cases
+│   │   │   └── output/        # 4 Repositories/Providers
+│   │   └── service/           # ✅ Domain Services (3 Services)
+│   ├── adapter/               # ✅ Dummy-Adapter (Testing)
+│   │   └── output/            # 4 In-Memory Implementierungen
+│   │       ├── workflow/      # ManualWorkflowExecutor
+│   │       ├── memory/        # InMemoryMemoryRepository
+│   │       ├── vibe/          # ConsoleVibeCheckEvaluator
+│   │       └── process/       # InMemoryProcessRepository
+│   ├── ManualTestRunner.kt    # ✅ CLI Test Program
+│   └── application/           # 🚧 Application Layer (nächster Schritt)
 └── test/kotlin/ch/zuegi/rvmcp/  # ✅ 36 Unit Tests
 ```
 
 ## Status
 
-🚧 **In Entwicklung** – Phase 1: Grundgerüst (MVP)
+🚧 **In Entwicklung** – Phase 1: Business Logic implementiert!
 
 **Fertiggestellt**:
 - ✅ Domain Model (Entities, Value Objects)
 - ✅ Port Interfaces (Input & Output)
+- ✅ Domain Services (Business Logic)
+  - `StartProcessExecutionService` – Prozess initialisieren
+  - `ExecuteProcessPhaseService` – Phasen orchestrieren
+  - `CompletePhaseService` – Phasen abschließen
+- ✅ Dummy-Adapter (für Testing ohne KI)
+  - `ManualWorkflowExecutor` – CLI-basierte Workflow-Ausführung
+  - `ConsoleVibeCheckEvaluator` – Manuelle Vibe Checks
+  - `InMemoryMemoryRepository` – Temporärer Speicher
+  - `InMemoryProcessRepository` – Process Definitions
+- ✅ ManualTestRunner – Vollständiger End-to-End Test ohne KI
 - ✅ 36 Unit Tests (alle erfolgreich)
 
 **Nächste Schritte**:
-- YAML Workflow Templates
-- Kotlin Koog Integration (Output Adapter)
 - Application Layer (Use Case Implementierungen)
+- YAML Workflow Templates erstellen
+- Kotlin Koog Integration (KI-gestützte Adapter)
 
 ## Lizenz
 
