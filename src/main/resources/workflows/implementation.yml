@@ -1,0 +1,523 @@
+name: "Implementation"
+description: "Implementiert das Feature basierend auf Architecture Design"
+version: "1.0"
+
+# Kontext-Variablen
+context_variables:
+  - project_path
+  - git_branch
+  - phase_history
+  - architectural_decisions
+  - requirements_document
+  - architecture_document
+  - implementation_plan
+
+# Workflow-Schritte
+nodes:
+  # 1. Implementierungsplan laden
+  - id: load_implementation_plan
+    type: aggregation
+    description: "Lädt und analysiert den Implementierungsplan"
+    inputs:
+      - context.phase_history.architecture_design.artifacts.implementation_plan
+      - context.phase_history.architecture_design.artifacts.architecture_document
+    output: current_plan
+    
+  # 2. Nächsten Schritt identifizieren
+  - id: identify_next_step
+    type: llm
+    description: "Identifiziert den nächsten zu implementierenden Schritt"
+    prompt: |
+      **Implementierungsplan:**
+      {{current_plan}}
+      
+      **Bereits implementiert:**
+      {{context.completed_steps}}
+      
+      **Aufgabe:**
+      Identifiziere den nächsten Schritt, der implementiert werden sollte:
+      
+      1. Welche Schritte sind bereits abgeschlossen?
+      2. Welche Dependencies sind erfüllt?
+      3. Was ist der nächste logische Schritt?
+      
+      **Format:**
+      - Step ID
+      - Step Name
+      - Dateien, die erstellt/geändert werden müssen
+      - Abhängigkeiten (erfüllt/nicht erfüllt)
+    output: next_step
+    
+  # 3. Domain Model implementieren
+  - id: implement_domain_model
+    type: llm
+    description: "Implementiert Entities, Value Objects und Domain Services"
+    prompt: |
+      **Architecture Design:**
+      {{context.phase_history.architecture_design.artifacts.architecture_document}}
+      
+      **Nächster Schritt:**
+      {{next_step}}
+      
+      **Projekt-Struktur:**
+      {{context.project_path}}
+      
+      **Aufgabe:**
+      Implementiere die Domain Model Komponenten:
+      
+      ## Entities
+      Für jede Entity:
+      - Kotlin Data Class mit Validierung
+      - Immutable wo möglich
+      - Business Logic Methods
+      
+      ## Value Objects
+      - Inline/Value Classes für primitive Types
+      - Validierung im Constructor
+      - Equals/HashCode basierend auf Werten
+      
+      ## Domain Services
+      - Business Logic, die nicht in Entities passt
+      - Orchestrierung zwischen Entities
+      
+      **Beispiel (Kotlin):**
+      ```kotlin
+      data class Feature(
+          val id: FeatureId,
+          val name: String,
+          val requirements: List<Requirement>,
+          val status: FeatureStatus
+      ) {
+          init {
+              require(name.isNotBlank()) { "Feature name cannot be blank" }
+          }
+          
+          fun complete(): Feature = copy(status = FeatureStatus.COMPLETED)
+      }
+      
+      @JvmInline
+      value class FeatureId(val value: String) {
+          init {
+              require(value.matches(Regex("[A-Z]{3}-\\d{4}"))) {
+                  "Invalid feature ID format"
+              }
+          }
+      }
+      ```
+      
+      **Ausgabe:** Vollständiger Kotlin-Code für die Dateien
+    output: domain_model_code
+    
+  # 4. Port Interfaces implementieren
+  - id: implement_port_interfaces
+    type: llm
+    description: "Implementiert Input und Output Port Interfaces"
+    prompt: |
+      **Interface Design:**
+      {{context.phase_history.architecture_design.artifacts.architecture_document}}
+      
+      **Domain Model:**
+      {{domain_model_code}}
+      
+      **Aufgabe:**
+      Implementiere die Port Interfaces:
+      
+      ## Input Ports (Use Cases)
+      ```kotlin
+      interface CreateFeatureUseCase {
+          fun execute(command: CreateFeatureCommand): FeatureResult
+      }
+      
+      data class CreateFeatureCommand(
+          val name: String,
+          val requirements: List<String>
+      )
+      
+      sealed interface FeatureResult {
+          data class Success(val feature: Feature) : FeatureResult
+          data class Failure(val error: String) : FeatureResult
+      }
+      ```
+      
+      ## Output Ports (Repositories)
+      ```kotlin
+      interface FeatureRepository {
+          fun save(feature: Feature): Feature
+          fun findById(id: FeatureId): Feature?
+          fun findAll(): List<Feature>
+      }
+      ```
+      
+      **Wichtig:** 
+      - Interfaces im domain/port/input bzw. domain/port/output
+      - Keine Framework-Dependencies!
+      - Commands/Queries als eigene Types
+    output: port_interfaces_code
+    
+  # 5. Domain Services implementieren
+  - id: implement_domain_services
+    type: llm
+    description: "Implementiert die Business Logic Services"
+    prompt: |
+      **Domain Model:**
+      {{domain_model_code}}
+      
+      **Port Interfaces:**
+      {{port_interfaces_code}}
+      
+      **Use Cases:**
+      {{context.phase_history.architecture_design.artifacts.architecture_document}}
+      
+      **Aufgabe:**
+      Implementiere die Domain Services:
+      
+      ```kotlin
+      class CreateFeatureService(
+          private val featureRepository: FeatureRepository
+      ) : CreateFeatureUseCase {
+          
+          override fun execute(command: CreateFeatureCommand): FeatureResult {
+              // 1. Validierung
+              if (command.name.isBlank()) {
+                  return FeatureResult.Failure("Name cannot be blank")
+              }
+              
+              // 2. Business Logic
+              val feature = Feature(
+                  id = FeatureId.generate(),
+                  name = command.name,
+                  requirements = command.requirements.map { Requirement(it) },
+                  status = FeatureStatus.DRAFT
+              )
+              
+              // 3. Persistence (via Port)
+              val saved = featureRepository.save(feature)
+              
+              return FeatureResult.Success(saved)
+          }
+      }
+      ```
+      
+      **Wichtig:**
+      - Services nutzen nur Port Interfaces
+      - Keine direkten Framework-Calls
+      - Exception Handling
+    output: domain_services_code
+    
+  # 6. Unit Tests schreiben
+  - id: write_unit_tests
+    type: llm
+    description: "Schreibt Unit Tests für Domain Logic"
+    prompt: |
+      **Domain Model:**
+      {{domain_model_code}}
+      
+      **Domain Services:**
+      {{domain_services_code}}
+      
+      **Aufgabe:**
+      Schreibe Unit Tests für die Domain Logic:
+      
+      ```kotlin
+      class CreateFeatureServiceTest {
+          
+          private lateinit var featureRepository: FeatureRepository
+          private lateinit var service: CreateFeatureService
+          
+          @BeforeEach
+          fun setup() {
+              featureRepository = mockk()
+              service = CreateFeatureService(featureRepository)
+          }
+          
+          @Test
+          fun `should create feature successfully`() {
+              // Given
+              val command = CreateFeatureCommand(
+                  name = "New Feature",
+                  requirements = listOf("REQ-001")
+              )
+              every { featureRepository.save(any()) } returns mockFeature
+              
+              // When
+              val result = service.execute(command)
+              
+              // Then
+              assertThat(result).isInstanceOf(FeatureResult.Success::class.java)
+              verify { featureRepository.save(any()) }
+          }
+          
+          @Test
+          fun `should fail when name is blank`() {
+              // Given
+              val command = CreateFeatureCommand(name = "", requirements = emptyList())
+              
+              // When
+              val result = service.execute(command)
+              
+              // Then
+              assertThat(result).isInstanceOf(FeatureResult.Failure::class.java)
+          }
+      }
+      ```
+      
+      **Testing-Prinzipien:**
+      - Test Driven Development (wo möglich)
+      - AssertJ für Assertions (gemäß User-Rules)
+      - Mocks nur für Output Ports
+      - Domain Logic ohne Mocks testbar
+    output: unit_tests_code
+    
+  # 7. Tests ausführen
+  - id: run_tests
+    type: system_command
+    description: "Führt die Unit Tests aus"
+    command: "mvn test"
+    expected_output: "BUILD SUCCESS"
+    on_failure: fix_test_failures
+    
+  # 8. Adapter implementieren
+  - id: implement_adapters
+    type: llm
+    description: "Implementiert Input und Output Adapters"
+    prompt: |
+      **Port Interfaces:**
+      {{port_interfaces_code}}
+      
+      **Architecture:**
+      {{context.phase_history.architecture_design.artifacts.architecture_document}}
+      
+      **Aufgabe:**
+      Implementiere die Adapters:
+      
+      ## Output Adapter (z.B. InMemoryFeatureRepository)
+      ```kotlin
+      class InMemoryFeatureRepository : FeatureRepository {
+          private val storage = mutableMapOf<FeatureId, Feature>()
+          
+          override fun save(feature: Feature): Feature {
+              storage[feature.id] = feature
+              return feature
+          }
+          
+          override fun findById(id: FeatureId): Feature? {
+              return storage[id]
+          }
+          
+          override fun findAll(): List<Feature> {
+              return storage.values.toList()
+          }
+      }
+      ```
+      
+      ## Input Adapter (z.B. CLI)
+      ```kotlin
+      class FeatureCLI(
+          private val createFeature: CreateFeatureUseCase
+      ) {
+          fun handleCreateCommand(args: Array<String>) {
+              val command = CreateFeatureCommand(
+                  name = args[0],
+                  requirements = args.drop(1)
+              )
+              
+              when (val result = createFeature.execute(command)) {
+                  is FeatureResult.Success -> println("Created: ${result.feature.id}")
+                  is FeatureResult.Failure -> println("Error: ${result.error}")
+              }
+          }
+      }
+      ```
+    output: adapters_code
+    
+  # 9. Integration Tests
+  - id: write_integration_tests
+    type: llm
+    description: "Schreibt Integration Tests für den kompletten Flow"
+    prompt: |
+      **Aufgabe:**
+      Schreibe Integration Tests für den End-to-End Flow:
+      
+      ```kotlin
+      @SpringBootTest
+      class FeatureIntegrationTest {
+          
+          @Autowired
+          lateinit var createFeature: CreateFeatureUseCase
+          
+          @Autowired
+          lateinit var featureRepository: FeatureRepository
+          
+          @Test
+          fun `should create and persist feature`() {
+              // Given
+              val command = CreateFeatureCommand(
+                  name = "Integration Test Feature",
+                  requirements = listOf("REQ-001", "REQ-002")
+              )
+              
+              // When
+              val result = createFeature.execute(command)
+              
+              // Then
+              assertThat(result).isInstanceOf(FeatureResult.Success::class.java)
+              val success = result as FeatureResult.Success
+              
+              val persisted = featureRepository.findById(success.feature.id)
+              assertThat(persisted).isNotNull
+              assertThat(persisted!!.name).isEqualTo("Integration Test Feature")
+          }
+      }
+      ```
+    output: integration_tests_code
+    
+  # 10. Code Quality Check
+  - id: check_code_quality
+    type: system_command
+    description: "Führt ktlint Check aus"
+    command: "mvn ktlint:check"
+    expected_output: "BUILD SUCCESS"
+    on_failure: format_code
+    
+  # 11. Code formatieren (falls nötig)
+  - id: format_code
+    type: system_command
+    description: "Formatiert Code mit ktlint"
+    command: "mvn ktlint:format"
+    next: check_code_quality
+    
+  # 12. Implementation Summary erstellen
+  - id: create_implementation_summary
+    type: llm
+    description: "Erstellt eine Zusammenfassung der Implementierung"
+    prompt: |
+      Erstelle eine Zusammenfassung der Implementierung:
+      
+      **Implementierte Komponenten:**
+      - Domain Model: {{domain_model_code}}
+      - Ports: {{port_interfaces_code}}
+      - Services: {{domain_services_code}}
+      - Adapters: {{adapters_code}}
+      
+      **Tests:**
+      - Unit Tests: {{unit_tests_code}}
+      - Integration Tests: {{integration_tests_code}}
+      
+      **Format:**
+      
+      # Implementation Summary
+      
+      ## ✅ Implementierte Features
+      - [Feature-Name]
+        - Domain Model: ✅
+        - Ports: ✅
+        - Services: ✅
+        - Adapters: ✅
+        - Tests: ✅
+      
+      ## 📊 Metriken
+      - Neue Dateien: X
+      - Geänderte Dateien: Y
+      - Tests: Z (alle grün)
+      - Code Coverage: XX%
+      
+      ## 🧪 Test-Ergebnisse
+      - Unit Tests: XX/XX passed
+      - Integration Tests: YY/YY passed
+      
+      ## 📝 Nächste Schritte
+      - [ ] Code Review
+      - [ ] Performance Tests
+      - [ ] Documentation Update
+      
+      ## 🎯 Offene Punkte
+      - [TODO-001] ...
+    output: implementation_summary
+
+# Workflow-Graph
+graph:
+  start: load_implementation_plan
+  
+  edges:
+    - from: load_implementation_plan
+      to: identify_next_step
+      
+    - from: identify_next_step
+      to: implement_domain_model
+      
+    - from: implement_domain_model
+      to: implement_port_interfaces
+      
+    - from: implement_port_interfaces
+      to: implement_domain_services
+      
+    - from: implement_domain_services
+      to: write_unit_tests
+      
+    - from: write_unit_tests
+      to: run_tests
+      
+    - from: run_tests
+      to: implement_adapters
+      
+    - from: implement_adapters
+      to: write_integration_tests
+      
+    - from: write_integration_tests
+      to: check_code_quality
+      
+    - from: check_code_quality
+      to: format_code
+      condition: "on_failure"
+      
+    - from: check_code_quality
+      to: create_implementation_summary
+      condition: "success"
+      
+    - from: format_code
+      to: create_implementation_summary
+  
+  end: create_implementation_summary
+
+# Outputs
+outputs:
+  summary: "{{implementation_summary}}"
+  
+  artifacts:
+    - name: "implementation-summary.md"
+      type: "DOCUMENTATION"
+      content: "{{implementation_summary}}"
+      
+  code_files:
+    - domain_model: "{{domain_model_code}}"
+    - ports: "{{port_interfaces_code}}"
+    - services: "{{domain_services_code}}"
+    - adapters: "{{adapters_code}}"
+    - tests: "{{unit_tests_code}}"
+    - integration_tests: "{{integration_tests_code}}"
+      
+  decisions:
+    - phase: "Implementation"
+      decision: "Implemented using TDD approach"
+      reasoning: "Ensures high code quality and test coverage"
+      
+    - phase: "Implementation"
+      decision: "Used AssertJ for testing"
+      reasoning: "User preference from rules"
+
+# Vibe Checks
+vibe_checks:
+  - question: "Sind alle Tests grün?"
+    type: "QUALITY"
+    
+  - question: "Entspricht der Code den ktlint Standards?"
+    type: "QUALITY"
+    
+  - question: "Ist die Domain Logic framework-unabhängig?"
+    type: "ARCHITECTURE"
+    
+  - question: "Sind alle Port Interfaces implementiert?"
+    type: "COMPLETENESS"
+    
+  - question: "Ist der Code ausreichend getestet (Unit + Integration)?"
+    type: "QUALITY"

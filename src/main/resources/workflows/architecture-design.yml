@@ -1,0 +1,418 @@
+name: "Architecture Design"
+description: "Entwirft die technische Architektur basierend auf Requirements"
+version: "1.0"
+
+# Kontext-Variablen
+context_variables:
+  - project_path
+  - git_branch
+  - phase_history
+  - architectural_decisions
+  - requirements_document
+
+# Workflow-Schritte
+nodes:
+  # 1. Requirements analysieren
+  - id: analyze_requirements
+    type: llm
+    description: "Extrahiert technische Anforderungen aus dem Requirements-Dokument"
+    prompt: |
+      **Requirements-Dokument:**
+      {{context.phase_history.requirements_analysis.artifacts.requirements_document}}
+      
+      **Bestehende Architektur:**
+      {{context.architectural_decisions}}
+      
+      **Aufgabe:**
+      Analysiere die Requirements und identifiziere:
+      
+      1. **Technische Komponenten:**
+         - Welche Module/Services werden benötigt?
+         - Welche Datenstrukturen?
+      
+      2. **Architektur-Pattern:**
+         - Welches Pattern passt? (Hexagonal, Layered, Event-Driven, etc.)
+         - Warum ist es geeignet?
+      
+      3. **Integration Points:**
+         - Wo muss mit bestehenden Komponenten integriert werden?
+         - Welche neuen Schnittstellen werden benötigt?
+      
+      4. **Technologie-Stack:**
+         - Welche Frameworks/Libraries?
+         - Warum diese Wahl?
+    output: technical_analysis
+    
+  # 2. Komponenten-Design
+  - id: design_components
+    type: llm
+    description: "Entwirft die Komponenten-Architektur"
+    prompt: |
+      **Technische Analyse:**
+      {{technical_analysis}}
+      
+      **Projekt-Struktur:**
+      {{context.project_path}}
+      
+      **Aufgabe:**
+      Entwerfe die Komponenten-Architektur:
+      
+      ## Domain Layer
+      - Entities & Value Objects
+      - Domain Services
+      - Port Interfaces (Input & Output)
+      
+      ## Application Layer
+      - Use Cases
+      - Orchestration Logic
+      
+      ## Adapter Layer
+      - Input Adapters (CLI, API, etc.)
+      - Output Adapters (Persistence, External Services)
+      
+      ## Infrastructure Layer
+      - Configuration
+      - Dependency Injection
+      
+      **Für jede Komponente:**
+      - Name & Zweck
+      - Verantwortlichkeiten
+      - Dependencies
+      - Public Interface
+      
+      **Format:** Strukturiertes Markdown mit Diagrammen (Mermaid)
+    output: component_design
+    
+  # 3. Datenmodell entwerfen
+  - id: design_data_model
+    type: llm
+    description: "Entwirft das Datenmodell"
+    prompt: |
+      **Requirements:**
+      {{context.phase_history.requirements_analysis.artifacts.requirements_document}}
+      
+      **Komponenten:**
+      {{component_design}}
+      
+      **Aufgabe:**
+      Entwerfe das Datenmodell:
+      
+      1. **Entities:**
+         - Welche Business-Objekte gibt es?
+         - Attribute & Typen
+         - Lifecycle (mutable/immutable)
+      
+      2. **Value Objects:**
+         - Welche Werte brauchen Validierung?
+         - Welche sind immutable?
+      
+      3. **Aggregates:**
+         - Welche Objekte gehören zusammen?
+         - Wo sind Aggregate-Roots?
+      
+      4. **Relationships:**
+         - Wie hängen Entities zusammen?
+         - Kardinalität (1:1, 1:n, n:m)
+      
+      **Format:** Mermaid ER-Diagramm + Beschreibung
+    output: data_model
+    
+  # 4. API/Interface Design
+  - id: design_interfaces
+    type: llm
+    description: "Entwirft die öffentlichen Schnittstellen"
+    prompt: |
+      **Komponenten:**
+      {{component_design}}
+      
+      **Datenmodell:**
+      {{data_model}}
+      
+      **Aufgabe:**
+      Entwerfe die Schnittstellen (Ports):
+      
+      ## Input Ports (Use Cases)
+      Für jeden Use Case:
+      - Name & Zweck
+      - Input-Parameter
+      - Return-Type
+      - Exceptions
+      
+      ## Output Ports (Repositories, Services)
+      Für jeden Output Port:
+      - Name & Zweck
+      - Methods
+      - Contracts (was muss implementiert werden)
+      
+      **Beispiel (Kotlin):**
+      ```kotlin
+      interface CreateFeatureUseCase {
+          fun execute(request: CreateFeatureRequest): FeatureResult
+      }
+      
+      data class CreateFeatureRequest(
+          val name: String,
+          val requirements: List<Requirement>
+      )
+      ```
+      
+      **Wichtig:** Interfaces sollen technologieunabhängig sein!
+    output: interface_design
+    
+  # 5. Prüfung: Breaking Changes?
+  - id: check_breaking_changes
+    type: conditional
+    description: "Prüft, ob das Design Breaking Changes zur bestehenden Architektur enthält"
+    condition: |
+      contains(component_design, "breaking") OR
+      contains(interface_design, "deprecated") OR
+      affects_existing_modules(component_design, context.architectural_decisions)
+    if_true: request_approval
+    if_false: create_implementation_plan
+    
+  # 6. Human-in-the-Loop: Approval für Breaking Changes
+  - id: request_approval
+    type: human_interaction
+    description: "Fordert Bestätigung für Breaking Changes"
+    prompt: |
+      **⚠️ Breaking Changes erkannt:**
+      
+      {{component_design}}
+      
+      {{interface_design}}
+      
+      **Betroffene Komponenten:**
+      - [Liste der betroffenen Module]
+      
+      **Fragen:**
+      - Sind diese Changes akzeptabel?
+      - Gibt es Alternativen ohne Breaking Changes?
+      - Soll mit dem Design fortgefahren werden?
+    output: breaking_changes_approval
+    required: true
+    
+  # 7. Implementierungsplan erstellen
+  - id: create_implementation_plan
+    type: llm
+    description: "Erstellt einen schrittweisen Implementierungsplan"
+    prompt: |
+      **Komponenten:**
+      {{component_design}}
+      
+      **Interfaces:**
+      {{interface_design}}
+      
+      **Datenmodell:**
+      {{data_model}}
+      
+      **Aufgabe:**
+      Erstelle einen Schritt-für-Schritt Implementierungsplan:
+      
+      ## Phase 1: Domain Layer
+      1. Value Objects erstellen
+      2. Entities erstellen
+      3. Domain Services implementieren
+      4. Port Interfaces definieren
+      
+      ## Phase 2: Tests
+      1. Unit Tests für Domain Logic
+      2. Integration Tests für Ports
+      
+      ## Phase 3: Adapter Layer
+      1. Input Adapters
+      2. Output Adapters
+      
+      ## Phase 4: Infrastructure
+      1. Configuration
+      2. Dependency Injection
+      
+      **Für jeden Schritt:**
+      - Dateien, die erstellt/geändert werden müssen
+      - Dependencies zwischen Schritten
+      - Geschätzte Komplexität (niedrig/mittel/hoch)
+      - Test-Strategie
+    output: implementation_plan
+    
+  # 8. Architektur-Dokument erstellen
+  - id: document_architecture
+    type: llm
+    description: "Erstellt ein vollständiges Architektur-Dokument"
+    prompt: |
+      Erstelle ein vollständiges Architektur-Dokument:
+      
+      **Inputs:**
+      - Technische Analyse: {{technical_analysis}}
+      - Komponenten: {{component_design}}
+      - Datenmodell: {{data_model}}
+      - Interfaces: {{interface_design}}
+      - Implementierungsplan: {{implementation_plan}}
+      
+      **Format (Markdown):**
+      
+      # Architecture Design: [Feature-Name]
+      
+      ## 1. Übersicht
+      - Architektur-Pattern
+      - Technologie-Stack
+      - Begründung der Entscheidungen
+      
+      ## 2. Komponenten-Architektur
+      [Mermaid Component Diagram]
+      
+      ### Domain Layer
+      - Entities
+      - Value Objects
+      - Services
+      - Ports
+      
+      ### Application Layer
+      - Use Cases
+      
+      ### Adapter Layer
+      - Input Adapters
+      - Output Adapters
+      
+      ### Infrastructure Layer
+      - Configuration
+      
+      ## 3. Datenmodell
+      [Mermaid ER Diagram]
+      
+      ## 4. Schnittstellen (Ports)
+      ### Input Ports
+      - [Port-Name]: Beschreibung
+      
+      ### Output Ports
+      - [Port-Name]: Beschreibung
+      
+      ## 5. Implementierungsplan
+      - Phase 1: ...
+      - Phase 2: ...
+      
+      ## 6. Risiken & Trade-offs
+      - Performance
+      - Komplexität
+      - Wartbarkeit
+      
+      ## 7. Offene Entscheidungen
+      - [ADR-001] ...
+    output: architecture_document
+    
+  # 9. ADRs (Architecture Decision Records) erstellen
+  - id: create_adrs
+    type: llm
+    description: "Dokumentiert wichtige Architektur-Entscheidungen als ADRs"
+    prompt: |
+      **Architektur-Entscheidungen:**
+      {{technical_analysis}}
+      {{component_design}}
+      
+      **Aufgabe:**
+      Erstelle ADRs (Architecture Decision Records) für wichtige Entscheidungen:
+      
+      **Format pro ADR:**
+      
+      # ADR-XXX: [Titel]
+      
+      ## Status
+      Proposed / Accepted / Deprecated / Superseded
+      
+      ## Kontext
+      Welches Problem wird gelöst?
+      
+      ## Entscheidung
+      Was wurde entschieden?
+      
+      ## Konsequenzen
+      - ✅ Positive Auswirkungen
+      - ⚠️ Trade-offs
+      - ❌ Negative Aspekte
+      
+      ## Alternativen
+      Welche anderen Optionen wurden betrachtet?
+      
+      **Beispiel-Themen:**
+      - Wahl des Architektur-Patterns
+      - Technologie-Stack
+      - Datenmodell-Entscheidungen
+      - Integration-Strategie
+    output: architecture_decision_records
+
+# Workflow-Graph
+graph:
+  start: analyze_requirements
+  
+  edges:
+    - from: analyze_requirements
+      to: design_components
+      
+    - from: design_components
+      to: design_data_model
+      
+    - from: design_data_model
+      to: design_interfaces
+      
+    - from: design_interfaces
+      to: check_breaking_changes
+      
+    - from: check_breaking_changes
+      to: request_approval
+      condition: "if_true"
+      
+    - from: check_breaking_changes
+      to: create_implementation_plan
+      condition: "if_false"
+      
+    - from: request_approval
+      to: create_implementation_plan
+      
+    - from: create_implementation_plan
+      to: document_architecture
+      
+    - from: document_architecture
+      to: create_adrs
+  
+  end: create_adrs
+
+# Outputs
+outputs:
+  summary: "{{architecture_document}}"
+  
+  artifacts:
+    - name: "architecture.md"
+      type: "DOCUMENTATION"
+      content: "{{architecture_document}}"
+      
+    - name: "implementation-plan.md"
+      type: "DOCUMENTATION"
+      content: "{{implementation_plan}}"
+      
+    - name: "adrs/"
+      type: "DOCUMENTATION"
+      content: "{{architecture_decision_records}}"
+      
+  decisions:
+    - phase: "Architecture Design"
+      decision: "Architecture Pattern: {{technical_analysis.pattern}}"
+      reasoning: "{{technical_analysis.pattern_reasoning}}"
+      
+    - phase: "Architecture Design"
+      decision: "Technology Stack: {{technical_analysis.tech_stack}}"
+      reasoning: "{{technical_analysis.tech_reasoning}}"
+
+# Vibe Checks
+vibe_checks:
+  - question: "Passt die Architektur in das bestehende System?"
+    type: "ARCHITECTURE"
+    
+  - question: "Sind die Komponenten klar voneinander getrennt?"
+    type: "DESIGN"
+    
+  - question: "Sind alle Schnittstellen (Ports) technologieunabhängig?"
+    type: "ARCHITECTURE"
+    
+  - question: "Ist das Design testbar?"
+    type: "QUALITY"
+    
+  - question: "Wurden Risiken & Trade-offs dokumentiert?"
+    type: "COMPLETENESS"
