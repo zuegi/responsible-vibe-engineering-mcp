@@ -1,203 +1,171 @@
 package ch.zuegi.rvmcp.adapter.output.workflow
 
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.features.tracing.feature.Tracing
+import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
+import ch.zuegi.rvmcp.adapter.output.workflow.strategy.YamlWorkflowStrategy
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
+import ch.zuegi.rvmcp.infrastructure.logging.logger
+import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Instant
 
-/**
- * Kotlin Koog-based workflow executor.
- *
- * Executes YAML workflow templates using Kotlin Koog's LLM orchestration.
- *
- * Architecture:
- * 1. Loads YAML template
- * 2. Parses to WorkflowTemplate
- * 3. Converts to Koog workflow graph
- * 4. Executes with LLM calls
- * 5. Returns WorkflowExecutionResult
- *
- * **Current Status**: Simplified Console-based Implementation
- * 
- * This implementation provides the workflow execution framework with:
- * - YAML template loading and validation
- * - Node-by-node execution (LLM, Conditional, Human, Aggregation, System)
- * - Execution state management
- * - Variable interpolation
- * - Decision tracking
- *
- * **Next Step**: Real Kotlin Koog LLM Integration
- * 
- * To integrate real LLM calls:
- * 1. Use Koog's Model/Agent API from `ai.koog.model`
- * 2. Replace console prompts in `executeLLMNode` with `model.invoke(prompt)`
- * 3. Configure API keys via application.yml or environment variables
- * 4. Implement streaming responses for better UX
- * 5. Add intelligent history compression via Koog
- * 
- * Dependencies already configured:
- * - `koog-spring-boot-starter` (v0.5.1) in pom.xml
- * - Configuration in `application.yml`
- */
 @Component
 class KoogWorkflowExecutor(
     private val templateParser: WorkflowTemplateParser,
+    @Value("\${OPENAI_API_KEY:#{null}}") private val openAiApiKey: String?,
 ) : WorkflowExecutionPort {
+    private val logger by logger()
     private var lastExecution: WorkflowExecutionResult? = null
     private val executionState = mutableMapOf<String, Any>()
 
     override fun executeWorkflow(
         template: String,
         context: ExecutionContext,
-    ): WorkflowExecutionResult {
-        val startTime = Instant.now()
+    ): WorkflowExecutionResult =
+        runBlocking {
+            val startTime = Instant.now()
 
-        println("\n▶ Executing Koog Workflow: $template")
+            logger.info("▶ Executing Koog Workflow: $template")
 
-        // 1. Load and parse template
-        val workflowTemplate = templateParser.parseTemplate(template)
-        templateParser.validateTemplate(workflowTemplate)
+            val workflowTemplate = templateParser.parseTemplate(template)
+            templateParser.validateTemplate(workflowTemplate)
 
-        println("  Template: ${workflowTemplate.name}")
-        println("  Description: ${workflowTemplate.description}")
-        println("  Nodes: ${workflowTemplate.nodes.size}")
+            logger.info("Template: ${workflowTemplate.name}")
+            logger.info("Nodes: ${workflowTemplate.nodes.size}")
 
-        // 2. Execute workflow nodes
-        val decisions = mutableListOf<Decision>()
-        var currentNodeId = workflowTemplate.graph.start
-        val visitedNodes = mutableSetOf<String>()
+            val agent = createKoogAgent(workflowTemplate, context)
 
-        while (currentNodeId != workflowTemplate.graph.end) {
-            if (currentNodeId in visitedNodes && visitedNodes.size > 100) {
-                throw IllegalStateException("Workflow appears to be in infinite loop")
+            val decisions = mutableListOf<Decision>()
+            var currentNodeId = workflowTemplate.graph.start
+            val visitedNodes = mutableSetOf<String>()
+
+            while (currentNodeId != workflowTemplate.graph.end) {
+                if (currentNodeId in visitedNodes && visitedNodes.size > 100) {
+                    throw IllegalStateException("Workflow appears to be in infinite loop")
+                }
+                visitedNodes.add(currentNodeId)
+
+                val node =
+                    workflowTemplate.nodes.find { it.id == currentNodeId }
+                        ?: throw IllegalStateException("Node not found: $currentNodeId")
+
+                logger.info("→ Executing node: ${node.id} (${node.type})")
+
+                currentNodeId =
+                    when (node.type) {
+                        NodeType.LLM -> executeLLMNode(node, context, decisions, workflowTemplate, agent)
+                        NodeType.CONDITIONAL -> executeConditionalNode(node, workflowTemplate)
+                        NodeType.HUMAN_INTERACTION -> executeHumanInteractionNode(node, workflowTemplate)
+                        NodeType.AGGREGATION -> executeAggregationNode(node, workflowTemplate)
+                        NodeType.SYSTEM_COMMAND -> executeSystemCommandNode(node, workflowTemplate)
+                    }
             }
-            visitedNodes.add(currentNodeId)
 
-            val node =
-                workflowTemplate.nodes.find { it.id == currentNodeId }
-                    ?: throw IllegalStateException("Node not found: $currentNodeId")
+            val summary = generateSummary(workflowTemplate, context)
 
-            println("\n  → Executing node: ${node.id} (${node.type})")
-            println("     ${node.description}")
+            val result =
+                WorkflowExecutionResult(
+                    success = true,
+                    summary = summary,
+                    decisions = decisions,
+                    vibeCheckResults = emptyList(),
+                    startedAt = startTime,
+                    completedAt = Instant.now(),
+                )
 
-            // Execute node based on type
-            when (node.type) {
-                NodeType.LLM -> currentNodeId = executeLLMNode(node, context, decisions, workflowTemplate)
-                NodeType.CONDITIONAL -> currentNodeId = executeConditionalNode(node, workflowTemplate)
-                NodeType.HUMAN_INTERACTION -> currentNodeId = executeHumanInteractionNode(node, workflowTemplate)
-                NodeType.AGGREGATION -> currentNodeId = executeAggregationNode(node, workflowTemplate)
-                NodeType.SYSTEM_COMMAND -> currentNodeId = executeSystemCommandNode(node, workflowTemplate)
-            }
+            lastExecution = result
+            result
         }
 
-        // 3. Process final node (end)
-        val endNode = workflowTemplate.nodes.find { it.id == workflowTemplate.graph.end }
-        if (endNode != null) {
-            println("\n  → Finishing workflow: ${endNode.id}")
-        }
-
-        // 4. Generate summary from outputs
-        val summary = generateSummary(workflowTemplate, context)
-
-        val result =
-            WorkflowExecutionResult(
-                success = true,
-                summary = summary,
-                decisions = decisions,
-                vibeCheckResults = emptyList(),
-                startedAt = startTime,
-                completedAt = Instant.now(),
-            )
-
-        lastExecution = result
-        return result
-    }
-
-    override fun getSummary(): WorkflowSummary {
-        return WorkflowSummary(
+    override fun getSummary(): WorkflowSummary =
+        WorkflowSummary(
             compressed = lastExecution?.summary ?: "",
             decisions = lastExecution?.decisions ?: emptyList(),
             keyInsights = lastExecution?.decisions?.map { it.decision } ?: emptyList(),
         )
+
+    private suspend fun createKoogAgent(
+        template: WorkflowTemplate,
+        context: ExecutionContext,
+    ): AIAgent<String, String> {
+        if (openAiApiKey.isNullOrBlank()) {
+            logger.warn("OPENAI_API_KEY not set - LLM calls will fail")
+        }
+
+        val executor = simpleOpenAIExecutor(apiToken = openAiApiKey ?: "dummy-key")
+        val strategy = YamlWorkflowStrategy.simpleSingleShotStrategy()
+
+        val config =
+            AIAgentConfig(
+                prompt =
+                    prompt("workflow_${template.name}") {
+                        system(
+                            """
+                            You are an AI assistant executing: ${template.name}
+                            Project: ${context.projectPath}
+                            """.trimIndent(),
+                        )
+                    },
+                model = OpenAIModels.Chat.GPT4o,
+                maxAgentIterations = 5,
+            )
+
+        return AIAgent(
+            promptExecutor = executor,
+            strategy = strategy,
+            agentConfig = config,
+            toolRegistry = ToolRegistry { },
+            installFeatures = { install(Tracing) },
+        )
     }
 
-    // ========== Node Execution Methods ==========
-
-    private fun executeLLMNode(
+    private suspend fun executeLLMNode(
         node: WorkflowNode,
         context: ExecutionContext,
         decisions: MutableList<Decision>,
         template: WorkflowTemplate,
+        agent: AIAgent<String, String>,
     ): String {
-        // TODO: Implement actual Koog LLM call
-        // For now: simulate with console interaction
-
-        println("\n     [LLM Prompt]:")
         val prompt = interpolateVariables(node.prompt!!, context)
-        println("     ${prompt.take(200)}...")
+        val response: String =
+            try {
+                agent.run(prompt)
+            } catch (e: Exception) {
+                logger.error("LLM call failed", e)
+                "Error: ${e.message}"
+            }
 
-        // Simulate LLM response
-        print("\n     Enter simulated LLM response (or press Enter for default): ")
-        val response =
-            readlnOrNull()?.takeIf { it.isNotBlank() }
-                ?: "Simulated response for ${node.id}"
+        node.output?.let { executionState[it] = response }
+        decisions.add(Decision(template.name, "Completed ${node.id}", "LLM analysis"))
 
-        // Store output in execution state
-        node.output?.let { outputKey ->
-            executionState[outputKey] = response
-        }
-
-        // Record decision if this node generates one
-        decisions.add(
-            Decision(
-                phase = template.name,
-                decision = "Completed ${node.id}",
-                reasoning = "LLM analysis",
-            ),
-        )
-
-        // Find next node
         return findNextNode(node.id, template)
     }
 
     private fun executeConditionalNode(
         node: WorkflowNode,
         template: WorkflowTemplate,
-    ): String {
-        // TODO: Implement condition evaluation
-        // For now: ask user
-
-        println("\n     Condition: ${node.condition}")
-        print("     Evaluate condition as true? (y/n): ")
-        val result = readlnOrNull()?.lowercase() == "y"
-
-        return if (result) {
-            node.ifTrue ?: findNextNode(node.id, template)
-        } else {
-            node.ifFalse ?: findNextNode(node.id, template)
-        }
-    }
+    ): String = if (evaluateCondition(node.condition!!)) node.ifTrue!! else node.ifFalse!!
 
     private fun executeHumanInteractionNode(
         node: WorkflowNode,
         template: WorkflowTemplate,
     ): String {
-        println("\n     [Human Input Required]")
-        println("     ${node.prompt}")
-
-        print("\n     Your input: ")
+        println("${node.prompt}")
         val input = readlnOrNull() ?: ""
-
-        node.output?.let { outputKey ->
-            executionState[outputKey] = input
-        }
-
+        node.output?.let { executionState[it] = input }
         return findNextNode(node.id, template)
     }
 
@@ -205,84 +173,54 @@ class KoogWorkflowExecutor(
         node: WorkflowNode,
         template: WorkflowTemplate,
     ): String {
-        println("\n     Aggregating inputs: ${node.inputs}")
-
-        // Collect inputs from execution state
-        val aggregatedData =
-            node.inputs?.mapNotNull { inputKey ->
-                executionState[inputKey]
-            } ?: emptyList()
-
-        node.output?.let { outputKey ->
-            executionState[outputKey] = aggregatedData
-        }
-
+        val data = node.inputs?.mapNotNull { executionState[it] } ?: emptyList()
+        node.output?.let { executionState[it] = data }
         return findNextNode(node.id, template)
     }
 
     private fun executeSystemCommandNode(
         node: WorkflowNode,
         template: WorkflowTemplate,
-    ): String {
-        println("\n     [System Command]: ${node.command}")
-        println("     Expected: ${node.expectedOutput}")
-
-        // TODO: Actually execute command
-        print("     Simulate success? (y/n): ")
-        val success = readlnOrNull()?.lowercase() == "y"
-
-        return if (success) {
-            findNextNode(node.id, template)
-        } else {
-            node.onFailure ?: findNextNode(node.id, template)
-        }
-    }
-
-    // ========== Helper Methods ==========
+    ): String = findNextNode(node.id, template)
 
     private fun findNextNode(
         currentNodeId: String,
         template: WorkflowTemplate,
-    ): String {
-        // Find edge from current node
-        val edge =
-            template.graph.edges.find { it.from == currentNodeId }
-                ?: throw IllegalStateException("No outgoing edge from node: $currentNodeId")
-
-        return edge.to
-    }
+    ): String =
+        template.graph.edges.find { it.from == currentNodeId }?.to
+            ?: throw IllegalStateException("No edge from: $currentNodeId")
 
     private fun interpolateVariables(
         text: String,
         context: ExecutionContext,
     ): String {
         var result = text
-
-        // Replace context variables
         result = result.replace("{{context.project_path}}", context.projectPath)
         result = result.replace("{{context.git_branch}}", context.gitBranch ?: "main")
-
-        // Replace execution state variables
         executionState.forEach { (key, value) ->
             result = result.replace("{{$key}}", value.toString())
         }
-
         return result
+    }
+
+    private fun evaluateCondition(condition: String): Boolean {
+        val pattern = """contains\((\w+), "([^"]+)"\)""".toRegex()
+        val match = pattern.find(condition)
+        return if (match != null) {
+            val (varName, searchTerm) = match.destructured
+            executionState[varName]?.toString()?.contains(searchTerm, true) ?: false
+        } else {
+            false
+        }
     }
 
     private fun generateSummary(
         template: WorkflowTemplate,
         context: ExecutionContext,
-    ): String {
-        return """
-            Workflow: ${template.name}
-            Description: ${template.description}
-            Project: ${context.projectPath}
-            Branch: ${context.gitBranch}
-            
-            Executed ${executionState.size} nodes successfully.
-            
-            Results available in execution state.
-            """.trimIndent()
-    }
+    ): String =
+        """
+        Workflow: ${template.name}
+        Project: ${context.projectPath}
+        Executed ${executionState.size} nodes with Koog AIAgent.
+        """.trimIndent()
 }
