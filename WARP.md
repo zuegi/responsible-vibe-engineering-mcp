@@ -299,10 +299,18 @@ responsible-vibe-mcp/
 │   │   ├── kotlin/ch/zuegi/rvmcp/
 │   │   │   ├── RvmcpApplication.kt            # Spring Boot Application
 │   │   │   ├── domain/                        # 🔷 Domain Layer (Kern)
-│   │   │   │   ├── model/                     # Entities, Value Objects
-│   │   │   │   ├── port/
-│   │   │   │   │   ├── input/                 # Use Case Interfaces
-│   │   │   │   │   └── output/                # Repository/Provider Interfaces
+│   │   │   │   ├── model/                     # ✅ Entities, Value Objects
+│   │   │   │   │   ├── process/               # EngineeringProcess, ProcessExecution
+│   │   │   │   │   ├── phase/                 # ProcessPhase, PhaseResult
+│   │   │   │   │   ├── context/               # ExecutionContext
+│   │   │   │   │   ├── vibe/                  # VibeCheck, VibeCheckResult
+│   │   │   │   │   ├── memory/                # Decision, Interaction, Artifact
+│   │   │   │   │   ├── id/                    # ProcessId, ExecutionId
+│   │   │   │   │   └── status/                # ExecutionStatus, VibeCheckType, etc.
+│   │   │   │   ├── port/                      # ✅ Port Interfaces
+│   │   │   │   │   ├── input/                 # ✅ Use Case Interfaces (3)
+│   │   │   │   │   └── output/                # ✅ Repository/Provider Interfaces (4)
+│   │   │   │   │       └── model/             # ✅ Output Models (2)
 │   │   │   │   └── service/                   # Domain Services
 │   │   │   ├── application/                   # 🔷 Application Layer
 │   │   │   │   └── workflow/                  # Use Case Implementations
@@ -320,7 +328,7 @@ responsible-vibe-mcp/
 │   │       ├── application.yml
 │   │       └── workflows/                     # Workflow Definitions (YAML/JSON)
 │   └── test/
-│       └── kotlin/ch/zuegi/rvmcp/
+│       └── kotlin/ch/zuegi/rvmcp/             # ✅ 36 Unit Tests
 └── docs/
     ├── architecture.md                        # Architekturentscheidungen
     ├── workflows.md                           # Detaillierte Workflow-Beschreibungen
@@ -342,10 +350,11 @@ responsible-vibe-mcp/
   - [x] ExecutionContext (Entity)
   - [x] VibeCheck / VibeCheckResult (Value Objects)
   - [x] Supporting: ProcessId, ExecutionId, ExecutionStatus, Decision, Interaction, Artifact
-  - [x] Unit Tests (29 Tests erfolgreich)
-- [ ] Port Interfaces definieren:
-  - [ ] input: ExecuteProcessPhaseUseCase
-  - [ ] output: WorkflowExecutionPort, MemoryRepositoryPort
+  - [x] Unit Tests (36 Tests erfolgreich)
+- [x] Port Interfaces definieren:
+  - [x] input: StartProcessExecutionUseCase, ExecuteProcessPhaseUseCase, CompletePhaseUseCase
+  - [x] output: WorkflowExecutionPort, MemoryRepositoryPort, VibeCheckEvaluatorPort, ProcessRepositoryPort
+  - [x] output/model: WorkflowExecutionResult, WorkflowSummary
 - [ ] YAML Workflow Templates erstellen:
   - [ ] requirements-analysis.yml
   - [ ] architecture-design.yml
@@ -418,8 +427,8 @@ responsible-vibe-mcp/
 
 ## Status
 
-**Aktueller Stand**: Domain Model vollständig implementiert und getestet (29 Unit Tests)  
-**Nächster Schritt**: Port Interfaces definieren (input: ExecuteProcessPhaseUseCase, output: WorkflowExecutionPort, MemoryRepositoryPort)
+**Aktueller Stand**: Domain Model & Port Interfaces vollständig implementiert und getestet (36 Unit Tests)  
+**Nächster Schritt**: YAML Workflow Templates erstellen + Kotlin Koog Integration (Output Adapter)
 
 ---
 
