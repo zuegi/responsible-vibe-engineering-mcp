@@ -9,12 +9,11 @@ import java.time.LocalDate
 class WorkflowSummaryTest {
     @Test
     fun `should create workflow summary with valid data`() {
-        val summary =
-            WorkflowSummary(
-                compressed = "User wants feature X with constraints Y and Z",
-                decisions = emptyList(),
-                keyInsights = listOf("Use REST API", "Implement caching"),
-            )
+        val summary = WorkflowSummary(
+            compressed = "User wants feature X with constraints Y and Z",
+            decisions = emptyList(),
+            keyInsights = listOf("Use REST API", "Implement caching"),
+        )
 
         assertThat(summary.compressed).isEqualTo("User wants feature X with constraints Y and Z")
         assertThat(summary.keyInsights).hasSize(2)
@@ -34,20 +33,18 @@ class WorkflowSummaryTest {
 
     @Test
     fun `should contain decisions`() {
-        val decision =
-            Decision(
-                phase = "Architecture Design",
-                decision = "Use microservices",
-                reasoning = "Better scalability",
-                date = LocalDate.now(),
-            )
+        val decision = Decision(
+            phase = "Architecture Design",
+            decision = "Use microservices",
+            reasoning = "Better scalability",
+            date = LocalDate.now(),
+        )
 
-        val summary =
-            WorkflowSummary(
-                compressed = "Architecture defined",
-                decisions = listOf(decision),
-                keyInsights = emptyList(),
-            )
+        val summary = WorkflowSummary(
+            compressed = "Architecture defined",
+            decisions = listOf(decision),
+            keyInsights = emptyList(),
+        )
 
         assertThat(summary.decisions).hasSize(1)
         assertThat(summary.decisions.first()).isEqualTo(decision)
