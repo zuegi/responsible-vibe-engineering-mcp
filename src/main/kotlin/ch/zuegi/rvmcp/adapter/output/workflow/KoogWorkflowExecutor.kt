@@ -6,7 +6,8 @@ import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.features.tracing.feature.Tracing
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
+import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
@@ -101,11 +102,12 @@ class KoogWorkflowExecutor(
         template: WorkflowTemplate,
         context: ExecutionContext,
     ): AIAgent<String, String> {
-        if (openAiApiKey.isNullOrBlank()) {
-            logger.warn("OPENAI_API_KEY not set - LLM calls will fail")
-        }
-
-        val executor = simpleOpenAIExecutor(apiToken = openAiApiKey ?: "dummy-key")
+        val executor =
+            simpleAzureOpenAIExecutor(
+                baseUrl = "https://aivs-llm-gateway-aivisorium-dev.apps.cp.rch.cloud/openai/shared-chn/openai/deployments/gpt-4o/",
+                version = AzureOpenAIServiceVersion.fromString("2024-05-01-preview"),
+                apiToken = "dummy",
+            )
         val strategy = YamlWorkflowStrategy.simpleSingleShotStrategy()
 
         val config =

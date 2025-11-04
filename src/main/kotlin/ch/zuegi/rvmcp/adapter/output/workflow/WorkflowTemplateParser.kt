@@ -16,7 +16,8 @@ class WorkflowTemplateParser {
         }
 
     fun parseTemplate(templateName: String): WorkflowTemplate {
-        val resourcePath = "workflows/$templateName"
+        val normalizedName = if (templateName.endsWith(".yml")) templateName else "$templateName.yml"
+        val resourcePath = if (normalizedName.startsWith("workflows/")) normalizedName else "workflows/$normalizedName"
 
         return try {
             val resource = ClassPathResource(resourcePath)
