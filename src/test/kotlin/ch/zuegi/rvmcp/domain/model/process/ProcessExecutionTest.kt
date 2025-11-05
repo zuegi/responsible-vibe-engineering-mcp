@@ -13,54 +13,59 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class ProcessExecutionTest {
-
     private lateinit var testProcess: EngineeringProcess
 
     @BeforeEach
     fun setup() {
-        val phase1 = ProcessPhase(
-            name = "Requirements Analysis",
-            description = "Gather and analyze requirements",
-            vibeChecks = listOf(
-                VibeCheck(
-                    question = "Are requirements clear?",
-                    type = VibeCheckType.REQUIREMENTS,
-                ),
-            ),
-            koogWorkflowTemplate = "requirements-analysis.yml",
-            order = 0,
-        )
+        val phase1 =
+            ProcessPhase(
+                name = "Requirements Analysis",
+                description = "Gather and analyze requirements",
+                vibeChecks =
+                    listOf(
+                        VibeCheck(
+                            question = "Are requirements clear?",
+                            type = VibeCheckType.REQUIREMENTS,
+                        ),
+                    ),
+                koogWorkflowTemplate = "requirements-analysis.yml",
+                order = 0,
+            )
 
-        val phase2 = ProcessPhase(
-            name = "Architecture Design",
-            description = "Design the architecture",
-            vibeChecks = listOf(
-                VibeCheck(
-                    question = "Does architecture fit?",
-                    type = VibeCheckType.ARCHITECTURE,
-                ),
-            ),
-            koogWorkflowTemplate = "architecture-design.yml",
-            order = 1,
-        )
+        val phase2 =
+            ProcessPhase(
+                name = "Architecture Design",
+                description = "Design the architecture",
+                vibeChecks =
+                    listOf(
+                        VibeCheck(
+                            question = "Does architecture fit?",
+                            type = VibeCheckType.ARCHITECTURE,
+                        ),
+                    ),
+                koogWorkflowTemplate = "architecture-design.yml",
+                order = 1,
+            )
 
-        testProcess = EngineeringProcess(
-            id = ProcessId.generate(),
-            name = "Feature Development",
-            description = "Standard feature development",
-            phases = listOf(phase1, phase2),
-        )
+        testProcess =
+            EngineeringProcess(
+                id = ProcessId.generate(),
+                name = "Feature Development",
+                description = "Standard feature development",
+                phases = listOf(phase1, phase2),
+            )
     }
 
     @Test
     fun `should create valid process execution`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 0,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 0,
+                startedAt = Instant.now(),
+            )
 
         assertThat(execution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
         assertThat(execution.currentPhaseIndex).isEqualTo(0)
@@ -112,13 +117,14 @@ class ProcessExecutionTest {
 
     @Test
     fun `should get current phase`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 0,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 0,
+                startedAt = Instant.now(),
+            )
 
         val currentPhase = execution.currentPhase()
 
@@ -128,13 +134,14 @@ class ProcessExecutionTest {
 
     @Test
     fun `should move to next phase`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.PHASE_COMPLETED,
-            currentPhaseIndex = 0,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.PHASE_COMPLETED,
+                currentPhaseIndex = 0,
+                startedAt = Instant.now(),
+            )
 
         val nextExecution = execution.nextPhase()
 
@@ -145,13 +152,14 @@ class ProcessExecutionTest {
 
     @Test
     fun `should fail when moving to next phase beyond last phase`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 1,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 1,
+                startedAt = Instant.now(),
+            )
 
         assertThatThrownBy {
             execution.nextPhase()
@@ -161,13 +169,14 @@ class ProcessExecutionTest {
 
     @Test
     fun `should complete execution`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 1,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 1,
+                startedAt = Instant.now(),
+            )
 
         val completed = execution.complete()
 
@@ -177,13 +186,14 @@ class ProcessExecutionTest {
 
     @Test
     fun `should fail execution`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 0,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 0,
+                startedAt = Instant.now(),
+            )
 
         val failed = execution.fail()
 
@@ -193,13 +203,14 @@ class ProcessExecutionTest {
 
     @Test
     fun `should complete phase`() {
-        val execution = ProcessExecution(
-            id = ExecutionId.generate(),
-            process = testProcess,
-            status = ExecutionStatus.IN_PROGRESS,
-            currentPhaseIndex = 0,
-            startedAt = Instant.now(),
-        )
+        val execution =
+            ProcessExecution(
+                id = ExecutionId.generate(),
+                process = testProcess,
+                status = ExecutionStatus.IN_PROGRESS,
+                currentPhaseIndex = 0,
+                startedAt = Instant.now(),
+            )
 
         val phaseCompleted = execution.completePhase()
 

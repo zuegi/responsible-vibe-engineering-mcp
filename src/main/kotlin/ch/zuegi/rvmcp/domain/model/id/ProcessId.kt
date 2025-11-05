@@ -6,6 +6,7 @@ import java.util.UUID
 value class ProcessId(val value: String) {
     companion object {
         fun generate(): ProcessId = ProcessId(UUID.randomUUID().toString())
+
         fun of(value: String): ProcessId = ProcessId(value)
     }
 }

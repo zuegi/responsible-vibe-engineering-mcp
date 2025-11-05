@@ -23,8 +23,9 @@ data class ProcessExecution(
         }
     }
 
-    fun currentPhase(): ProcessPhase = process.getPhase(currentPhaseIndex)
-        ?: throw IllegalStateException("Current phase not found")
+    fun currentPhase(): ProcessPhase =
+        process.getPhase(currentPhaseIndex)
+            ?: throw IllegalStateException("Current phase not found")
 
     fun nextPhase(): ProcessExecution {
         require(process.hasNextPhase(currentPhaseIndex)) { "No next phase available" }
@@ -34,17 +35,20 @@ data class ProcessExecution(
         )
     }
 
-    fun complete(): ProcessExecution = copy(
-        status = ExecutionStatus.COMPLETED,
-        completedAt = Instant.now(),
-    )
+    fun complete(): ProcessExecution =
+        copy(
+            status = ExecutionStatus.COMPLETED,
+            completedAt = Instant.now(),
+        )
 
-    fun fail(): ProcessExecution = copy(
-        status = ExecutionStatus.FAILED,
-        completedAt = Instant.now(),
-    )
+    fun fail(): ProcessExecution =
+        copy(
+            status = ExecutionStatus.FAILED,
+            completedAt = Instant.now(),
+        )
 
-    fun completePhase(): ProcessExecution = copy(
-        status = ExecutionStatus.PHASE_COMPLETED,
-    )
+    fun completePhase(): ProcessExecution =
+        copy(
+            status = ExecutionStatus.PHASE_COMPLETED,
+        )
 }
