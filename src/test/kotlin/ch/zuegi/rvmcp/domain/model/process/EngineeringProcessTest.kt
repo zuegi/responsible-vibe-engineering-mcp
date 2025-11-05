@@ -9,31 +9,36 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class EngineeringProcessTest {
-
-    private fun createTestPhase(name: String, order: Int): ProcessPhase = ProcessPhase(
-        name = name,
-        description = "Test phase $name",
-        vibeChecks = listOf(
-            VibeCheck(
-                question = "Is everything ok?",
-                type = VibeCheckType.QUALITY,
-            ),
-        ),
-        koogWorkflowTemplate = "test-workflow.yml",
-        order = order,
-    )
+    private fun createTestPhase(
+        name: String,
+        order: Int,
+    ): ProcessPhase =
+        ProcessPhase(
+            name = name,
+            description = "Test phase $name",
+            vibeChecks =
+                listOf(
+                    VibeCheck(
+                        question = "Is everything ok?",
+                        type = VibeCheckType.QUALITY,
+                    ),
+                ),
+            koogWorkflowTemplate = "test-workflow.yml",
+            order = order,
+        )
 
     @Test
     fun `should create valid engineering process`() {
         val phase1 = createTestPhase("Phase 1", 0)
         val phase2 = createTestPhase("Phase 2", 1)
 
-        val process = EngineeringProcess(
-            id = ProcessId.generate(),
-            name = "Feature Development",
-            description = "Standard feature development process",
-            phases = listOf(phase1, phase2),
-        )
+        val process =
+            EngineeringProcess(
+                id = ProcessId.generate(),
+                name = "Feature Development",
+                description = "Standard feature development process",
+                phases = listOf(phase1, phase2),
+            )
 
         assertThat(process.name).isEqualTo("Feature Development")
         assertThat(process.phases).hasSize(2)
@@ -100,12 +105,13 @@ class EngineeringProcessTest {
         val phase1 = createTestPhase("Phase 1", 0)
         val phase2 = createTestPhase("Phase 2", 1)
 
-        val process = EngineeringProcess(
-            id = ProcessId.generate(),
-            name = "Test",
-            description = "Test description",
-            phases = listOf(phase1, phase2),
-        )
+        val process =
+            EngineeringProcess(
+                id = ProcessId.generate(),
+                name = "Test",
+                description = "Test description",
+                phases = listOf(phase1, phase2),
+            )
 
         assertThat(process.getPhase(0)).isEqualTo(phase1)
         assertThat(process.getPhase(1)).isEqualTo(phase2)
@@ -118,12 +124,13 @@ class EngineeringProcessTest {
         val phase2 = createTestPhase("Phase 2", 1)
         val phase3 = createTestPhase("Phase 3", 2)
 
-        val process = EngineeringProcess(
-            id = ProcessId.generate(),
-            name = "Test",
-            description = "Test description",
-            phases = listOf(phase1, phase2, phase3),
-        )
+        val process =
+            EngineeringProcess(
+                id = ProcessId.generate(),
+                name = "Test",
+                description = "Test description",
+                phases = listOf(phase1, phase2, phase3),
+            )
 
         assertThat(process.hasNextPhase(0)).isTrue()
         assertThat(process.hasNextPhase(1)).isTrue()
@@ -132,18 +139,20 @@ class EngineeringProcessTest {
 
     @Test
     fun `should return total number of phases`() {
-        val phases = listOf(
-            createTestPhase("Phase 1", 0),
-            createTestPhase("Phase 2", 1),
-            createTestPhase("Phase 3", 2),
-        )
+        val phases =
+            listOf(
+                createTestPhase("Phase 1", 0),
+                createTestPhase("Phase 2", 1),
+                createTestPhase("Phase 3", 2),
+            )
 
-        val process = EngineeringProcess(
-            id = ProcessId.generate(),
-            name = "Test",
-            description = "Test description",
-            phases = phases,
-        )
+        val process =
+            EngineeringProcess(
+                id = ProcessId.generate(),
+                name = "Test",
+                description = "Test description",
+                phases = phases,
+            )
 
         assertThat(process.totalPhases()).isEqualTo(3)
     }

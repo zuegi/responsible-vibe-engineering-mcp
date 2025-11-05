@@ -15,31 +15,37 @@ data class ExecutionContext(
     val interactions: List<Interaction> = emptyList(),
     val artifacts: List<Artifact> = emptyList(),
 ) {
+    val phaseHistory: List<PhaseResult>
+        get() = phaseResults.values.toList()
+
     init {
         require(projectPath.isNotBlank()) { "Project path must not be blank" }
         require(gitBranch.isNotBlank()) { "Git branch must not be blank" }
     }
 
-    fun addPhaseResult(result: PhaseResult): ExecutionContext = copy(
-        phaseResults = phaseResults + (result.phaseName to result),
-    )
+    fun addPhaseResult(result: PhaseResult): ExecutionContext =
+        copy(
+            phaseResults = phaseResults + (result.phaseName to result),
+        )
 
-    fun addDecision(decision: Decision): ExecutionContext = copy(
-        architecturalDecisions = architecturalDecisions + decision,
-    )
+    fun addDecision(decision: Decision): ExecutionContext =
+        copy(
+            architecturalDecisions = architecturalDecisions + decision,
+        )
 
-    fun addInteraction(interaction: Interaction): ExecutionContext = copy(
-        interactions = interactions + interaction,
-    )
+    fun addInteraction(interaction: Interaction): ExecutionContext =
+        copy(
+            interactions = interactions + interaction,
+        )
 
-    fun addArtifact(artifact: Artifact): ExecutionContext = copy(
-        artifacts = artifacts + artifact,
-    )
+    fun addArtifact(artifact: Artifact): ExecutionContext =
+        copy(
+            artifacts = artifacts + artifact,
+        )
 
     fun getPhaseResult(phaseName: String): PhaseResult? = phaseResults[phaseName]
 
     fun hasCompletedPhase(phaseName: String): Boolean = phaseResults.containsKey(phaseName)
 
-    fun getDecisionsByPhase(phaseName: String): List<Decision> =
-        architecturalDecisions.filter { it.phase == phaseName }
+    fun getDecisionsByPhase(phaseName: String): List<Decision> = architecturalDecisions.filter { it.phase == phaseName }
 }
