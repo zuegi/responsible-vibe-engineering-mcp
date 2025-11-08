@@ -9,10 +9,10 @@ Supports multiple providers: Azure OpenAI, OpenAI, Anthropic, and custom gateway
 
 1. **Copy the example configuration**:
    ```bash
-   cp src/test/resources/application-test.yml.example src/test/resources/application-test.yml
+   cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
    ```
 
-2. **Edit `application-test.yml`** with your actual values:
+2. **Edit `application-local.yml`** with your actual values:
    ```yaml
    llm:
      provider: azure-openai  # or "openai", "anthropic", "custom"
@@ -22,7 +22,7 @@ Supports multiple providers: Azure OpenAI, OpenAI, Anthropic, and custom gateway
    ```
 
 3. **Verify gitignore**: 
-   - `src/test/resources/application-test.yml` is already in `.gitignore`
+   - `src/main/resources/application-local.yml` is already in `.gitignore`
    - This file will NOT be committed to git
 
 ### Environment Variables (Alternative)
@@ -56,11 +56,10 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 ## Security Notes
 
 ⚠️ **NEVER commit**:
-- `application-local.yml`
-- `src/test/resources/application-test.yml`
+- `src/main/resources/application-local.yml`
 
-These files contain sensitive URLs and credentials that should not be public.
+This file contains sensitive URLs and credentials that should not be public.
 
 ✅ **Safe to commit**:
 - `application.yml` (uses environment variable placeholders)
-- `application-test.yml.example` (template with placeholder values)
+- `application-local.yml.example` (template with placeholder values)

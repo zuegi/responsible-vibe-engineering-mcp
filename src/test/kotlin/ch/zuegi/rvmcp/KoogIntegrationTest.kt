@@ -9,6 +9,9 @@ import ch.zuegi.rvmcp.domain.model.id.ExecutionId
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 
 /**
  * Integration test for Koog workflow execution with LLM.
@@ -19,33 +22,27 @@ import org.junit.jupiter.api.Test
  * - Workflow execution with real LLM calls
  * - Result generation and summary
  *
- * Note: Requires LLM configuration.
- * See src/test/resources/application-test.yml.example for setup.
+ * Note: Requires LLM configuration in src/main/resources/application-local.yml
+ * See application-local.yml.example for setup.
  */
+@SpringBootTest
+@ActiveProfiles("local")
 class KoogIntegrationTest {
+    @Autowired
+    private lateinit var llmProperties: LlmProperties
+
     private val parser = WorkflowTemplateParser()
     private val strategyTranslator = YamlToKoogStrategyTranslator()
     private val promptBuilder = WorkflowPromptBuilder()
 
-    // Create LlmProperties from environment or fallback
-    private val llmProperties =
-        LlmProperties().apply {
-            baseUrl =
-                System.getenv("LLM_BASE_URL")
-                    ?: System.getProperty("llm.base-url")
-                    ?: "https://api.openai.com/v1/"
-            apiVersion = System.getenv("LLM_API_VERSION") ?: "2024-05-01-preview"
-            apiToken = System.getenv("LLM_API_TOKEN") ?: "dummy"
-            provider = System.getenv("LLM_PROVIDER") ?: "openai"
-        }
-
-    private val executor =
+    private val executor by lazy {
         RefactoredKoogWorkflowExecutor(
             parser,
             strategyTranslator,
             promptBuilder,
             llmProperties,
         )
+    }
 
     @Test
     fun `should execute simple test workflow with single LLM node`() {
