@@ -10,29 +10,36 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.strategy.YamlWorkflowStrategy
+import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 
 /**
  * Simple test to verify LLM connection works.
  *
- * IMPORTANT: Requires src/test/resources/application-test.yml with LLM configuration.
- * See application-test.yml.example for template.
+ * IMPORTANT: Requires src/main/resources/application-local.yml with LLM configuration.
+ * See application-local.yml.example for template.
  */
+@SpringBootTest
+@ActiveProfiles("local")
 class SimpleLLMConnectionTest {
+    @Autowired
+    private lateinit var llmProperties: LlmProperties
+
     @Test
     fun `should connect to LLM and get response`() =
         runBlocking {
             println("\n🚀 Testing LLM Connection...")
+            println("Provider: ${llmProperties.provider}")
 
-            // Load config from environment or application-test.yml
-            val baseUrl =
-                System.getenv("LLM_BASE_URL")
-                    ?: System.getProperty("llm.base-url")
-                    ?: "https://api.openai.com/v1/" // Fallback to OpenAI
-            val apiVersion = System.getenv("LLM_API_VERSION") ?: "2024-05-01-preview"
-            val apiToken = System.getenv("LLM_API_TOKEN") ?: "dummy"
+            // Use LlmProperties from Spring
+            val baseUrl = llmProperties.baseUrl
+            val apiVersion = llmProperties.apiVersion
+            val apiToken = llmProperties.apiToken
 
             println("Base URL: ${baseUrl.take(30)}...")
 
