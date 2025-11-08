@@ -53,6 +53,34 @@ Then activate with:
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
+## CI/CD Testing
+
+### GitHub Actions
+
+The CI build excludes LLM integration tests since they require credentials:
+
+```yaml
+# .github/workflows/build.yml
+- name: Build with Maven
+  run: mvn clean verify -Dtest='!KoogIntegrationTest,!SimpleLLMConnectionTest'
+```
+
+This ensures:
+- ✅ All unit tests (47 tests) run in CI
+- ✅ No LLM credentials needed in CI
+- ✅ Fast CI builds
+
+### Local Testing
+
+With `application-local.yml` configured:
+- All 54 tests run automatically
+- LLM integration tests included
+- No profile specification needed (auto-activated via `src/test/resources/application.yml`)
+
+```bash
+mvn test  # Runs all 54 tests
+```
+
 ## Security Notes
 
 ⚠️ **NEVER commit**:

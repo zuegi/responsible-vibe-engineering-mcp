@@ -23,6 +23,8 @@ import org.springframework.test.context.ActiveProfiles
  *
  * IMPORTANT: Requires src/main/resources/application-local.yml with LLM configuration.
  * See application-local.yml.example for template.
+ *
+ * Test runs automatically when application-local.yml exists.
  */
 @SpringBootTest
 @ActiveProfiles("local")
