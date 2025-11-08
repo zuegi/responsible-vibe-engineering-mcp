@@ -24,6 +24,13 @@ import org.springframework.test.context.ActiveProfiles
  *
  * Note: Requires LLM configuration in src/main/resources/application-local.yml
  * See application-local.yml.example for setup.
+ *
+ * Tests run automatically when application-local.yml exists.
+ * In CI (no application-local.yml), Spring will use fallback values (https://api.openai.com)
+ * which will fail with 401, causing test failures.
+ *
+ * To skip these tests in CI, exclude them:
+ * mvn test -Dtest=!KoogIntegrationTest,!SimpleLLMConnectionTest
  */
 @SpringBootTest
 @ActiveProfiles("local")
