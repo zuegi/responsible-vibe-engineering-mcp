@@ -6,19 +6,20 @@ import ch.zuegi.rvmcp.adapter.output.workflow.WorkflowTemplateParser
 import ch.zuegi.rvmcp.adapter.output.workflow.YamlToKoogStrategyTranslator
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
+import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 /**
- * Integration test for Koog workflow execution with Azure OpenAI.
+ * Integration test for Koog workflow execution with LLM.
  *
  * This test verifies:
  * - YAML workflow parsing and validation
- * - Koog AIAgent integration with Azure OpenAI Gateway
+ * - Koog AIAgent integration with LLM providers
  * - Workflow execution with real LLM calls
  * - Result generation and summary
  *
- * Note: Requires Azure OpenAI configuration.
+ * Note: Requires LLM configuration.
  * See src/test/resources/application-test.yml.example for setup.
  */
 class KoogIntegrationTest {
@@ -26,22 +27,24 @@ class KoogIntegrationTest {
     private val strategyTranslator = YamlToKoogStrategyTranslator()
     private val promptBuilder = WorkflowPromptBuilder()
 
-    // Load config from environment or fallback
-    private val baseUrl =
-        System.getenv("AZURE_OPENAI_BASE_URL")
-            ?: System.getProperty("azure.openai.base-url")
-            ?: "https://api.openai.com/v1/"
-    private val apiVersion = System.getenv("AZURE_OPENAI_API_VERSION") ?: "2024-05-01-preview"
-    private val apiToken = System.getenv("AZURE_OPENAI_API_TOKEN") ?: "dummy"
+    // Create LlmProperties from environment or fallback
+    private val llmProperties =
+        LlmProperties().apply {
+            baseUrl =
+                System.getenv("LLM_BASE_URL")
+                    ?: System.getProperty("llm.base-url")
+                    ?: "https://api.openai.com/v1/"
+            apiVersion = System.getenv("LLM_API_VERSION") ?: "2024-05-01-preview"
+            apiToken = System.getenv("LLM_API_TOKEN") ?: "dummy"
+            provider = System.getenv("LLM_PROVIDER") ?: "openai"
+        }
 
     private val executor =
         RefactoredKoogWorkflowExecutor(
             parser,
             strategyTranslator,
             promptBuilder,
-            baseUrl,
-            apiVersion,
-            apiToken,
+            llmProperties,
         )
 
     @Test

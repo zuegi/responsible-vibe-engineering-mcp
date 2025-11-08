@@ -15,24 +15,24 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
 /**
- * Simple test to verify Azure OpenAI LLM connection works.
+ * Simple test to verify LLM connection works.
  *
- * IMPORTANT: Requires src/test/resources/application-test.yml with Azure OpenAI configuration.
+ * IMPORTANT: Requires src/test/resources/application-test.yml with LLM configuration.
  * See application-test.yml.example for template.
  */
 class SimpleLLMConnectionTest {
     @Test
-    fun `should connect to Azure OpenAI and get response`() =
+    fun `should connect to LLM and get response`() =
         runBlocking {
-            println("\n🚀 Testing Azure OpenAI Connection...")
+            println("\n🚀 Testing LLM Connection...")
 
             // Load config from environment or application-test.yml
             val baseUrl =
-                System.getenv("AZURE_OPENAI_BASE_URL")
-                    ?: System.getProperty("azure.openai.base-url")
+                System.getenv("LLM_BASE_URL")
+                    ?: System.getProperty("llm.base-url")
                     ?: "https://api.openai.com/v1/" // Fallback to OpenAI
-            val apiVersion = System.getenv("AZURE_OPENAI_API_VERSION") ?: "2024-05-01-preview"
-            val apiToken = System.getenv("AZURE_OPENAI_API_TOKEN") ?: "dummy"
+            val apiVersion = System.getenv("LLM_API_VERSION") ?: "2024-05-01-preview"
+            val apiToken = System.getenv("LLM_API_TOKEN") ?: "dummy"
 
             println("Base URL: ${baseUrl.take(30)}...")
 

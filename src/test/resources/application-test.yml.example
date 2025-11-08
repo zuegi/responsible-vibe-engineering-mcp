@@ -2,10 +2,10 @@
 # Copy this to application-test.yml and fill in your actual values
 # application-test.yml is gitignored and will not be committed
 
-azure:
-  openai:
-    # Replace with your actual Azure OpenAI Gateway URL
-    base-url: https://your-gateway.example.com/openai/deployments/gpt-4o/
-    api-version: 2024-05-01-preview
-    # Replace with your actual API token (or use "dummy" if gateway doesn't require it)
-    api-token: dummy
+llm:
+  provider: openai  # or "azure-openai", "anthropic", "custom"
+  # Replace with your actual LLM Gateway URL
+  base-url: https://your-gateway.example.com/openai/deployments/gpt-4o/
+  api-version: 2024-05-01-preview
+  # Replace with your actual API token (or use "dummy" if gateway doesn't require it)
+  api-token: dummy

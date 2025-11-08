@@ -1,8 +1,9 @@
 # Configuration Guide
 
-## Azure OpenAI Configuration
+## LLM Configuration
 
-The application requires Azure OpenAI configuration for LLM integration.
+The application requires LLM configuration for AI integration.
+Supports multiple providers: Azure OpenAI, OpenAI, Anthropic, and custom gateways.
 
 ### Setup
 
@@ -13,11 +14,11 @@ The application requires Azure OpenAI configuration for LLM integration.
 
 2. **Edit `application-test.yml`** with your actual values:
    ```yaml
-   azure:
-     openai:
-       base-url: https://your-gateway.example.com/openai/deployments/gpt-4o/
-       api-version: 2024-05-01-preview
-       api-token: your-token-or-dummy
+   llm:
+     provider: azure-openai  # or "openai", "anthropic", "custom"
+     base-url: https://your-gateway.example.com/openai/deployments/gpt-4o/
+     api-version: 2024-05-01-preview
+     api-token: your-token-or-dummy
    ```
 
 3. **Verify gitignore**: 
@@ -29,9 +30,10 @@ The application requires Azure OpenAI configuration for LLM integration.
 You can also configure via environment variables:
 
 ```bash
-export AZURE_OPENAI_BASE_URL="https://your-gateway.example.com/..."
-export AZURE_OPENAI_API_VERSION="2024-05-01-preview"
-export AZURE_OPENAI_API_TOKEN="your-token"
+export LLM_PROVIDER="azure-openai"  # or "openai", "anthropic", etc.
+export LLM_BASE_URL="https://your-gateway.example.com/..."
+export LLM_API_VERSION="2024-05-01-preview"
+export LLM_API_TOKEN="your-token"
 ```
 
 ### Spring Profiles
@@ -39,11 +41,11 @@ export AZURE_OPENAI_API_TOKEN="your-token"
 For local development, you can create `application-local.yml` in `src/main/resources/`:
 
 ```yaml
-azure:
-  openai:
-    base-url: https://your-gateway.example.com/...
-    api-version: 2024-05-01-preview
-    api-token: dummy
+llm:
+  provider: azure-openai
+  base-url: https://your-gateway.example.com/...
+  api-version: 2024-05-01-preview
+  api-token: dummy
 ```
 
 Then activate with:
