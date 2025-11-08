@@ -1,0 +1,54 @@
+name: "Multi-Node Context Test"
+description: "Tests context preservation across multiple LLM nodes"
+version: "1.0"
+
+nodes:
+  - id: step1_introduce
+    type: llm
+    description: "Introduce yourself with a secret code"
+    prompt: |
+      You are testing a multi-node workflow system.
+      
+      In this first step:
+      1. Introduce yourself as "Agent Alpha"
+      2. Generate a random 4-digit secret code
+      3. Remember this code for the next step
+      
+      Respond with:
+      "I am Agent Alpha. My secret code is: [your 4-digit code]"
+    output: introduction
+    
+  - id: step2_recall
+    type: llm
+    description: "Recall the secret code from previous step"
+    prompt: |
+      This is the second step of the workflow.
+      
+      Your task:
+      1. Recall the secret code you generated in the previous step
+      2. Confirm that you remember it
+      
+      Respond with:
+      "I remember! The secret code from step 1 was: [the code]"
+      
+      IMPORTANT: This tests context preservation - you should have access
+      to the previous conversation where you introduced yourself.
+    output: recall
+    
+  - id: done
+    type: aggregation
+    description: "End node"
+    inputs:
+      - introduction
+      - recall
+    output: final_result
+
+graph:
+  start: step1_introduce
+  end: done
+  
+  edges:
+    - from: step1_introduce
+      to: step2_recall
+    - from: step2_recall
+      to: done

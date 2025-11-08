@@ -14,6 +14,14 @@ koog:
   # ANTHROPIC_API_KEY=...
   # OPENAI_API_KEY=...
 
+# Azure OpenAI Configuration
+# IMPORTANT: Set these in application-local.yml (not committed to git)
+azure:
+  openai:
+    base-url: ${AZURE_OPENAI_BASE_URL:https://api.openai.com/v1/}
+    api-version: ${AZURE_OPENAI_API_VERSION:2024-05-01-preview}
+    api-token: ${AZURE_OPENAI_API_TOKEN:dummy}
+
 # Logging
 logging:
   level:
