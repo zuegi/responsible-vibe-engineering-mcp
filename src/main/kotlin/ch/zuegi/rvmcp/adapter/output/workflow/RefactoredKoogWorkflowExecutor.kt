@@ -14,9 +14,9 @@ import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
+import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import ch.zuegi.rvmcp.infrastructure.logging.logger
 import kotlinx.coroutines.runBlocking
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
@@ -43,23 +43,22 @@ class RefactoredKoogWorkflowExecutor(
     private val templateParser: WorkflowTemplateParser,
     private val strategyTranslator: YamlToKoogStrategyTranslator,
     private val promptBuilder: WorkflowPromptBuilder,
-    @Value("\${azure.openai.base-url}") private val azureBaseUrl: String,
-    @Value("\${azure.openai.api-version}") private val azureApiVersion: String,
-    @Value("\${azure.openai.api-token}") private val azureApiToken: String,
+    private val llmProperties: LlmProperties,
 ) : WorkflowExecutionPort {
     private val logger by logger()
     private var lastExecution: WorkflowExecutionResult? = null
 
-    // Create Azure OpenAI executor lazily and reuse (expensive to create)
-    private val azureExecutor by lazy {
-        logger.info("Initializing Azure OpenAI executor...")
-        logger.debug("Base URL: $azureBaseUrl")
+    // Create LLM executor lazily and reuse (expensive to create)
+    private val llmExecutor by lazy {
+        logger.info("Initializing LLM executor...")
+        logger.info("Provider: ${llmProperties.provider}")
+        logger.debug("Base URL: ${llmProperties.baseUrl}")
         simpleAzureOpenAIExecutor(
-            baseUrl = azureBaseUrl,
-            version = AzureOpenAIServiceVersion.fromString(azureApiVersion),
-            apiToken = azureApiToken,
+            baseUrl = llmProperties.baseUrl,
+            version = AzureOpenAIServiceVersion.fromString(llmProperties.apiVersion),
+            apiToken = llmProperties.apiToken,
         ).also {
-            logger.info("Azure OpenAI executor initialized")
+            logger.info("LLM executor initialized successfully")
         }
     }
 
@@ -95,7 +94,7 @@ class RefactoredKoogWorkflowExecutor(
 
             val agent =
                 AIAgent<String, String>(
-                    promptExecutor = azureExecutor,
+                    promptExecutor = llmExecutor,
                     strategy = strategy,
                     agentConfig =
                         AIAgentConfig(

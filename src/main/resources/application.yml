@@ -14,13 +14,14 @@ koog:
   # ANTHROPIC_API_KEY=...
   # OPENAI_API_KEY=...
 
-# Azure OpenAI Configuration
+# LLM Configuration (provider-agnostic)
 # IMPORTANT: Set these in application-local.yml (not committed to git)
-azure:
-  openai:
-    base-url: ${AZURE_OPENAI_BASE_URL:https://api.openai.com/v1/}
-    api-version: ${AZURE_OPENAI_API_VERSION:2024-05-01-preview}
-    api-token: ${AZURE_OPENAI_API_TOKEN:dummy}
+# Supports: Azure OpenAI, OpenAI, Anthropic, custom gateways
+llm:
+  provider: ${LLM_PROVIDER:openai}
+  base-url: ${LLM_BASE_URL:https://api.openai.com/v1/}
+  api-version: ${LLM_API_VERSION:2024-05-01-preview}
+  api-token: ${LLM_API_TOKEN:dummy}
 
 # Logging
 logging:
