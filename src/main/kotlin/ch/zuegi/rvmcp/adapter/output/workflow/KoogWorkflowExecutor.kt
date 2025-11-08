@@ -26,11 +26,26 @@ import java.time.Instant
 @Component
 class KoogWorkflowExecutor(
     private val templateParser: WorkflowTemplateParser,
-    @Value("\${OPENAI_API_KEY:#{null}}") private val openAiApiKey: String?,
+    @Value("\${azure.openai.base-url}") private val azureBaseUrl: String,
+    @Value("\${azure.openai.api-version}") private val azureApiVersion: String,
+    @Value("\${azure.openai.api-token}") private val azureApiToken: String,
 ) : WorkflowExecutionPort {
     private val logger by logger()
     private var lastExecution: WorkflowExecutionResult? = null
     private val executionState = mutableMapOf<String, Any>()
+
+    // Create Azure OpenAI executor lazily and reuse (expensive to create)
+    private val azureExecutor by lazy {
+        logger.info("Initializing Azure OpenAI executor...")
+        logger.debug("Base URL: $azureBaseUrl")
+        simpleAzureOpenAIExecutor(
+            baseUrl = azureBaseUrl,
+            version = AzureOpenAIServiceVersion.fromString(azureApiVersion),
+            apiToken = azureApiToken,
+        ).also {
+            logger.info("Azure OpenAI executor initialized")
+        }
+    }
 
     override fun executeWorkflow(
         template: String,
@@ -46,8 +61,6 @@ class KoogWorkflowExecutor(
 
             logger.info("Template: ${workflowTemplate.name}")
             logger.info("Nodes: ${workflowTemplate.nodes.size}")
-
-            val agent = createKoogAgent(workflowTemplate, context)
 
             val decisions = mutableListOf<Decision>()
             var currentNodeId = workflowTemplate.graph.start
@@ -67,7 +80,7 @@ class KoogWorkflowExecutor(
 
                 currentNodeId =
                     when (node.type) {
-                        NodeType.LLM -> executeLLMNode(node, context, decisions, workflowTemplate, agent)
+                        NodeType.LLM -> executeLLMNode(node, context, decisions, workflowTemplate)
                         NodeType.CONDITIONAL -> executeConditionalNode(node, workflowTemplate)
                         NodeType.HUMAN_INTERACTION -> executeHumanInteractionNode(node, workflowTemplate)
                         NodeType.AGGREGATION -> executeAggregationNode(node, workflowTemplate)
@@ -102,12 +115,7 @@ class KoogWorkflowExecutor(
         template: WorkflowTemplate,
         context: ExecutionContext,
     ): AIAgent<String, String> {
-        val executor =
-            simpleAzureOpenAIExecutor(
-                baseUrl = "https://aivs-llm-gateway-aivisorium-dev.apps.cp.rch.cloud/openai/shared-chn/openai/deployments/gpt-4o/",
-                version = AzureOpenAIServiceVersion.fromString("2024-05-01-preview"),
-                apiToken = "dummy",
-            )
+        // Lightweight agent creation - reuse existing executor (HTTP client)
         val strategy = YamlWorkflowStrategy.simpleSingleShotStrategy()
 
         val config =
@@ -126,7 +134,7 @@ class KoogWorkflowExecutor(
             )
 
         return AIAgent(
-            promptExecutor = executor,
+            promptExecutor = azureExecutor, // Reuse shared executor
             strategy = strategy,
             agentConfig = config,
             toolRegistry = ToolRegistry { },
@@ -139,9 +147,17 @@ class KoogWorkflowExecutor(
         context: ExecutionContext,
         decisions: MutableList<Decision>,
         template: WorkflowTemplate,
-        agent: AIAgent<String, String>,
     ): String {
+        val startTime = System.currentTimeMillis()
         val prompt = interpolateVariables(node.prompt!!, context)
+
+        logger.info("   Creating agent for node ${node.id}...")
+        val agentStart = System.currentTimeMillis()
+        val agent = createKoogAgent(template, context)
+        logger.info("   Agent created in ${System.currentTimeMillis() - agentStart}ms")
+
+        logger.info("   Sending LLM request...")
+        val llmStart = System.currentTimeMillis()
         val response: String =
             try {
                 agent.run(prompt)
@@ -149,6 +165,10 @@ class KoogWorkflowExecutor(
                 logger.error("LLM call failed", e)
                 "Error: ${e.message}"
             }
+
+        val llmDuration = System.currentTimeMillis() - llmStart
+        val totalDuration = System.currentTimeMillis() - startTime
+        logger.info("   LLM response received in ${llmDuration}ms (total: ${totalDuration}ms)")
 
         node.output?.let { executionState[it] = response }
         decisions.add(Decision(template.name, "Completed ${node.id}", "LLM analysis"))
