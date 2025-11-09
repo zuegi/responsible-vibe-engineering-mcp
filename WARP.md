@@ -83,6 +83,7 @@ Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 - **Build Tool**: Maven
 - **Version Control**: Git
 - **Architektur**: Hexagonal Architecture (Ports & Adapters)
+- **Interface**: Model Context Protocol (MCP) Server
 
 ---
 
@@ -112,6 +113,241 @@ Das Projekt folgt dem **Hexagonal Architecture**-Pattern (Ports & Adapters), um:
 
 **Infrastructure**:
 - Spring Boot Configuration, Dependency Injection
+
+---
+
+## MCP Server: Das Interface zur KI
+
+### Was ist MCP (Model Context Protocol)?
+
+**Model Context Protocol** ist ein standardisiertes Protokoll für die Kommunikation zwischen KI-Systemen (wie Claude, ChatGPT, Warp Agent) und externen Tools/Services.
+
+**Vorteile**:
+- 🔌 **Standardisiert**: JSON-RPC 2.0 basiertes Protokoll
+- 🛠️ **Tool-basiert**: Funktionen werden als "Tools" exposed
+- 📡 **Bidirektional**: Client ↔ Server Kommunikation
+- 🔄 **Stateless**: Jeder Request ist unabhängig
+- 🌐 **Universal**: Funktioniert mit jedem MCP-kompatiblen Client
+
+### Wie funktioniert der MCP Server?
+
+```
+MCP Client (Claude Desktop, Warp Agent, IDE)       MCP Server (Responsible Vibe)
+        │                                                     │
+        │  JSON-RPC Request: "start_process"                 │
+        │────────────────────────────────────────────────────>│
+        │                                                     │
+        │                                      Domain Service │
+        │                                      orchestrates   │
+        │                                      Business Logic │
+        │                                                     │
+        │  JSON-RPC Response: ProcessExecution                │
+        │<────────────────────────────────────────────────────│
+        │                                                     │
+```
+
+### MCP Server Architektur
+
+```
+adapter/input/mcp/
+├── McpServerAdapter.kt          # MCP Server Entry Point (stdio Transport)
+├── McpToolRegistry.kt           # Tool Registration & Discovery
+├── McpRequestHandler.kt         # JSON-RPC Request Processing
+├── tools/
+│   ├── StartProcessTool.kt      # Tool: start_process
+│   ├── ExecutePhaseTool.kt      # Tool: execute_phase
+│   ├── CompletePhaseTool.kt     # Tool: complete_phase
+│   ├── GetContextTool.kt        # Tool: get_context
+│   └── ListProcessesTool.kt     # Tool: list_processes
+└── resources/
+    ├── ContextResource.kt        # Resource: context://project/branch
+    └── ProcessResource.kt        # Resource: process://process-id
+```
+
+### MCP Tools
+
+**1. start_process**
+```json
+{
+  "name": "start_process",
+  "description": "Startet einen Engineering-Prozess (Feature Development, Bug Fix, etc.)",
+  "parameters": {
+    "process_id": "feature-development",
+    "project_path": "/path/to/project",
+    "git_branch": "feature/new-feature"
+  },
+  "returns": "ProcessExecution"
+}
+```
+
+**2. execute_phase**
+```json
+{
+  "name": "execute_phase",
+  "description": "Führt eine ProcessPhase aus (mit Koog Workflow und Vibe Checks)",
+  "parameters": {
+    "execution_id": "exec-12345",
+    "phase_index": 0
+  },
+  "returns": "PhaseResult"
+}
+```
+
+**3. complete_phase**
+```json
+{
+  "name": "complete_phase",
+  "description": "Schließt eine Phase ab und wechselt zur nächsten",
+  "parameters": {
+    "execution_id": "exec-12345"
+  },
+  "returns": "ProcessExecution"
+}
+```
+
+**4. get_context**
+```json
+{
+  "name": "get_context",
+  "description": "Lädt den ExecutionContext für ein Projekt",
+  "parameters": {
+    "project_path": "/path/to/project",
+    "git_branch": "feature/new-feature"
+  },
+  "returns": "ExecutionContext"
+}
+```
+
+**5. list_processes**
+```json
+{
+  "name": "list_processes",
+  "description": "Listet verfügbare Engineering-Prozesse auf",
+  "parameters": {},
+  "returns": "List<EngineeringProcess>"
+}
+```
+
+### MCP Resources
+
+**Resources** sind lesbare Inhalte, die der MCP Client nutzen kann:
+
+**1. Context Resource**
+```
+URI: context://project/path/branch/name
+Content-Type: application/json
+
+Bietet: ExecutionContext mit Phase History, Architectural Decisions, etc.
+```
+
+**2. Process Resource**
+```
+URI: process://feature-development
+Content-Type: application/json
+
+Bietet: EngineeringProcess Definition mit Phasen und Vibe Checks
+```
+
+### Integration mit KI-Systemen
+
+#### Claude Desktop
+
+**Konfiguration**: `~/.config/claude/mcp-servers.json`
+```json
+{
+  "responsible-vibe-mcp": {
+    "command": "java",
+    "args": [
+      "-jar",
+      "/path/to/rvmcp.jar",
+      "--mcp-mode"
+    ]
+  }
+}
+```
+
+**Nutzung**:
+```
+User: "Starte einen Feature Development Prozess für mein OAuth2 Login"
+
+Claude:
+1. Ruft start_process auf
+2. Führt execute_phase aus (Requirements Analysis)
+3. Zeigt Vibe Check Ergebnisse
+4. Fragt nach Bestätigung
+5. Führt nächste Phase aus
+```
+
+#### Warp Agent
+
+**Warp Agent** kann den MCP Server direkt nutzen:
+```
+User: "Implementiere OAuth2 Login strukturiert"
+
+Warp Agent:
+1. Startet MCP Server (falls nicht laufend)
+2. Tool Call: start_process
+3. Tool Call: execute_phase (Requirements)
+4. Zeigt LLM-generierte Requirements
+5. Tool Call: execute_phase (Architecture)
+6. Zeigt Architektur-Vorschlag
+7. Fragt: "Ready for Implementation?"
+```
+
+### Communication Flow: End-to-End
+
+```
+[1] User Request (via Claude/Warp)
+    ↓
+[2] MCP Client
+    │ JSON-RPC Request über stdio
+    ↓
+[3] McpServerAdapter
+    │ Parse Request, Route zu Tool
+    ↓
+[4] StartProcessTool
+    │ Call Domain Service
+    ↓
+[5] StartProcessExecutionService
+    │ Business Logic
+    ↓
+[6] ProcessRepository, MemoryRepository
+    │ Persistence
+    ↓
+[7] ProcessExecution (Response)
+    ↓
+[8] McpServerAdapter
+    │ JSON-RPC Response über stdio
+    ↓
+[9] MCP Client
+    ↓
+[10] User (Result anzeigen)
+```
+
+### Vorteile des MCP-Ansatzes
+
+✅ **Universal**: Ein Server, viele Clients (Claude, Warp, IDEs)  
+✅ **Standardisiert**: Keine proprietären Protokolle  
+✅ **Erweiterbar**: Neue Tools einfach hinzufügen  
+✅ **Testbar**: Tools können unabhängig getestet werden  
+✅ **Framework-Unabhängig**: Domain Logic bleibt isoliert  
+
+### Phase 2a: MCP Server Implementation
+
+**Ziel**: Responsible Vibe Engineering als MCP Server verfügbar machen
+
+**Scope**:
+1. MCP Protocol Integration (JSON-RPC 2.0)
+2. stdio Transport (für Claude Desktop / Warp)
+3. Tool Implementations (5 Tools)
+4. Resource Implementations (2 Resources)
+5. Integration mit bestehenden Domain Services
+6. MCP Server Tests
+
+**Nicht in Phase 2a**:
+- HTTP Transport (später)
+- Authentication (später)
+- Persistentes Memory (Phase 2b)
 
 ---
 
@@ -401,7 +637,28 @@ responsible-vibe-mcp/
   - [x] Vibe Checks werden automatisiert durchgeführt
   - [x] Error Handling funktioniert wie erwartet
 
-### Phase 2: Memory & Persistenz
+### Phase 2a: MCP Server Implementation
+- [ ] MCP Protocol Library Integration
+  - [ ] JSON-RPC 2.0 Support
+  - [ ] stdio Transport
+- [ ] MCP Server Adapter implementieren
+  - [ ] McpServerAdapter.kt (Entry Point)
+  - [ ] McpToolRegistry.kt (Tool Registration)
+  - [ ] McpRequestHandler.kt (Request Processing)
+- [ ] MCP Tools implementieren (5 Tools)
+  - [ ] StartProcessTool (start_process)
+  - [ ] ExecutePhaseTool (execute_phase)
+  - [ ] CompletePhaseTool (complete_phase)
+  - [ ] GetContextTool (get_context)
+  - [ ] ListProcessesTool (list_processes)
+- [ ] MCP Resources implementieren
+  - [ ] ContextResource (context://project/branch)
+  - [ ] ProcessResource (process://process-id)
+- [ ] Integration mit Domain Services
+- [ ] MCP Server Tests
+- [ ] Claude Desktop / Warp Integration testen
+
+### Phase 2b: Memory & Persistenz
 - [ ] Persistentes Memory (Datei-basiert oder DB)
 - [ ] Kontext-Speicherung & -Wiederherstellung
 - [ ] Branch-Awareness (Git-Integration)
