@@ -110,13 +110,13 @@ class ResponsibleVibeMcpServer(
             name = "start_process",
             description = "Starts a new engineering process execution (requires processId, projectPath, gitBranch)",
         ) { request ->
-            // TODO: Parse arguments from request when SDK API is clarified
-            // For now, return placeholder
+            // TODO: Implement parameter extraction when API is clarified
+            // For now, return placeholder that shows request structure
             CallToolResult(
                 content =
                     listOf(
                         TextContent(
-                            text = "⚠️ start_process: Implementation in progress. Need to parse request arguments.",
+                            text = "⚠️ start_process: Implementation in progress. Request type: ${request::class.simpleName}",
                         ),
                     ),
             )
@@ -158,23 +158,23 @@ class ResponsibleVibeMcpServer(
 
         System.err.println("      ✅ Registered: complete_phase")
 
-        // Tool 5: get_memory
+        // Tool 5: get_context
         server.addTool(
-            name = "get_memory",
+            name = "get_context",
             description = "Retrieves stored memory/context for a process execution (requires projectPath, gitBranch)",
         ) { request ->
-            // TODO: Parse arguments from request
+            // TODO: Implement parameter extraction when API is clarified
             CallToolResult(
                 content =
                     listOf(
                         TextContent(
-                            text = "⚠️ get_memory: Implementation in progress. Need to parse request arguments.",
+                            text = "⚠️ get_context: Implementation in progress. Request type: ${request::class.simpleName}",
                         ),
                     ),
             )
         }
 
-        System.err.println("      ✅ Registered: get_memory")
+        System.err.println("      ✅ Registered: get_context")
     }
 
     private fun registerResources() {
