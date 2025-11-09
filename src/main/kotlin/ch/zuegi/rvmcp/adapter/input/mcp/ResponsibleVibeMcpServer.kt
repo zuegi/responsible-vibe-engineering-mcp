@@ -5,6 +5,7 @@ import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
+import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
@@ -16,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Responsible Vibe MCP Server
@@ -109,17 +111,60 @@ class ResponsibleVibeMcpServer(
         server.addTool(
             name = "start_process",
             description = "Starts a new engineering process execution (requires processId, projectPath, gitBranch)",
-        ) { request ->
-            // TODO: Implement parameter extraction when API is clarified
-            // For now, return placeholder that shows request structure
-            CallToolResult(
-                content =
-                    listOf(
-                        TextContent(
-                            text = "⚠️ start_process: Implementation in progress. Request type: ${request::class.simpleName}",
+        ) { request: CallToolRequest ->
+            try {
+                val args =
+                    request.arguments ?: return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "❌ Error: No arguments provided")),
+                        isError = true,
+                    )
+
+                val processId =
+                    args["processId"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: processId parameter is required")),
+                            isError = true,
+                        )
+                val projectPath =
+                    args["projectPath"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: projectPath parameter is required")),
+                            isError = true,
+                        )
+                val gitBranch =
+                    args["gitBranch"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: gitBranch parameter is required")),
+                            isError = true,
+                        )
+
+                val processExecution =
+                    startProcessUseCase.execute(
+                        ch.zuegi.rvmcp.domain.model.id.ProcessId(processId),
+                        projectPath,
+                        gitBranch,
+                    )
+
+                CallToolResult(
+                    content =
+                        listOf(
+                            TextContent(
+                                text = """✅ Process started successfully!
+Process ID: $processId
+Execution ID: ${processExecution.id.value}
+Project: $projectPath
+Branch: $gitBranch
+Current Phase: ${processExecution.currentPhase().name}
+Status: ${processExecution.status}""",
+                            ),
                         ),
-                    ),
-            )
+                )
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "❌ Error starting process: ${e.message}")),
+                    isError = true,
+                )
+            }
         }
 
         System.err.println("      ✅ Registered: start_process")
@@ -162,16 +207,55 @@ class ResponsibleVibeMcpServer(
         server.addTool(
             name = "get_context",
             description = "Retrieves stored memory/context for a process execution (requires projectPath, gitBranch)",
-        ) { request ->
-            // TODO: Implement parameter extraction when API is clarified
-            CallToolResult(
-                content =
-                    listOf(
-                        TextContent(
-                            text = "⚠️ get_context: Implementation in progress. Request type: ${request::class.simpleName}",
-                        ),
-                    ),
-            )
+        ) { request: CallToolRequest ->
+            try {
+                val args =
+                    request.arguments ?: return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "❌ Error: No arguments provided")),
+                        isError = true,
+                    )
+
+                val projectPath =
+                    args["projectPath"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: projectPath parameter is required")),
+                            isError = true,
+                        )
+                val gitBranch =
+                    args["gitBranch"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: gitBranch parameter is required")),
+                            isError = true,
+                        )
+
+                val context = memoryRepository.load(projectPath, gitBranch)
+                if (context == null) {
+                    CallToolResult(
+                        content = listOf(TextContent(text = "ℹ️ No context found for project: $projectPath, branch: $gitBranch")),
+                    )
+                } else {
+                    CallToolResult(
+                        content =
+                            listOf(
+                                TextContent(
+                                    text = """📂 Execution Context Found:
+Project: ${context.projectPath}
+Branch: ${context.gitBranch}
+Execution ID: ${context.executionId.value}
+Phase History: ${context.phaseHistory.size} phases completed
+Architectural Decisions: ${context.architecturalDecisions.size}
+Interactions: ${context.interactions.size}
+Artifacts: ${context.artifacts.size}""",
+                                ),
+                            ),
+                    )
+                }
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "❌ Error retrieving context: ${e.message}")),
+                    isError = true,
+                )
+            }
         }
 
         System.err.println("      ✅ Registered: get_context")
