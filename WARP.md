@@ -380,8 +380,26 @@ responsible-vibe-mcp/
 - [x] Performance-Optimierung: 11x Speedup (900ms/node statt 10s/node)
 - [x] Context-Preservation Tests (Secret Code, City-Landmark Chain)
 - [x] Integration mit Azure OpenAI Gateway
+- [x] Security Refactoring: Hardcoded URLs entfernt, LlmProperties Configuration
 - [ ] Application Layer (Use Case Implementierungen) - verschoben zu Phase 2
 - [ ] Spring Boot Configuration (Infrastructure Layer) - verschoben zu Phase 2
+
+### Phase 1.6: End-to-End Proof-of-Concept ✅ ABGESCHLOSSEN
+- [x] SimpleEndToEndTest implementiert (4 umfassende Tests):
+  - [x] Single Phase Execution (Requirements Analysis mit LLM Workflow)
+  - [x] Multi-Phase Execution (alle 3 Phasen: Requirements → Architecture → Implementation)
+  - [x] Error Handling: Failed Required Vibe Check
+  - [x] Error Handling: Process Not Found Exception
+- [x] Helper Classes für Testing:
+  - [x] AutoPassVibeCheckEvaluator (Success-Szenarien)
+  - [x] FailingVibeCheckEvaluator (Error-Szenarien)
+- [x] Architektur-Validierung End-to-End:
+  - [x] Domain Services orchestrieren Flow korrekt
+  - [x] Ports & Adapters Pattern funktioniert vollständig
+  - [x] Koog Integration führt echte LLM Workflows aus
+  - [x] In-Memory Persistence speichert Resultate korrekt
+  - [x] Vibe Checks werden automatisiert durchgeführt
+  - [x] Error Handling funktioniert wie erwartet
 
 ### Phase 2: Memory & Persistenz
 - [ ] Persistentes Memory (Datei-basiert oder DB)
@@ -440,7 +458,7 @@ responsible-vibe-mcp/
 
 ## Status
 
-**Aktueller Stand**: ✅ **Phase 1.5 ABGESCHLOSSEN** - Refactored Koog Integration mit Context-Preservation!
+**Aktueller Stand**: ✅ **Phase 1.6 ABGESCHLOSSEN** - End-to-End Proof-of-Concept Tests validieren komplette Architektur!
 
 ### Implementiert
 - ✅ Domain Model, Port Interfaces & Domain Services (36 Tests)
@@ -451,7 +469,11 @@ responsible-vibe-mcp/
 - ✅ WorkflowPromptBuilder für umfassende System-Prompts
 - ✅ RefactoredKoogWorkflowExecutor mit dramatisch verbesserter Performance
 - ✅ **Context-Preservation VERIFIED**: Agent behält Kontext über alle Nodes
-- ✅ Comprehensive Test Suite (54 Tests, alle passing)
+- ✅ **End-to-End Tests**: SimpleEndToEndTest validiert komplette Architektur
+  - Single Phase Execution mit echtem LLM Workflow
+  - Multi-Phase Execution (3 Phasen)
+  - Error Handling (Failed Vibe Checks, Process Not Found)
+- ✅ Comprehensive Test Suite (58 Tests, alle passing)
 
 ### Performance-Verbesserung (Gemessen)
 | Szenario | Alt | Neu | Speedup |
@@ -472,11 +494,16 @@ responsible-vibe-mcp/
 - ✅ **City-Landmark Chain**: Agent nutzt City aus Step 1 für Landmark in Step 2
 - ✅ **3-Node Summary**: Agent fasst alle 3 Steps korrekt zusammen
 
-### Test-Übersicht (54 Tests passing)
+### Test-Übersicht (58 Tests passing)
 - ✅ 36 Domain Model Tests (Entities, Value Objects)
 - ✅ 7 Port Output Model Tests
 - ✅ 6 KoogIntegrationTests (Simple, Multi-Node, Three-Node, etc.)
 - ✅ 1 SimpleLLMConnectionTest
+- ✅ **4 End-to-End Tests (SimpleEndToEndTest)**:
+  - Single Phase Execution (Requirements Analysis)
+  - Multi-Phase Execution (Complete Feature Development)
+  - Failed Required Vibe Check Handling
+  - Process Not Found Exception
 - ✅ 4 andere Tests
 
 ### Aktuelle Limitierungen
@@ -535,6 +562,19 @@ responsible-vibe-mcp/
 - **Token-Effizienz**: Keine redundanten Informationen in LLM-Calls
 
 **Implementierung**: Memory-Adapter als Bridge zwischen beiden Ebenen
+
+### ADR-006: End-to-End Tests mit Helper Evaluators
+**Entscheidung**: SimpleEndToEndTest mit AutoPassVibeCheckEvaluator und FailingVibeCheckEvaluator  
+**Begründung**:
+- **Testbarkeit**: End-to-End Tests brauchen deterministische Vibe Check Ergebnisse
+- **Keine LLM-Calls für Vibe Checks**: Tests sollen unabhängig von LLM-Verfügbarkeit laufen
+- **Success & Error Szenarien**: Beide Evaluators ermöglichen vollständige Test-Abdeckung
+- **Schnelligkeit**: Keine echten LLM-Calls für Vibe Checks = schnellere Tests
+
+**Implementierung**:
+- `AutoPassVibeCheckEvaluator`: Alle Checks passen automatisch (Success-Pfad)
+- `FailingVibeCheckEvaluator`: Required Checks failen automatisch (Error-Pfad)
+- Helper Klassen im Test-File, wiederverwendbar für weitere Tests
 
 ---
 
