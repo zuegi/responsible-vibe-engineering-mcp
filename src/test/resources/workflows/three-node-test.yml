@@ -1,0 +1,55 @@
+name: "Three-Node Chain Test"
+description: "Tests context preservation across 3 LLM nodes (max supported)"
+version: "1.0"
+
+nodes:
+  - id: step1_city
+    type: llm
+    description: "Choose a city"
+    prompt: |
+      Step 1 of 3: Choose a famous city.
+      
+      Pick one city and respond with:
+      "I choose: [city name]"
+    output: city_choice
+    
+  - id: step2_landmark
+    type: llm
+    description: "Name a landmark in the chosen city"
+    prompt: |
+      Step 2 of 3: Name a famous landmark in the city you chose.
+      
+      Respond with:
+      "A famous landmark in [city from step 1] is: [landmark name]"
+    output: landmark
+    
+  - id: step3_summary
+    type: llm
+    description: "Summarize the chain"
+    prompt: |
+      Step 3 of 3: Summarize the complete chain.
+      
+      Respond with:
+      "Summary: City=[city from step 1], Landmark=[landmark from step 2]"
+    output: summary
+    
+  - id: done
+    type: aggregation
+    description: "End node"
+    inputs:
+      - city_choice
+      - landmark
+      - summary
+    output: final_result
+
+graph:
+  start: step1_city
+  end: done
+  
+  edges:
+    - from: step1_city
+      to: step2_landmark
+    - from: step2_landmark
+      to: step3_summary
+    - from: step3_summary
+      to: done

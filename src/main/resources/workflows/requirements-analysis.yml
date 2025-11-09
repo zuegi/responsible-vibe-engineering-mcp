@@ -1,0 +1,252 @@
+name: "Requirements Analysis"
+description: "Sammelt und analysiert Anforderungen für ein neues Feature oder Projekt"
+version: "1.0"
+
+# Kontext-Variablen, die vom ExecutionContext bereitgestellt werden
+context_variables:
+  - project_path
+  - git_branch
+  - phase_history
+  - architectural_decisions
+
+# Workflow-Schritte (Nodes)
+nodes:
+  # 1. Initiale Anforderungssammlung
+  - id: gather_requirements
+    type: llm
+    description: "Sammelt erste Anforderungen durch gezielte Fragen"
+    prompt: |
+      Du bist ein Software-Architekt, der einem Entwickler hilft, ein neues Feature zu planen.
+      
+      **Projekt-Kontext:**
+      - Pfad: {{context.project_path}}
+      - Branch: {{context.git_branch}}
+      - Bisherige Phasen: {{context.phase_history}}
+      
+      **Aufgabe:**
+      Stelle gezielte Fragen, um die Anforderungen zu verstehen:
+      
+      1. **Funktionale Anforderungen:**
+         - Was soll das Feature genau tun?
+         - Welche Eingaben gibt es?
+         - Welche Ausgaben werden erwartet?
+      
+      2. **Nicht-funktionale Anforderungen:**
+         - Performance-Erwartungen?
+         - Skalierbarkeit?
+         - Sicherheitsaspekte?
+      
+      3. **Nutzer & Use Cases:**
+         - Wer sind die primären Nutzer?
+         - Welche typischen Nutzungsszenarien gibt es?
+      
+      Führe ein strukturiertes Interview und dokumentiere die Antworten.
+    output: requirements_draft
+    max_iterations: 3
+    
+  # 2. Edge Cases identifizieren
+  - id: identify_edge_cases
+    type: llm
+    description: "Analysiert mögliche Randfälle und Problemszenarien"
+    prompt: |
+      **Anforderungen (Draft):**
+      {{requirements_draft}}
+      
+      **Aufgabe:**
+      Analysiere die Anforderungen kritisch und identifiziere:
+      
+      1. **Edge Cases:**
+         - Was passiert bei ungültigen Eingaben?
+         - Wie verhält sich das System bei Grenzwerten?
+         - Welche unerwarteten Nutzungsszenarien gibt es?
+      
+      2. **Fehlerszenarien:**
+         - Was kann schiefgehen?
+         - Wie sollen Fehler behandelt werden?
+      
+      3. **Performance & Skalierung:**
+         - Wo könnten Bottlenecks entstehen?
+         - Wie verhält sich das System unter Last?
+      
+      4. **Abhängigkeiten:**
+         - Welche externen Systeme/Services werden benötigt?
+         - Was passiert, wenn diese nicht verfügbar sind?
+      
+      Erstelle eine strukturierte Liste mit jedem Edge Case und dessen Priorität (hoch/mittel/niedrig).
+    output: edge_cases
+    
+  # 3. Unklarheiten prüfen
+  - id: check_ambiguities
+    type: conditional
+    description: "Prüft, ob es noch unklare oder widersprüchliche Anforderungen gibt"
+    condition: |
+      contains(edge_cases, "unklar") OR 
+      contains(edge_cases, "widersprüchlich") OR
+      contains(requirements_draft, "TODO") OR
+      contains(requirements_draft, "TBD")
+    if_true: request_clarification
+    if_false: analyze_existing_architecture
+    
+  # 4. Human-in-the-Loop: Klärung von Unklarheiten
+  - id: request_clarification
+    type: human_interaction
+    description: "Fordert menschliche Klärung bei Unklarheiten an"
+    prompt: |
+      **Es gibt noch offene Fragen:**
+      
+      {{edge_cases}}
+      
+      Bitte kläre folgende Punkte:
+      - Welche Edge Cases sind relevant?
+      - Wie sollen widersprüchliche Anforderungen aufgelöst werden?
+      - Welche unklaren Punkte benötigen Spezifikation?
+    output: clarifications
+    required: true
+    
+  # 5. Bestehende Architektur analysieren
+  - id: analyze_existing_architecture
+    type: llm
+    description: "Analysiert die bestehende Projektarchitektur"
+    prompt: |
+      **Projekt-Pfad:** {{context.project_path}}
+      
+      **Bisherige Architektur-Entscheidungen:**
+      {{context.architectural_decisions}}
+      
+      **Aufgabe:**
+      1. Analysiere die bestehende Code-Struktur
+      2. Identifiziere relevante Module/Komponenten
+      3. Prüfe, welche Patterns bereits verwendet werden
+      4. Stelle fest, wo das neue Feature einzuordnen ist
+      
+      **Ausgabe:**
+      - Übersicht über relevante Komponenten
+      - Identifizierte Patterns (z.B. Hexagonal Architecture)
+      - Empfehlung zur Integration des Features
+    output: architecture_analysis
+    
+  # 6. Requirements dokumentieren
+  - id: document_requirements
+    type: llm
+    description: "Erstellt ein strukturiertes Requirements-Dokument"
+    prompt: |
+      Erstelle ein vollständiges Requirements-Dokument basierend auf:
+      
+      **Anforderungen:**
+      {{requirements_draft}}
+      
+      **Edge Cases:**
+      {{edge_cases}}
+      
+      **Klärungen:**
+      {{clarifications}}
+      
+      **Architektur-Kontext:**
+      {{architecture_analysis}}
+      
+      **Format (Markdown):**
+      
+      # Requirements: [Feature-Name]
+      
+      ## 1. Übersicht
+      - Kurzbeschreibung
+      - Ziele
+      - Nicht-Ziele
+      
+      ## 2. Funktionale Anforderungen
+      - [REQ-001] ...
+      - [REQ-002] ...
+      
+      ## 3. Nicht-funktionale Anforderungen
+      - Performance
+      - Skalierbarkeit
+      - Sicherheit
+      
+      ## 4. Edge Cases & Fehlerbehandlung
+      - [EDGE-001] ...
+      
+      ## 5. Abhängigkeiten
+      - Externe Services
+      - Interne Module
+      
+      ## 6. Architektur-Kontext
+      - Integration in bestehende Struktur
+      - Betroffene Komponenten
+      
+      ## 7. Offene Fragen
+      - [OPEN-001] ...
+      
+      **Wichtig:** Jede Anforderung soll eindeutig identifizierbar und testbar sein.
+    output: requirements_document
+    
+  # 7. Vibe Check Preparation
+  - id: prepare_vibe_checks
+    type: aggregation
+    description: "Bereitet Daten für Vibe Checks vor"
+    inputs:
+      - requirements_document
+      - edge_cases
+      - architecture_analysis
+    output: vibe_check_data
+
+# Workflow-Graph (Ablauf)
+graph:
+  start: gather_requirements
+  
+  edges:
+    - from: gather_requirements
+      to: identify_edge_cases
+      
+    - from: identify_edge_cases
+      to: check_ambiguities
+      
+    - from: check_ambiguities
+      to: request_clarification
+      condition: "if_true"
+      
+    - from: check_ambiguities
+      to: analyze_existing_architecture
+      condition: "if_false"
+      
+    - from: request_clarification
+      to: analyze_existing_architecture
+      
+    - from: analyze_existing_architecture
+      to: document_requirements
+      
+    - from: document_requirements
+      to: prepare_vibe_checks
+  
+  end: prepare_vibe_checks
+
+# Erwartete Outputs für Integration mit ExecutionContext
+outputs:
+  summary: "{{requirements_document}}"
+  
+  artifacts:
+    - name: "requirements.md"
+      type: "DOCUMENTATION"
+      content: "{{requirements_document}}"
+      
+  decisions:
+    - phase: "Requirements Analysis"
+      decision: "Identified {{count(edge_cases)}} edge cases"
+      reasoning: "Critical for robust implementation"
+      
+    - phase: "Requirements Analysis"
+      decision: "Feature integrates into {{architecture_analysis.target_module}}"
+      reasoning: "Maintains existing architecture patterns"
+
+# Vibe Checks, die nach diesem Workflow ausgeführt werden
+vibe_checks:
+  - question: "Sind alle funktionalen Anforderungen klar und testbar formuliert?"
+    type: "REQUIREMENTS"
+    
+  - question: "Wurden relevante Edge Cases identifiziert und priorisiert?"
+    type: "QUALITY"
+    
+  - question: "Passt das Feature in die bestehende Architektur?"
+    type: "ARCHITECTURE"
+    
+  - question: "Gibt es offene Fragen, die vor der Implementierung geklärt werden müssen?"
+    type: "COMPLETENESS"

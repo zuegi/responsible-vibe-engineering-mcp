@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: responsible-vibe-mcp
+
+# Kotlin Koog Configuration
+koog:
+  model:
+    provider: ANTHROPIC
+    name: claude-3-5-sonnet-20241022
+    temperature: 0.7
+    max-tokens: 4096
+  
+  # API Keys (should be set via environment variables)
+  # ANTHROPIC_API_KEY=...
+  # OPENAI_API_KEY=...
+
+# LLM Configuration (provider-agnostic)
+# IMPORTANT: Set these in application-local.yml (not committed to git)
+# Supports: Azure OpenAI, OpenAI, Anthropic, custom gateways
+llm:
+  provider: ${LLM_PROVIDER:openai}
+  base-url: ${LLM_BASE_URL:https://api.openai.com/v1/}
+  api-version: ${LLM_API_VERSION:2024-05-01-preview}
+  api-token: ${LLM_API_TOKEN:dummy}
+
+# Logging
+logging:
+  level:
+    root: INFO
+    ch.zuegi.rvmcp: DEBUG
+    ai.koog: DEBUG
