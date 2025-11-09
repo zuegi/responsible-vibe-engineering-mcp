@@ -276,7 +276,8 @@ class SimpleEndToEndTest {
         // Execute all 3 phases
         for (phaseIndex in 0 until processExecution.process.totalPhases()) {
             println(
-                "\n➡️  Executing Phase ${phaseIndex + 1}/${processExecution.process.totalPhases()}: ${processExecution.currentPhase().name}",
+                "\n➡️  Executing Phase ${phaseIndex + 1}/" +
+                    "${processExecution.process.totalPhases()}: ${processExecution.currentPhase().name}",
             )
 
             // Load context
