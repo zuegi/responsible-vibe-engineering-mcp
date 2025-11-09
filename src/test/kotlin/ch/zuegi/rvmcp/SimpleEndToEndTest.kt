@@ -2,10 +2,7 @@ package ch.zuegi.rvmcp
 
 import ch.zuegi.rvmcp.adapter.output.memory.InMemoryMemoryRepository
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
-import ch.zuegi.rvmcp.adapter.output.workflow.RefactoredKoogWorkflowExecutor
-import ch.zuegi.rvmcp.adapter.output.workflow.WorkflowPromptBuilder
-import ch.zuegi.rvmcp.adapter.output.workflow.WorkflowTemplateParser
-import ch.zuegi.rvmcp.adapter.output.workflow.YamlToKoogStrategyTranslator
+import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.domain.model.id.ProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
@@ -48,7 +45,7 @@ class SimpleEndToEndTest {
 
     private lateinit var processRepository: InMemoryProcessRepository
     private lateinit var memoryRepository: InMemoryMemoryRepository
-    private lateinit var workflowExecutor: RefactoredKoogWorkflowExecutor
+    private lateinit var workflowExecutor: KoogWorkflowExecutor
     private lateinit var vibeCheckEvaluator: AutoPassVibeCheckEvaluator
 
     private lateinit var startProcessService: StartProcessExecutionService
@@ -62,16 +59,9 @@ class SimpleEndToEndTest {
         memoryRepository = InMemoryMemoryRepository()
 
         // Initialize workflow executor with Koog
-        val parser = WorkflowTemplateParser()
-        val strategyTranslator = YamlToKoogStrategyTranslator()
-        val promptBuilder = WorkflowPromptBuilder()
-
         workflowExecutor =
-            RefactoredKoogWorkflowExecutor(
-                parser,
-                strategyTranslator,
-                promptBuilder,
-                llmProperties,
+            KoogWorkflowExecutor(
+                llmProperties = llmProperties,
             )
 
         // Use automatic vibe check evaluator for testing
@@ -86,9 +76,8 @@ class SimpleEndToEndTest {
 
         executePhaseService =
             ExecuteProcessPhaseService(
-                workflowExecutor,
-                vibeCheckEvaluator,
-                memoryRepository,
+                workflowExecutor = workflowExecutor,
+                vibeCheckEvaluator = vibeCheckEvaluator,
             )
 
         completePhaseService =
@@ -143,7 +132,8 @@ class SimpleEndToEndTest {
         println("\n⚙️  STEP 3: Execute Phase 'Requirements Analysis'")
         val phase = processExecution.currentPhase()
 
-        executionContext = executePhaseService.execute(phase, executionContext)
+        val phaseResult = executePhaseService.execute(phase, executionContext)
+        executionContext = executionContext.addPhaseResult(phaseResult)
 
         assertThat(executionContext.phaseHistory).hasSize(1)
         assertThat(executionContext.phaseHistory.first().phaseName).isEqualTo("Requirements Analysis")
@@ -156,7 +146,6 @@ class SimpleEndToEndTest {
 
         // ===== STEP 4: Complete Phase and Move to Next =====
         println("\n📝 STEP 4: Complete Phase")
-        val phaseResult = executionContext.phaseHistory.first()
         val updatedExecution = completePhaseService.execute(processExecution, executionContext, phaseResult)
 
         assertThat(updatedExecution.currentPhaseIndex).isEqualTo(1)
@@ -285,10 +274,10 @@ class SimpleEndToEndTest {
 
             // Execute phase
             val phase = processExecution.currentPhase()
-            executionContext = executePhaseService.execute(phase, executionContext)
+            val phaseResult = executePhaseService.execute(phase, executionContext)
+            executionContext = executionContext.addPhaseResult(phaseResult)
 
-            // Complete phase
-            val phaseResult = executionContext.phaseHistory.last()
+            // Complete phase (phaseResult already added to context)
             processExecution = completePhaseService.execute(processExecution, executionContext, phaseResult)
 
             println("✅ Phase ${phaseIndex + 1} completed: ${phaseResult.phaseName}")
@@ -335,9 +324,8 @@ class SimpleEndToEndTest {
         val failingEvaluator = FailingVibeCheckEvaluator()
         val executePhaseServiceWithFailure =
             ExecuteProcessPhaseService(
-                workflowExecutor,
-                failingEvaluator,
-                memoryRepository,
+                workflowExecutor = workflowExecutor,
+                vibeCheckEvaluator = failingEvaluator,
             )
 
         println("✅ Process started")
@@ -346,10 +334,10 @@ class SimpleEndToEndTest {
         // Execute phase (should fail vibe check)
         var executionContext = memoryRepository.load(projectPath, gitBranch)!!
         val phase = processExecution.currentPhase()
-        executionContext = executePhaseServiceWithFailure.execute(phase, executionContext)
+        val phaseResult = executePhaseServiceWithFailure.execute(phase, executionContext)
+        executionContext = executionContext.addPhaseResult(phaseResult)
 
         // Verify phase failed
-        val phaseResult = executionContext.phaseHistory.first()
         assertThat(phaseResult.status).isEqualTo(ExecutionStatus.FAILED)
         assertThat(phaseResult.vibeCheckResults).isNotEmpty
         assertThat(phaseResult.vibeCheckResults.any { !it.passed }).isTrue()

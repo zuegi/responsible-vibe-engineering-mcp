@@ -6,8 +6,7 @@ import ai.koog.agents.core.dsl.extension.nodeLLMRequest
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
-import ch.zuegi.rvmcp.infrastructure.logging.logger
-import org.springframework.stereotype.Component
+import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
 
 /**
  * Translates YAML workflow templates into Koog agent strategies.
@@ -17,9 +16,8 @@ import org.springframework.stereotype.Component
  *
  * Based on Koog 0.5.1 API structure, following the pattern from YamlWorkflowStrategy.
  */
-@Component
 class YamlToKoogStrategyTranslator {
-    private val logger by logger()
+    private val logger by rvmcpLogger()
 
     /**
      * Translates a YAML workflow into a Koog strategy.

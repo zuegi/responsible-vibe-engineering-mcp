@@ -4,11 +4,13 @@ import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult
 import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
+import org.springframework.stereotype.Component
 
 /**
- * Console-based vibe check evaluator for manual testing.
- * Prompts user to answer quality gate questions.
+ * Console-based Vibe Check Evaluator for manual testing.
+ * Prompts the user via console to evaluate vibe checks.
  */
+@Component
 class ConsoleVibeCheckEvaluator : VibeCheckEvaluatorPort {
     override fun evaluate(
         vibeCheck: VibeCheck,

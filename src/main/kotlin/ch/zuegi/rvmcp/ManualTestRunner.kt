@@ -38,9 +38,8 @@ fun main() {
     val startService = StartProcessExecutionService(processRepository, memoryRepository)
     val executePhaseService =
         ExecuteProcessPhaseService(
-            workflowExecutor,
-            vibeCheckEvaluator,
-            memoryRepository,
+            workflowExecutor = workflowExecutor,
+            vibeCheckEvaluator = vibeCheckEvaluator,
         )
     val completePhaseService = CompletePhaseService(memoryRepository)
 
@@ -83,14 +82,14 @@ fun main() {
         readlnOrNull()
 
         // Phase ausführen
-        context =
+        val phaseResult =
             executePhaseService.execute(
                 phase = processExecution.currentPhase(),
                 context = context,
             )
 
-        // Phase Result prüfen
-        val phaseResult = context.phaseHistory.last()
+        // Update context with phase result
+        context = context.addPhaseResult(phaseResult)
 
         // Wenn Phase fehlgeschlagen, frage ob wiederholen oder abbrechen
         if (phaseResult.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.FAILED) {

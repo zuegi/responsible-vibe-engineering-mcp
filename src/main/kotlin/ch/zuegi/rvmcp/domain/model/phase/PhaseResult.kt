@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.domain.model.phase
 
+import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult
 import java.time.Instant
@@ -9,6 +10,7 @@ data class PhaseResult(
     val status: ExecutionStatus,
     val summary: String,
     val vibeCheckResults: List<VibeCheckResult>,
+    val decisions: List<Decision> = emptyList(),
     val startedAt: Instant,
     val completedAt: Instant? = null,
 ) {

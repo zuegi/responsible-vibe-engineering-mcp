@@ -4,7 +4,6 @@ import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
-import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import java.time.Instant
@@ -21,19 +20,18 @@ import java.time.Instant
 class ExecuteProcessPhaseService(
     private val workflowExecutor: WorkflowExecutionPort,
     private val vibeCheckEvaluator: VibeCheckEvaluatorPort,
-    private val memoryRepository: MemoryRepositoryPort,
 ) {
     /**
      * Executes a single process phase with the given context.
      *
      * @param phase The process phase to execute
      * @param context The current execution context
-     * @return The updated execution context after phase completion
+     * @return PhaseResult
      */
     fun execute(
         phase: ProcessPhase,
         context: ExecutionContext,
-    ): ExecutionContext {
+    ): PhaseResult {
         val startTime = Instant.now()
         println("\n▶ Starting phase: ${phase.name}")
         println("  Description: ${phase.description}")
@@ -45,22 +43,16 @@ class ExecuteProcessPhaseService(
                 context = context,
             )
 
-        // 2. Add workflow decisions to context
-        var updatedContext =
-            workflowResult.decisions.fold(context) { ctx, decision ->
-                ctx.addDecision(decision)
-            }
-
-        // 4. Evaluate vibe checks
+        // 2. Evaluate vibe checks (with original context - decisions will be added later via PhaseResult)
         val vibeCheckResults =
             vibeCheckEvaluator.evaluateBatch(
                 vibeChecks = phase.vibeChecks,
-                context = updatedContext,
+                context = context,
             )
 
         val allVibeChecksPassed = vibeCheckResults.all { it.passed }
 
-        // 5. Human-in-the-loop if vibe checks failed
+        // 3. Human-in-the-loop if vibe checks failed
         if (!allVibeChecksPassed) {
             println("\n⚠ Einige Vibe Checks sind fehlgeschlagen:")
             vibeCheckResults.filter { !it.passed }.forEach { result ->
@@ -74,55 +66,50 @@ class ExecuteProcessPhaseService(
 
                 return createFailedPhaseResult(
                     phase = phase,
-                    context = updatedContext,
                     vibeCheckResults = vibeCheckResults,
                     startTime = startTime,
                     workflowSummary = workflowResult.summary,
+                    decisions = workflowResult.decisions,
                 )
             }
         }
 
-        // 6. Create phase result
+        // 4. Create phase result (including workflow decisions)
         val phaseResult =
             PhaseResult(
                 phaseName = phase.name,
                 status = if (allVibeChecksPassed) ExecutionStatus.PHASE_COMPLETED else ExecutionStatus.FAILED,
                 summary = workflowResult.summary,
                 vibeCheckResults = vibeCheckResults,
+                decisions = workflowResult.decisions,
                 startedAt = startTime,
                 completedAt = Instant.now(),
             )
 
-        // 7. Update context with phase result
-        updatedContext = updatedContext.addPhaseResult(phaseResult)
-
-        // 8. Persist context
-        memoryRepository.save(updatedContext)
+        // 5. Persistence handled externally
 
         println("\n✓ Phase completed: ${phase.name}")
-        return updatedContext
+        return phaseResult
     }
 
     private fun createFailedPhaseResult(
         phase: ProcessPhase,
-        context: ExecutionContext,
         vibeCheckResults: List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult>,
         startTime: Instant,
         workflowSummary: String,
-    ): ExecutionContext {
+        decisions: List<ch.zuegi.rvmcp.domain.model.memory.Decision>,
+    ): PhaseResult {
         val phaseResult =
             PhaseResult(
                 phaseName = phase.name,
                 status = ExecutionStatus.FAILED,
                 summary = workflowSummary,
                 vibeCheckResults = vibeCheckResults,
+                decisions = decisions,
                 startedAt = startTime,
                 completedAt = Instant.now(),
             )
 
-        val updatedContext = context.addPhaseResult(phaseResult)
-        memoryRepository.save(updatedContext)
-
-        return updatedContext
+        return phaseResult
     }
 }

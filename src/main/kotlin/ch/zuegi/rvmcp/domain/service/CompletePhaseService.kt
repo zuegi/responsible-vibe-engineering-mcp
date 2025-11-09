@@ -1,6 +1,5 @@
 package ch.zuegi.rvmcp.domain.service
 
-import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
@@ -18,16 +17,11 @@ class CompletePhaseService(
     private val memoryRepository: MemoryRepositoryPort,
 ) {
     /**
-     * Completes the current phase and transitions to the next phase if available.
-     *
-     * @param execution The current process execution
-     * @param context The updated execution context after phase completion
-     * @param phaseResult The result of the completed phase
-     * @return The updated process execution (either moved to next phase or completed)
+     * Completes a phase and advances execution.
      */
     fun execute(
         execution: ProcessExecution,
-        context: ExecutionContext,
+        context: ch.zuegi.rvmcp.domain.model.context.ExecutionContext,
         phaseResult: PhaseResult,
     ): ProcessExecution {
         println("\n📋 Completing phase: ${phaseResult.phaseName}")
@@ -65,7 +59,7 @@ class CompletePhaseService(
      */
     fun fail(
         execution: ProcessExecution,
-        context: ExecutionContext,
+        context: ch.zuegi.rvmcp.domain.model.context.ExecutionContext,
     ): ProcessExecution {
         println("\n❌ Process execution failed")
 

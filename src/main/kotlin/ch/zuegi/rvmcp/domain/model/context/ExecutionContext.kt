@@ -26,6 +26,7 @@ data class ExecutionContext(
     fun addPhaseResult(result: PhaseResult): ExecutionContext =
         copy(
             phaseResults = phaseResults + (result.phaseName to result),
+            architecturalDecisions = architecturalDecisions + result.decisions,
         )
 
     fun addDecision(decision: Decision): ExecutionContext =

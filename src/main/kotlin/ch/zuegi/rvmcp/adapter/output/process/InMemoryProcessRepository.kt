@@ -3,11 +3,14 @@ package ch.zuegi.rvmcp.adapter.output.process
 import ch.zuegi.rvmcp.domain.model.id.ProcessId
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
+import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * In-memory storage for engineering process definitions.
+ * In-memory implementation of ProcessRepositoryPort.
+ * Stores process definitions in memory (lost on restart).
  */
+@Component
 class InMemoryProcessRepository : ProcessRepositoryPort {
     private val storage = ConcurrentHashMap<ProcessId, EngineeringProcess>()
 

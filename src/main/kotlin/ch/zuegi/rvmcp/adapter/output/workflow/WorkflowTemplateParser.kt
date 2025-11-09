@@ -6,9 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.springframework.core.io.ClassPathResource
-import org.springframework.stereotype.Component
 
-@Component
 class WorkflowTemplateParser {
     private val yamlMapper =
         ObjectMapper(YAMLFactory()).apply {
