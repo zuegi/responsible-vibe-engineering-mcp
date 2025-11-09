@@ -637,25 +637,32 @@ responsible-vibe-mcp/
   - [x] Vibe Checks werden automatisiert durchgeführt
   - [x] Error Handling funktioniert wie erwartet
 
-### Phase 2a: MCP Server Implementation
-- [ ] MCP Protocol Library Integration
-  - [ ] JSON-RPC 2.0 Support
-  - [ ] stdio Transport
-- [ ] MCP Server Adapter implementieren
-  - [ ] McpServerAdapter.kt (Entry Point)
-  - [ ] McpToolRegistry.kt (Tool Registration)
-  - [ ] McpRequestHandler.kt (Request Processing)
-- [ ] MCP Tools implementieren (5 Tools)
-  - [ ] StartProcessTool (start_process)
-  - [ ] ExecutePhaseTool (execute_phase)
-  - [ ] CompletePhaseTool (complete_phase)
-  - [ ] GetContextTool (get_context)
-  - [ ] ListProcessesTool (list_processes)
-- [ ] MCP Resources implementieren
+### Phase 2a: MCP Server Implementation ⏳ IN PROGRESS
+- [x] MCP Protocol Library Integration
+  - [x] JSON-RPC 2.0 Support (MCP SDK 0.7.6)
+  - [x] stdio Transport (StdioServerTransport)
+- [x] Hexagonal Architecture Implementation (Application Layer)
+  - [x] StartProcessExecutionUseCaseImpl
+  - [x] ExecuteProcessPhaseUseCaseImpl  
+  - [x] CompletePhaseUseCaseImpl
+  - [x] ApplicationConfiguration (Spring Bean wiring)
+- [x] MCP Server Adapter implementieren
+  - [x] ResponsibleVibeMcpServer.kt (Entry Point)
+  - [x] MCP SDK API exploration (CallToolRequest.arguments)
+  - [x] Parameter extraction via JsonElement.jsonPrimitive.content
+- [x] MCP Tools implementieren (3 von 5 Tools)
+  - [x] list_processes (vollständig funktional)
+  - [x] start_process (vollständig funktional)
+  - [x] get_context (vollständig funktional)
+  - [ ] execute_phase (Placeholder - benötigt Execution State Management)
+  - [ ] complete_phase (Placeholder - benötigt Execution State Management)
+- [ ] MCP Resources implementieren (optional)
   - [ ] ContextResource (context://project/branch)
   - [ ] ProcessResource (process://process-id)
-- [ ] Integration mit Domain Services
-- [ ] MCP Server Tests
+- [x] Integration mit Domain Services (Use Cases rufen Domain Services auf)
+- [x] MCP Server Tests (API Exploration Tests)
+- [ ] Main Entry Point für MCP Server Mode
+- [ ] Integration Tests für MCP Protocol
 - [ ] Claude Desktop / Warp Integration testen
 
 ### Phase 2b: Memory & Persistenz
@@ -715,17 +722,28 @@ responsible-vibe-mcp/
 
 ## Status
 
-**Aktueller Stand**: ✅ **Phase 1.6 ABGESCHLOSSEN** - End-to-End Proof-of-Concept Tests validieren komplette Architektur!
+**Aktueller Stand**: ⏳ **Phase 2a IN PROGRESS** - MCP Server Implementierung mit 3 von 5 Tools funktional!
 
 ### Implementiert
+- ✅ **Phase 1-1.6 ABGESCHLOSSEN**: Komplette Domain & Workflow Engine
 - ✅ Domain Model, Port Interfaces & Domain Services (36 Tests)
 - ✅ YAML Workflow Templates (simple-test, multi-node-test, three-node-test)
 - ✅ Kotlin Koog Integration mit Azure OpenAI Gateway
-- ✅ **REFACTORED**: Single-Agent-per-Workflow Architektur
+- ✅ KoogWorkflowExecutor (vorher RefactoredKoogWorkflowExecutor) mit 11x Speedup
 - ✅ YamlToKoogStrategyTranslator (unterstützt 1-3 LLM nodes)
 - ✅ WorkflowPromptBuilder für umfassende System-Prompts
-- ✅ RefactoredKoogWorkflowExecutor mit dramatisch verbesserter Performance
 - ✅ **Context-Preservation VERIFIED**: Agent behält Kontext über alle Nodes
+- ✅ **Application Layer (Hexagonal Architecture Option B)**:
+  - StartProcessExecutionUseCaseImpl
+  - ExecuteProcessPhaseUseCaseImpl
+  - CompletePhaseUseCaseImpl
+  - ApplicationConfiguration mit Spring Bean Wiring
+- ✅ **MCP Server (3 von 5 Tools funktional)**:
+  - ResponsibleVibeMcpServer mit stdio Transport
+  - list_processes Tool (✅ komplett)
+  - start_process Tool (✅ komplett)
+  - get_context Tool (✅ komplett)
+  - CallToolRequest.arguments Parameter Extraction
 - ✅ **End-to-End Tests**: SimpleEndToEndTest validiert komplette Architektur
   - Single Phase Execution mit echtem LLM Workflow
   - Multi-Phase Execution (3 Phasen)
@@ -764,17 +782,23 @@ responsible-vibe-mcp/
 - ✅ 4 andere Tests
 
 ### Aktuelle Limitierungen
-- Translator unterstützt max. 3 LLM-Nodes (TODO: beliebig viele)
+- YamlToKoogStrategyTranslator unterstützt max. 3 LLM-Nodes (TODO: beliebig viele)
 - Conditional & Human-Interaction Nodes noch nicht unterstützt
-- Aggregation & System-Command Nodes werden übersprungen
-- Old KoogWorkflowExecutor noch vorhanden (zur Referenz)
+- MCP Tools execute_phase und complete_phase noch Platzhalter (benötigen Execution State Management)
+- MCP Resources noch nicht implementiert (optional)
+- Kein MCP Server Main Entry Point
 
-### Nächste Schritte
-1. ⏳ Erweitern auf beliebig viele LLM-Nodes
-2. ⏳ Support für Conditional Nodes (Tool-based oder Strategy Branches)
-3. ⏳ Support für Human-Interaction Nodes (Tool-based)
-4. ⏳ Application Layer (Use Case Implementierungen)
-5. ⏳ Old KoogWorkflowExecutor entfernen
+### Nächste Schritte (Phase 2a abschließen)
+1. ⏳ execute_phase und complete_phase Tools implementieren
+2. ⏳ MCP Server Main Entry Point erstellen
+3. ⏳ Integration Tests für MCP Protocol
+4. ⏳ Claude Desktop / Warp Integration testen
+
+### Weitere Zukunft
+5. ⏳ MCP Resources implementieren (optional)
+6. ⏳ Erweitern auf beliebig viele LLM-Nodes im YamlToKoogStrategyTranslator
+7. ⏳ Support für Conditional Nodes (Tool-based oder Strategy Branches)
+8. ⏳ Support für Human-Interaction Nodes (Tool-based)
 
 ---
 
