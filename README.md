@@ -125,7 +125,7 @@ src/
         - eine [WARP Rule](warp-rule-mcp-server), welche besagt, dass der MCP Server verwendet werden soll
  
 **Nächste Schritte**:
-- Phase 2b: Memory & Persistenz (File-based Memory)
+- Phase 2: Memory & Persistenz (File-based oder DB)
 - Phase 3: Workflows erweitern (Bug-Fix, Refactoring, Testing)
 - Phase 4: Tutorial & Documentation
 
