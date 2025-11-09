@@ -16,14 +16,15 @@ class WorkflowExecutionResultTest {
         val startedAt = Instant.now()
         val completedAt = startedAt.plusSeconds(300)
 
-        val result = WorkflowExecutionResult(
-            success = true,
-            summary = "Requirements gathered successfully",
-            decisions = emptyList(),
-            vibeCheckResults = emptyList(),
-            startedAt = startedAt,
-            completedAt = completedAt,
-        )
+        val result =
+            WorkflowExecutionResult(
+                success = true,
+                summary = "Requirements gathered successfully",
+                decisions = emptyList(),
+                vibeCheckResults = emptyList(),
+                startedAt = startedAt,
+                completedAt = completedAt,
+            )
 
         assertThat(result.success).isTrue()
         assertThat(result.summary).isEqualTo("Requirements gathered successfully")
@@ -69,34 +70,38 @@ class WorkflowExecutionResultTest {
     @Test
     fun `should contain decisions and vibe check results`() {
         val startedAt = Instant.now()
-        val decision = Decision(
-            phase = "Requirements Analysis",
-            decision = "Use hexagonal architecture",
-            reasoning = "Better testability",
-            date = LocalDate.now(),
-        )
+        val decision =
+            Decision(
+                phase = "Requirements Analysis",
+                decision = "Use hexagonal architecture",
+                reasoning = "Better testability",
+                date = LocalDate.now(),
+            )
 
-        val vibeCheck = VibeCheck(
-            question = "Are requirements clear?",
-            type = VibeCheckType.REQUIREMENTS,
-            required = true,
-        )
+        val vibeCheck =
+            VibeCheck(
+                question = "Are requirements clear?",
+                type = VibeCheckType.REQUIREMENTS,
+                required = true,
+            )
 
-        val vibeCheckResult = VibeCheckResult(
-            check = vibeCheck,
-            passed = true,
-            findings = "All requirements are well-defined",
-            timestamp = startedAt,
-        )
+        val vibeCheckResult =
+            VibeCheckResult(
+                check = vibeCheck,
+                passed = true,
+                findings = "All requirements are well-defined",
+                timestamp = startedAt,
+            )
 
-        val result = WorkflowExecutionResult(
-            success = true,
-            summary = "Phase completed",
-            decisions = listOf(decision),
-            vibeCheckResults = listOf(vibeCheckResult),
-            startedAt = startedAt,
-            completedAt = startedAt.plusSeconds(100),
-        )
+        val result =
+            WorkflowExecutionResult(
+                success = true,
+                summary = "Phase completed",
+                decisions = listOf(decision),
+                vibeCheckResults = listOf(vibeCheckResult),
+                startedAt = startedAt,
+                completedAt = startedAt.plusSeconds(100),
+            )
 
         assertThat(result.decisions).hasSize(1)
         assertThat(result.vibeCheckResults).hasSize(1)

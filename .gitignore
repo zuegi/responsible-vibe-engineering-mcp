@@ -37,3 +37,6 @@ bin/
 *.bak
 *.swp
 *~
+
+# Local configuration (contains sensitive URLs/credentials)
+src/main/resources/application-local.yml
