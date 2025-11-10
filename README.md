@@ -5,6 +5,7 @@
 ## Was ist Responsible Vibe MCP?
 
 Ein Framework, das KI-Systeme aktiv durch bewährte Software-Engineering-Workflows führt – von der Planung über die Architektur bis zur Implementierung.
+Ganz im Sinne von Think slow, act fast
 
 ### Das Problem
 
