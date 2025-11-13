@@ -8,6 +8,8 @@ Ein **MCP (Model Context Protocol) Server**, der KI-Systeme aktiv durch bewährt
 
 **MCP Server** = Standardisiertes Interface zwischen KI-Clients (Claude Desktop, Warp Agent, IDEs) und dem Responsible Vibe Engineering System.
 
+*Ganz im Sinne von Think slow, act fast*
+
 ### Das Problem
 
 KI-Tools generieren oft Code ohne methodisches Vorgehen. Das führt zu:
