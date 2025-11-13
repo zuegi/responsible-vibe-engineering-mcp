@@ -72,7 +72,15 @@ class ApplicationConfiguration {
     }
 
     @Bean
-    fun completePhaseUseCase(domainService: CompletePhaseService): CompletePhaseUseCase {
-        return CompletePhaseUseCaseImpl(domainService)
+    fun completePhaseUseCase(
+        domainService: CompletePhaseService,
+        memoryRepository: MemoryRepositoryPort,
+        processRepository: ProcessRepositoryPort,
+    ): CompletePhaseUseCase {
+        return CompletePhaseUseCaseImpl(
+            domainService = domainService,
+            memoryRepository = memoryRepository,
+            processRepository = processRepository,
+        )
     }
 }

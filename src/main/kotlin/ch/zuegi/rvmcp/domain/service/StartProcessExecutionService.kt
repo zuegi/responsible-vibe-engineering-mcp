@@ -58,15 +58,20 @@ class StartProcessExecutionService(
         // 3. Create process execution
         val processExecution =
             ProcessExecution(
-                id = ExecutionId(UUID.randomUUID().toString()),
+                id = executionContext.executionId,
                 process = process,
                 status = ExecutionStatus.IN_PROGRESS,
                 currentPhaseIndex = 0,
                 startedAt = Instant.now(),
             )
 
-        // 4. Persist initial state
-        memoryRepository.save(executionContext)
+        // 4. Update context with process info and persist
+        val updatedContext =
+            executionContext.copy(
+                processId = processId,
+                currentPhaseIndex = 0,
+            )
+        memoryRepository.save(updatedContext)
 
         println("\n✓ Process execution initialized")
         println("   Execution ID: ${processExecution.id.value}")

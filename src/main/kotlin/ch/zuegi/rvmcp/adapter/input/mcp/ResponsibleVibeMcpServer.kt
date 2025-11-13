@@ -172,16 +172,95 @@ Status: ${processExecution.status}""",
         // Tool 3: execute_phase
         server.addTool(
             name = "execute_phase",
-            description = "Executes a specific phase of an active process",
-        ) { request ->
-            CallToolResult(
-                content =
-                    listOf(
-                        TextContent(
-                            text = "⚠️ execute_phase: Implementation in progress.",
+            description = "Executes the current phase of an active process (requires projectPath, gitBranch)",
+        ) { request: CallToolRequest ->
+            try {
+                val args =
+                    request.arguments ?: return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "❌ Error: No arguments provided")),
+                        isError = true,
+                    )
+
+                val projectPath =
+                    args["projectPath"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: projectPath parameter is required")),
+                            isError = true,
+                        )
+                val gitBranch =
+                    args["gitBranch"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: gitBranch parameter is required")),
+                            isError = true,
+                        )
+
+                // Load context to get process state
+                val context =
+                    memoryRepository.load(projectPath, gitBranch)
+                        ?: return@addTool CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(
+                                        text =
+                                            "❌ Error: No execution context found for project: $projectPath, " +
+                                                "branch: $gitBranch. Start a process first.",
+                                    ),
+                                ),
+                            isError = true,
+                        )
+
+                val processId =
+                    context.processId
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: No active process found in context. Start a process first.")),
+                            isError = true,
+                        )
+
+                // Reconstruct ProcessExecution from context
+                val process =
+                    processRepository.findById(processId)
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: Process not found: ${processId.value}")),
+                            isError = true,
+                        )
+
+                val currentPhase =
+                    process.phases.getOrNull(context.currentPhaseIndex)
+                        ?: return@addTool CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(
+                                        text =
+                                            "❌ Error: Phase index ${context.currentPhaseIndex} out of bounds. " +
+                                                "Process has ${process.totalPhases()} phases.",
+                                    ),
+                                ),
+                            isError = true,
+                        )
+
+                // Execute the phase
+                val phaseResult = executePhaseUseCase.execute(currentPhase, context)
+
+                CallToolResult(
+                    content =
+                        listOf(
+                            TextContent(
+                                text = """✅ Phase executed successfully!
+Phase: ${phaseResult.phaseName}
+Status: ${phaseResult.status}
+Summary: ${phaseResult.summary}
+Vibe Checks: ${phaseResult.vibeCheckResults.size} checks (${phaseResult.vibeCheckResults.count { it.passed }} passed)
+Decisions: ${phaseResult.decisions.size} architectural decisions made
+Duration: ${java.time.Duration.between(phaseResult.startedAt, phaseResult.completedAt).toMillis()}ms""",
+                            ),
                         ),
-                    ),
-            )
+                )
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "❌ Error executing phase: ${e.message}")),
+                    isError = true,
+                )
+            }
         }
 
         System.err.println("      ✅ Registered: execute_phase")
@@ -189,16 +268,88 @@ Status: ${processExecution.status}""",
         // Tool 4: complete_phase
         server.addTool(
             name = "complete_phase",
-            description = "Marks a phase as completed and provides results",
-        ) { request ->
-            CallToolResult(
-                content =
-                    listOf(
-                        TextContent(
-                            text = "⚠️ complete_phase: Implementation in progress.",
+            description = "Completes the current phase and advances to next (requires projectPath, gitBranch)",
+        ) { request: CallToolRequest ->
+            try {
+                val args =
+                    request.arguments ?: return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "❌ Error: No arguments provided")),
+                        isError = true,
+                    )
+
+                val projectPath =
+                    args["projectPath"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: projectPath parameter is required")),
+                            isError = true,
+                        )
+                val gitBranch =
+                    args["gitBranch"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: gitBranch parameter is required")),
+                            isError = true,
+                        )
+
+                // Load context
+                val context =
+                    memoryRepository.load(projectPath, gitBranch)
+                        ?: return@addTool CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(text = "❌ Error: No execution context found for project: $projectPath, branch: $gitBranch"),
+                                ),
+                            isError = true,
+                        )
+
+                val processId =
+                    context.processId
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: No active process found in context")),
+                            isError = true,
+                        )
+
+                // Get last phase result from context
+                val lastPhaseResult =
+                    context.phaseHistory.lastOrNull()
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: No phase has been executed yet. Run execute_phase first.")),
+                            isError = true,
+                        )
+
+                // Complete the phase via Use Case
+                val updatedExecution =
+                    completePhaseUseCase.execute(
+                        context.executionId,
+                        lastPhaseResult,
+                    )
+
+                // Load updated context to check progress
+                val updatedContext = memoryRepository.load(projectPath, gitBranch)!!
+                val process = processRepository.findById(processId)!!
+
+                val isCompleted = updatedExecution.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.COMPLETED
+                val nextPhase = if (!isCompleted) updatedExecution.currentPhase().name else "None (all phases completed)"
+
+                CallToolResult(
+                    content =
+                        listOf(
+                            TextContent(
+                                text = """✅ Phase completed successfully!
+Completed Phase: ${lastPhaseResult.phaseName}
+Process Status: ${updatedExecution.status}
+Current Phase Index: ${updatedExecution.currentPhaseIndex}
+Next Phase: $nextPhase
+Total Phases: ${process.totalPhases()}
+Phases Completed: ${updatedContext.phaseHistory.size}""",
+                            ),
                         ),
-                    ),
-            )
+                )
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "❌ Error completing phase: ${e.message}")),
+                    isError = true,
+                )
+            }
         }
 
         System.err.println("      ✅ Registered: complete_phase")

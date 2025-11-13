@@ -31,6 +31,14 @@ interface MemoryRepositoryPort {
     ): ExecutionContext?
 
     /**
+     * Finds an execution context by its execution ID.
+     *
+     * @param executionId The execution ID to find
+     * @return The execution context if found, null otherwise
+     */
+    fun findByExecutionId(executionId: ExecutionId): ExecutionContext?
+
+    /**
      * Deletes an execution context by its ID.
      *
      * @param executionId The execution ID to delete

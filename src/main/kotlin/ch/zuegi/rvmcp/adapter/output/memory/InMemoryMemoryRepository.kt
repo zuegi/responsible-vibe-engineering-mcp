@@ -28,6 +28,10 @@ class InMemoryMemoryRepository : MemoryRepositoryPort {
         return storage[key]
     }
 
+    override fun findByExecutionId(executionId: ExecutionId): ExecutionContext? {
+        return storage.values.firstOrNull { it.executionId == executionId }
+    }
+
     override fun delete(executionId: ExecutionId) {
         storage.values.removeIf { it.executionId == executionId }
     }
