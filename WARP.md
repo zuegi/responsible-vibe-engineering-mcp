@@ -637,7 +637,7 @@ responsible-vibe-mcp/
   - [x] Vibe Checks werden automatisiert durchgeführt
   - [x] Error Handling funktioniert wie erwartet
 
-### Phase 2a: MCP Server Implementation 🎉 95% COMPLETE
+### Phase 2a: MCP Server Implementation ✅ 100% COMPLETE
 - [x] MCP Protocol Library Integration
   - [x] JSON-RPC 2.0 Support (MCP SDK 0.7.6)
   - [x] stdio Transport (StdioServerTransport)
@@ -654,16 +654,30 @@ responsible-vibe-mcp/
   - [x] list_processes (vollständig funktional)
   - [x] start_process (vollständig funktional)
   - [x] get_context (vollständig funktional)
-  - [x] execute_phase (vollständig funktional mit Execution State Management)
+  - [x] execute_phase (implementiert, siehe Bekannte Limitierungen)
   - [x] complete_phase (vollständig funktional mit Phase-Wechsel)
-- [ ] MCP Resources implementieren (optional - verschoben zu Phase 3)
-  - [ ] ContextResource (context://project/branch)
-  - [ ] ProcessResource (process://process-id)
+- [x] YAML-basierte Prozess-Initialisierung
+  - [x] YamlProcessLoader (lädt Workflows aus YAML)
+  - [x] ProcessInitializer (lädt Prozesse beim Start)
+  - [x] simple-test.yml in src/main/resources kopiert
+- [x] LLM Health Check beim Start
+  - [x] LlmHealthCheck (@PostConstruct)
+  - [x] Validiert Endpoint-Erreichbarkeit
+  - [x] Zeigt Konfigurations-Probleme beim Start
 - [x] Integration mit Domain Services (Use Cases rufen Domain Services auf)
 - [x] MCP Server Tests (API Exploration Tests)
 - [x] Main Entry Point für MCP Server Mode (McpServerConfiguration)
 - [x] Integration Tests für MCP Protocol (6 Tests, alle passing)
-- [ ] Claude Desktop / Warp Integration testen (manueller Test ausstehend)
+- [x] Warp Agent Integration getestet (manueller End-to-End Test)
+- [ ] MCP Resources implementieren (optional - verschoben zu Phase 3)
+  - [ ] ContextResource (context://project/branch)
+  - [ ] ProcessResource (process://process-id)
+
+**Bekannte Limitierungen:**
+- execute_phase mit komplexen Workflows (requirements-analysis.yml: 7 Nodes) dauert >2 Min
+- Warp MCP-Call Timeout bei langen Workflows
+- Workaround: simple-test.yml (1 LLM Node) für schnelle Tests
+- SimpleLLMConnectionTest validiert LLM-Connection funktioniert (472ms Response)
 
 ### Phase 2b: Memory & Persistenz
 - [ ] Persistentes Memory (Datei-basiert oder DB)
