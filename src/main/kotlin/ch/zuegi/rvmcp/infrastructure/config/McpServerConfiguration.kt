@@ -16,8 +16,11 @@ import java.util.concurrent.CountDownLatch
  *
  * Starts the MCP Server automatically on application launch using Spring Boot context
  * for dependency injection.
+ *
+ * Note: Only active when NOT in 'local' profile (used for testing).
  */
 @Configuration
+@org.springframework.context.annotation.Profile("!local")
 class McpServerConfiguration {
     @Bean
     fun mcpServerStarter(
