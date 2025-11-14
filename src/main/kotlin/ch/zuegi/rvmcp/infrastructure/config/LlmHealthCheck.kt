@@ -1,15 +1,22 @@
 package ch.zuegi.rvmcp.infrastructure.config
 
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
+import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
+import ch.zuegi.rvmcp.adapter.output.workflow.strategy.YamlWorkflowStrategy
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.springframework.stereotype.Component
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * Health check for LLM connection at startup.
  *
- * Validates that the configured LLM endpoint is reachable
- * before the MCP server starts accepting requests.
+ * Makes a real LLM call to validate configuration (not just HEAD request).
  */
 @Component
 class LlmHealthCheck(
@@ -20,39 +27,70 @@ class LlmHealthCheck(
         System.err.println("🔍 Checking LLM connection...")
         System.err.println("   Provider: ${llmProperties.provider}")
         System.err.println("   Base URL: ${llmProperties.baseUrl}")
+        System.err.println("   API Token: ${llmProperties.apiToken}")
 
         try {
-            val url = URL(llmProperties.baseUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "HEAD"
-            connection.connectTimeout = 5000 // 5 seconds
-            connection.readTimeout = 5000
-            connection.setRequestProperty("Authorization", "Bearer ${llmProperties.apiToken}")
+            runBlocking {
+                val result =
+                    withTimeoutOrNull(10000) {
+                        // 10 second timeout
+                        testLlmConnection()
+                    }
 
-            val responseCode = connection.responseCode
-
-            when {
-                responseCode in 200..299 || responseCode == 401 -> {
-                    // 200-299: Success
-                    // 401: Endpoint reachable, but auth might be wrong (acceptable for health check)
-                    System.err.println("   ✅ LLM endpoint is reachable (HTTP $responseCode)")
-                }
-                else -> {
-                    System.err.println("   ⚠️ LLM endpoint returned HTTP $responseCode")
-                    System.err.println("   ⚠️ Workflows may fail if LLM is not properly configured")
+                if (result == true) {
+                    System.err.println("   ✅ LLM connection successful!")
+                    System.err.println()
+                } else {
+                    System.err.println("   ⚠️ LLM connection timed out or failed")
+                    System.err.println("   ⚠️ Workflows may fail - check configuration")
+                    System.err.println()
                 }
             }
-
-            connection.disconnect()
         } catch (e: Exception) {
             System.err.println("   ❌ LLM connection failed: ${e.message}")
             System.err.println("   ⚠️ Workflows WILL fail until LLM is properly configured")
             System.err.println()
             System.err.println("   Please check:")
-            System.err.println("   - LLM_BASE_URL is correct")
+            System.err.println("   - LLM_BASE_URL is correct (current: ${llmProperties.baseUrl})")
             System.err.println("   - LLM_API_TOKEN is valid")
             System.err.println("   - Network connectivity")
             System.err.println()
         }
     }
+
+    private suspend fun testLlmConnection(): Boolean =
+        try {
+            val executor =
+                simpleAzureOpenAIExecutor(
+                    baseUrl = llmProperties.baseUrl,
+                    version = AzureOpenAIServiceVersion.fromString(llmProperties.apiVersion),
+                    apiToken = llmProperties.apiToken,
+                )
+
+            val strategy = YamlWorkflowStrategy.simpleSingleShotStrategy()
+
+            val config =
+                AIAgentConfig(
+                    prompt =
+                        prompt("health_check") {
+                            system("You are a health check. Respond with 'OK' only.")
+                        },
+                    model = OpenAIModels.Chat.GPT4o,
+                    maxAgentIterations = 3,
+                )
+
+            val agent =
+                AIAgent<String, String>(
+                    promptExecutor = executor,
+                    strategy = strategy,
+                    agentConfig = config,
+                    toolRegistry = ToolRegistry { },
+                )
+
+            val response = agent.run("Health check")
+            response.isNotBlank()
+        } catch (e: Exception) {
+            System.err.println("   ❌ Test call failed: ${e.message}")
+            false
+        }
 }

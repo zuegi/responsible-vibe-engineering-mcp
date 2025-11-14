@@ -13,6 +13,7 @@ import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
@@ -238,14 +239,19 @@ Status: ${processExecution.status}""",
                             isError = true,
                         )
 
-                // Execute the phase
-                val phaseResult = executePhaseUseCase.execute(currentPhase, context)
+                // Execute the phase on IO dispatcher to avoid blocking MCP server thread
+                // This moves the LLM call to a separate thread pool
+                val phaseResult =
+                    runBlocking(Dispatchers.IO) {
+                        executePhaseUseCase.execute(currentPhase, context)
+                    }
 
                 CallToolResult(
                     content =
                         listOf(
                             TextContent(
-                                text = """✅ Phase executed successfully!
+                                text =
+                                    """✅ Phase executed successfully!
 Phase: ${phaseResult.phaseName}
 Status: ${phaseResult.status}
 Summary: ${phaseResult.summary}
