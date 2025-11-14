@@ -67,6 +67,9 @@ class KoogWorkflowExecutor(
         template: String,
         context: ExecutionContext,
     ): WorkflowExecutionResult {
+        System.err.println("🔹 KoogWorkflowExecutor.executeWorkflow called")
+        System.err.println("   Template: $template")
+        System.err.println("   Thread: ${Thread.currentThread().name}")
         val startTime = Instant.now()
 
         logger.info("▶ Executing Koog Workflow (REFACTORED): $template")
@@ -90,6 +93,8 @@ class KoogWorkflowExecutor(
 
         // 4. Create single agent for entire workflow
         logger.info("Creating Koog agent for entire workflow...")
+        System.err.println("🔹 Creating AIAgent...")
+        System.err.println("   Accessing llmExecutor (lazy property)...")
         val agentStartTime = System.currentTimeMillis()
 
         val agent =
@@ -110,11 +115,14 @@ class KoogWorkflowExecutor(
                 installFeatures = { install(Tracing) },
             )
 
+        System.err.println("🔹 AIAgent created")
         val agentCreationTime = System.currentTimeMillis() - agentStartTime
         logger.info("Agent created in ${agentCreationTime}ms")
 
         // 5. Execute entire workflow in single agent run
         logger.info("Starting workflow execution...")
+        System.err.println("🔹 Calling agent.run()...")
+        System.err.println("   Thread: ${Thread.currentThread().name}")
         val workflowStartTime = System.currentTimeMillis()
 
         val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
@@ -122,10 +130,12 @@ class KoogWorkflowExecutor(
             try {
                 agent.run(initialPrompt)
             } catch (e: Exception) {
+                System.err.println("❌ agent.run() failed: ${e.message}")
                 logger.error("Workflow execution failed", e)
                 throw IllegalStateException("Workflow execution failed: ${e.message}", e)
             }
 
+        System.err.println("🔹 agent.run() returned successfully")
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
 

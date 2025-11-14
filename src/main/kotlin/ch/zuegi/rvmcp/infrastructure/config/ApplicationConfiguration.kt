@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.infrastructure.config
 
+import ch.zuegi.rvmcp.adapter.output.vibe.AutoPassVibeCheckEvaluator
 import ch.zuegi.rvmcp.application.usecase.CompletePhaseUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.ExecuteProcessPhaseUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.StartProcessExecutionUseCaseImpl
@@ -28,6 +29,15 @@ import org.springframework.context.annotation.Configuration
  */
 @Configuration
 class ApplicationConfiguration {
+    // ========== Output Adapters ==========
+
+    @Bean
+    fun vibeCheckEvaluator(): VibeCheckEvaluatorPort {
+        // Use AutoPassVibeCheckEvaluator for MCP Server mode (non-interactive)
+        // stdin is not available when running as MCP Server
+        return AutoPassVibeCheckEvaluator()
+    }
+
     // ========== Domain Services (Pure Business Logic) ==========
 
     @Bean

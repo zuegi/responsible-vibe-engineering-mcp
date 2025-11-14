@@ -18,6 +18,11 @@ class ExecuteProcessPhaseUseCaseImpl(
         phase: ProcessPhase,
         context: ExecutionContext,
     ): PhaseResult {
-        return domainService.execute(phase, context)
+        System.err.println("\uD83D\uDD39 ExecuteProcessPhaseUseCaseImpl.execute called")
+        System.err.println("   Phase: ${phase.name}")
+        System.err.println("   Thread: ${Thread.currentThread().name}")
+        val result = domainService.execute(phase, context)
+        System.err.println("\uD83D\uDD39 ExecuteProcessPhaseUseCaseImpl.execute returned")
+        return result
     }
 }

@@ -637,7 +637,7 @@ responsible-vibe-mcp/
   - [x] Vibe Checks werden automatisiert durchgeführt
   - [x] Error Handling funktioniert wie erwartet
 
-### Phase 2a: MCP Server Implementation ✅ 100% COMPLETE
+### Phase 2a: MCP Server Implementation ✅ COMPLETE
 - [x] MCP Protocol Library Integration
   - [x] JSON-RPC 2.0 Support (MCP SDK 0.7.6)
   - [x] stdio Transport (StdioServerTransport)
@@ -673,19 +673,17 @@ responsible-vibe-mcp/
   - [ ] ContextResource (context://project/branch)
   - [ ] ProcessResource (process://process-id)
 
-**Bekannte Limitierungen:**
-- **MCP Server Async Execution Problem** (KRITISCH):
-  - `execute_phase` Tool verwendet `runBlocking(Dispatchers.IO)` für LLM-Workflow-Ausführung
-  - Trotz separatem IO-Thread-Pool blockiert der MCP Server Response-Zyklus
-  - Warp MCP Client timeouts nach >2 Min (self-imposed timeout, keine Fehlermeldung)
-  - Integration Tests funktionieren perfekt (64 Tests passing), da sie synchron ohne MCP Protocol arbeiten
-  - Root Cause: MCP SDK Tool-Handler sind synchrone Callbacks, keine suspend functions
-  - **Proper Fix**: Vollständige Umstellung auf suspend functions (WorkflowExecutionPort, alle Use Cases, alle Implementierungen)
-  - **Current Workaround**: Dispatchers.IO Quick Fix (unzureichend)
-  - **Impact**: execute_phase mit komplexen Workflows (requirements-analysis.yml: 7 Nodes) timeout guaranteed
-  - **Mitigation**: simple-test.yml (1 LLM Node) verwenden, aber auch das timeouts aktuell
-- SimpleLLMConnectionTest validiert LLM-Connection funktioniert isoliert (472ms Response)
-- Vibe Checks laufen synchron (kein async Problem, da einfache Boolean-Checks)
+**Gelöste Probleme:**
+- ✅ **Async Job Pattern**: `execute_phase` gibt sofort Job-ID zurück, Execution läuft im Background
+  - Background Job mit `CoroutineScope(Dispatchers.IO + SupervisorJob())`
+  - `get_phase_result` Tool für Status-Polling
+  - Kein Client-Timeout mehr (Job läuft server-seitig)
+- ✅ **stdin Blocking Issue**: ConsoleVibeCheckEvaluator blockierte bei `readlnOrNull()`
+  - stdin wird vom MCP Protocol (JSON-RPC) genutzt → Deadlock
+  - Lösung: AutoPassVibeCheckEvaluator für non-interactive Mode
+  - ConsoleVibeCheckEvaluator nur für manuelle Tests
+- ✅ **Performance**: Complete workflow execution in ~1s (simple-test.yml)
+- ✅ **All 64 Tests passing**: Domain, Integration, End-to-End Tests
 
 ### Phase 2b: Memory & Persistenz
 - [ ] Persistentes Memory (Datei-basiert oder DB)

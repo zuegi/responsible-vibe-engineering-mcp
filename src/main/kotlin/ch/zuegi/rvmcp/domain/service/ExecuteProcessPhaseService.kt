@@ -32,16 +32,20 @@ class ExecuteProcessPhaseService(
         phase: ProcessPhase,
         context: ExecutionContext,
     ): PhaseResult {
+        System.err.println("🔹 ExecuteProcessPhaseService.execute called")
+        System.err.println("   Thread: ${Thread.currentThread().name}")
         val startTime = Instant.now()
         println("\n▶ Starting phase: ${phase.name}")
         println("  Description: ${phase.description}")
 
         // 1. Execute workflow
+        System.err.println("🔹 Calling workflowExecutor.executeWorkflow...")
         val workflowResult =
             workflowExecutor.executeWorkflow(
                 template = phase.koogWorkflowTemplate,
                 context = context,
             )
+        System.err.println("🔹 workflowExecutor.executeWorkflow returned")
 
         // 2. Evaluate vibe checks (with original context - decisions will be added later via PhaseResult)
         val vibeCheckResults =

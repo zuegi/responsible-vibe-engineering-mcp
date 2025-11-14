@@ -13,7 +13,10 @@ import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.io.asSink
 import kotlinx.io.asSource
@@ -38,6 +41,9 @@ class ResponsibleVibeMcpServer(
 ) {
     // Async Job Manager for background phase execution
     private val jobManager = AsyncJobManager()
+
+    // Coroutine scope for background job execution
+    private val jobScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val server: Server =
         Server(
             serverInfo =
@@ -242,32 +248,52 @@ Status: ${processExecution.status}""",
                             isError = true,
                         )
 
-                // Log progress to stderr (visible to client as server stderr)
-                System.err.println("⏳ Executing phase: ${currentPhase.name}...")
-                System.err.println("   This may take a while (LLM workflow execution)")
+                // Create job for async execution
+                val jobId = jobManager.createJob()
+                System.err.println("🚀 Starting async job: $jobId for phase: ${currentPhase.name}")
 
-                // Execute on IO dispatcher to not block server thread
-                val startTime = System.currentTimeMillis()
-                val phaseResult =
-                    withContext(Dispatchers.IO) {
-                        executePhaseUseCase.execute(currentPhase, context)
+                // Launch background coroutine for phase execution
+                jobScope.launch {
+                    try {
+                        System.err.println("⏳ Job $jobId: Executing phase ${currentPhase.name}...")
+                        System.err.println("   Thread: ${Thread.currentThread().name}")
+                        System.err.println("   Dispatcher: ${coroutineContext[kotlinx.coroutines.CoroutineDispatcher]}")
+                        val startTime = System.currentTimeMillis()
+
+                        System.err.println("   🔹 Calling executePhaseUseCase.execute...")
+                        // Explicit withContext to ensure proper dispatcher
+                        val phaseResult =
+                            withContext(Dispatchers.IO) {
+                                System.err.println("   🔹 Inside withContext(Dispatchers.IO)")
+                                System.err.println("      Thread: ${Thread.currentThread().name}")
+                                executePhaseUseCase.execute(currentPhase, context)
+                            }
+
+                        System.err.println("   🔹 executePhaseUseCase.execute returned")
+                        val duration = System.currentTimeMillis() - startTime
+                        System.err.println("✅ Job $jobId: Completed in ${duration}ms")
+
+                        jobManager.completeJob(jobId, phaseResult)
+                    } catch (e: Exception) {
+                        System.err.println("❌ Job $jobId: Failed - ${e.message}")
+                        e.printStackTrace(System.err)
+                        jobManager.failJob(jobId, e.message ?: "Unknown error")
                     }
-                val duration = System.currentTimeMillis() - startTime
+                }
 
-                System.err.println("✅ Phase execution completed in ${duration}ms")
-
+                // Return immediately with job ID
                 CallToolResult(
                     content =
                         listOf(
                             TextContent(
                                 text =
-                                    """✅ Phase executed successfully!
-Phase: ${phaseResult.phaseName}
-Status: ${phaseResult.status}
-Summary: ${phaseResult.summary}
-Vibe Checks: ${phaseResult.vibeCheckResults.size} checks (${phaseResult.vibeCheckResults.count { it.passed }} passed)
-Decisions: ${phaseResult.decisions.size} architectural decisions made
-Duration: ${java.time.Duration.between(phaseResult.startedAt, phaseResult.completedAt).toMillis()}ms""",
+                                    """🔄 Phase execution started in background!
+Job ID: $jobId
+Phase: ${currentPhase.name}
+Status: RUNNING
+
+Use get_phase_result tool with this jobId to check status and retrieve results.
+Example: get_phase_result(jobId: "$jobId")""",
                             ),
                         ),
                 )
