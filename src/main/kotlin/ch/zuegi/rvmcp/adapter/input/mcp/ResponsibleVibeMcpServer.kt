@@ -14,7 +14,7 @@ import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
@@ -36,6 +36,8 @@ class ResponsibleVibeMcpServer(
     private val memoryRepository: MemoryRepositoryPort,
     private val processRepository: ProcessRepositoryPort,
 ) {
+    // Async Job Manager for background phase execution
+    private val jobManager = AsyncJobManager()
     private val server: Server =
         Server(
             serverInfo =
@@ -56,31 +58,31 @@ class ResponsibleVibeMcpServer(
      * Start the MCP Server with stdio transport.
      * Blocks until the server is stopped.
      */
-    fun start(): Unit =
-        runBlocking {
-            System.err.println("🚀 Starting Responsible Vibe MCP Server...")
-            System.err.println("   Version: 0.1.0")
-            System.err.println("   Transport: stdio")
-            System.err.println("   Listening for MCP clients (Claude Desktop, Warp Agent, etc.)")
+    suspend fun start() {
+        System.err.println("🚀 Starting Responsible Vibe MCP Server...")
+        System.err.println("   Version: 0.1.0")
+        System.err.println("   Transport: stdio")
+        System.err.println("   Listening for MCP clients (Claude Desktop, Warp Agent, etc.)")
 
-            // Register all MCP Tools
-            registerTools()
+        // Register all MCP Tools
+        registerTools()
 
-            // Register all MCP Resources
-            registerResources()
+        // Register all MCP Resources
+        registerResources()
 
-            System.err.println("✅ MCP Server configured. Ready to connect.")
+        System.err.println("✅ MCP Server configured. Ready to connect.")
 
-            // Create server session with stdio transport (using kotlinx.io Source/Sink)
-            val transport =
-                StdioServerTransport(
-                    inputStream = System.`in`.asSource().buffered(),
-                    outputStream = System.out.asSink().buffered(),
-                )
+        // Connect server with stdio transport (using kotlinx.io Source/Sink)
+        val transport =
+            StdioServerTransport(
+                inputStream = System.`in`.asSource().buffered(),
+                outputStream = System.out.asSink().buffered(),
+            )
 
-            server.createSession(transport)
-            System.err.println("✅ MCP Server session created and connected.")
-        }
+        // Connect is a suspend function - this properly starts the async event loop
+        server.connect(transport)
+        System.err.println("✅ MCP Server connected and ready.")
+    }
 
     private fun registerTools() {
         System.err.println("   📦 Registering MCP Tools...")
@@ -139,6 +141,7 @@ class ResponsibleVibeMcpServer(
                             isError = true,
                         )
 
+                // MCP SDK has first-class coroutine support - no runBlocking needed!
                 val processExecution =
                     startProcessUseCase.execute(
                         ch.zuegi.rvmcp.domain.model.id.ProcessId(processId),
@@ -239,12 +242,19 @@ Status: ${processExecution.status}""",
                             isError = true,
                         )
 
-                // Execute the phase on IO dispatcher to avoid blocking MCP server thread
-                // This moves the LLM call to a separate thread pool
+                // Log progress to stderr (visible to client as server stderr)
+                System.err.println("⏳ Executing phase: ${currentPhase.name}...")
+                System.err.println("   This may take a while (LLM workflow execution)")
+
+                // Execute on IO dispatcher to not block server thread
+                val startTime = System.currentTimeMillis()
                 val phaseResult =
-                    runBlocking(Dispatchers.IO) {
+                    withContext(Dispatchers.IO) {
                         executePhaseUseCase.execute(currentPhase, context)
                     }
+                val duration = System.currentTimeMillis() - startTime
+
+                System.err.println("✅ Phase execution completed in ${duration}ms")
 
                 CallToolResult(
                     content =
@@ -270,6 +280,97 @@ Duration: ${java.time.Duration.between(phaseResult.startedAt, phaseResult.comple
         }
 
         System.err.println("      ✅ Registered: execute_phase")
+
+        // Tool 3b: get_phase_result
+        server.addTool(
+            name = "get_phase_result",
+            description = "Gets the result of an async phase execution (requires jobId)",
+        ) { request: CallToolRequest ->
+            try {
+                val args =
+                    request.arguments ?: return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "❌ Error: No arguments provided")),
+                        isError = true,
+                    )
+
+                val jobId =
+                    args["jobId"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: jobId parameter is required")),
+                            isError = true,
+                        )
+
+                // Get job from manager
+                val job =
+                    jobManager.getJob(jobId)
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "❌ Error: Job not found: $jobId")),
+                            isError = true,
+                        )
+
+                // Return job status and result
+                when (job.status) {
+                    JobStatus.RUNNING ->
+                        CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(
+                                        text =
+                                            """🔄 Job is still running...
+Job ID: ${job.id}
+Status: RUNNING
+
+Please wait and try again in a few seconds.""",
+                                    ),
+                                ),
+                        )
+
+                    JobStatus.COMPLETED -> {
+                        val phaseResult = job.result!!
+                        CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(
+                                        text =
+                                            """✅ Phase executed successfully!
+Job ID: ${job.id}
+Status: COMPLETED
+
+Phase: ${phaseResult.phaseName}
+Execution Status: ${phaseResult.status}
+Summary: ${phaseResult.summary}
+Vibe Checks: ${phaseResult.vibeCheckResults.size} checks (${phaseResult.vibeCheckResults.count { it.passed }} passed)
+Decisions: ${phaseResult.decisions.size} architectural decisions made
+Duration: ${java.time.Duration.between(phaseResult.startedAt, phaseResult.completedAt).toMillis()}ms""",
+                                    ),
+                                ),
+                        )
+                    }
+
+                    JobStatus.FAILED ->
+                        CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(
+                                        text =
+                                            """❌ Phase execution failed!
+Job ID: ${job.id}
+Status: FAILED
+Error: ${job.error}""",
+                                    ),
+                                ),
+                            isError = true,
+                        )
+                }
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "❌ Error getting phase result: ${e.message}")),
+                    isError = true,
+                )
+            }
+        }
+
+        System.err.println("      ✅ Registered: get_phase_result")
 
         // Tool 4: complete_phase
         server.addTool(
@@ -322,7 +423,7 @@ Duration: ${java.time.Duration.between(phaseResult.startedAt, phaseResult.comple
                             isError = true,
                         )
 
-                // Complete the phase via Use Case
+                // Complete the phase via Use Case - direct suspend call
                 val updatedExecution =
                     completePhaseUseCase.execute(
                         context.executionId,

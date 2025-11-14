@@ -20,7 +20,7 @@ class CompletePhaseUseCaseImpl(
     private val memoryRepository: MemoryRepositoryPort,
     private val processRepository: ProcessRepositoryPort,
 ) : CompletePhaseUseCase {
-    override fun execute(
+    override suspend fun execute(
         executionId: ExecutionId,
         phaseResult: PhaseResult,
     ): ProcessExecution {

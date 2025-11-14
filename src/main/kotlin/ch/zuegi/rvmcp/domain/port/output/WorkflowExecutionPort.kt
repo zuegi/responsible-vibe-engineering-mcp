@@ -19,7 +19,7 @@ interface WorkflowExecutionPort {
      * @param context The current execution context containing project and phase information
      * @return The result of the workflow execution including decisions and vibe check results
      */
-    fun executeWorkflow(
+    suspend fun executeWorkflow(
         template: String,
         context: ExecutionContext,
     ): WorkflowExecutionResult
@@ -32,5 +32,5 @@ interface WorkflowExecutionPort {
      *
      * @return A compressed summary containing key decisions and insights
      */
-    fun getSummary(): WorkflowSummary
+    suspend fun getSummary(): WorkflowSummary
 }

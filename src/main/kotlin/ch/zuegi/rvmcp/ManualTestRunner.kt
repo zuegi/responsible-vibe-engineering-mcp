@@ -12,6 +12,7 @@ import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
+import kotlinx.coroutines.runBlocking
 
 /**
  * Manual test runner for testing the business logic without Spring Boot.
@@ -57,11 +58,13 @@ fun main() {
     readlnOrNull()
 
     var processExecution =
-        startService.execute(
-            processId = featureDevelopmentProcess.id,
-            projectPath = "/Users/groot/test-project",
-            gitBranch = "feature/new-feature",
-        )
+        runBlocking {
+            startService.execute(
+                processId = featureDevelopmentProcess.id,
+                projectPath = "/Users/groot/test-project",
+                gitBranch = "feature/new-feature",
+            )
+        }
 
     // 5. Context laden
     var context =
@@ -83,10 +86,12 @@ fun main() {
 
         // Phase ausführen
         val phaseResult =
-            executePhaseService.execute(
-                phase = processExecution.currentPhase(),
-                context = context,
-            )
+            runBlocking {
+                executePhaseService.execute(
+                    phase = processExecution.currentPhase(),
+                    context = context,
+                )
+            }
 
         // Update context with phase result
         context = context.addPhaseResult(phaseResult)
@@ -109,11 +114,13 @@ fun main() {
 
         // Phase abschließen und zur nächsten
         processExecution =
-            completePhaseService.execute(
-                execution = processExecution,
-                context = context,
-                phaseResult = phaseResult,
-            )
+            runBlocking {
+                completePhaseService.execute(
+                    execution = processExecution,
+                    context = context,
+                    phaseResult = phaseResult,
+                )
+            }
     }
 
     // 7. Zusammenfassung

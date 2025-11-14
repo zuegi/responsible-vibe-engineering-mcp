@@ -14,7 +14,7 @@ import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 class ManualWorkflowExecutor : WorkflowExecutionPort {
     private var lastExecution: WorkflowExecutionResult? = null
 
-    override fun executeWorkflow(
+    override suspend fun executeWorkflow(
         template: String,
         context: ExecutionContext,
     ): WorkflowExecutionResult {
@@ -50,7 +50,7 @@ class ManualWorkflowExecutor : WorkflowExecutionPort {
         return lastExecution!!
     }
 
-    override fun getSummary(): WorkflowSummary {
+    override suspend fun getSummary(): WorkflowSummary {
         return WorkflowSummary(
             compressed = lastExecution?.summary ?: "",
             decisions = lastExecution?.decisions ?: emptyList(),

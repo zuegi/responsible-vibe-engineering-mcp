@@ -19,7 +19,7 @@ class CompletePhaseService(
     /**
      * Completes a phase and advances execution.
      */
-    fun execute(
+    suspend fun execute(
         execution: ProcessExecution,
         context: ch.zuegi.rvmcp.domain.model.context.ExecutionContext,
         phaseResult: PhaseResult,

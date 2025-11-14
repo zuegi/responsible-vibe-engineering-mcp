@@ -32,7 +32,7 @@ class StartProcessExecutionService(
      * @return The initialized process execution
      * @throws IllegalArgumentException if the process is not found
      */
-    fun execute(
+    suspend fun execute(
         processId: ProcessId,
         projectPath: String,
         gitBranch: String,

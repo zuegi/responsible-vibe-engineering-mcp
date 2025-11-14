@@ -14,7 +14,7 @@ import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
 class StartProcessExecutionUseCaseImpl(
     private val domainService: StartProcessExecutionService,
 ) : StartProcessExecutionUseCase {
-    override fun execute(
+    override suspend fun execute(
         processId: ProcessId,
         projectPath: String,
         gitBranch: String,

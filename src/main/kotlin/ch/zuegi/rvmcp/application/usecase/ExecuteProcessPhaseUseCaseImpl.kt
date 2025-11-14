@@ -14,7 +14,7 @@ import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 class ExecuteProcessPhaseUseCaseImpl(
     private val domainService: ExecuteProcessPhaseService,
 ) : ExecuteProcessPhaseUseCase {
-    override fun execute(
+    override suspend fun execute(
         phase: ProcessPhase,
         context: ExecutionContext,
     ): PhaseResult {

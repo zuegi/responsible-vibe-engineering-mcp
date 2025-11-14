@@ -5,6 +5,7 @@ import ch.zuegi.rvmcp.adapter.output.workflow.WorkflowTemplateParser
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -61,10 +62,12 @@ class KoogIntegrationTest {
         // When
         val startTime = System.currentTimeMillis()
         val result =
-            executor.executeWorkflow(
-                template = templateFileName,
-                context = context,
-            )
+            runBlocking {
+                executor.executeWorkflow(
+                    template = templateFileName,
+                    context = context,
+                )
+            }
         val duration = System.currentTimeMillis() - startTime
 
         // Then
@@ -95,10 +98,12 @@ class KoogIntegrationTest {
         // When
         val startTime = System.currentTimeMillis()
         val result =
-            executor.executeWorkflow(
-                template = templateFileName,
-                context = context,
-            )
+            runBlocking {
+                executor.executeWorkflow(
+                    template = templateFileName,
+                    context = context,
+                )
+            }
         val duration = System.currentTimeMillis() - startTime
 
         // Then
@@ -136,10 +141,12 @@ class KoogIntegrationTest {
         // When
         val startTime = System.currentTimeMillis()
         val result =
-            executor.executeWorkflow(
-                template = templateFileName,
-                context = context,
-            )
+            runBlocking {
+                executor.executeWorkflow(
+                    template = templateFileName,
+                    context = context,
+                )
+            }
         val duration = System.currentTimeMillis() - startTime
 
         // Then
@@ -200,10 +207,12 @@ class KoogIntegrationTest {
         // When
         val startTime = System.currentTimeMillis()
         val result =
-            executor.executeWorkflow(
-                template = templateFileName,
-                context = context,
-            )
+            runBlocking {
+                executor.executeWorkflow(
+                    template = templateFileName,
+                    context = context,
+                )
+            }
         val duration = System.currentTimeMillis() - startTime
 
         // Then
@@ -221,7 +230,10 @@ class KoogIntegrationTest {
         println("   ${result.summary.prependIndent("   ")}")
 
         // Verify summary generation
-        val summary = executor.getSummary()
+        val summary =
+            runBlocking {
+                executor.getSummary()
+            }
         assertThat(summary.compressed).isNotBlank()
         assertThat(summary.decisions).isEqualTo(result.decisions)
 
@@ -246,10 +258,12 @@ class KoogIntegrationTest {
 
         // When
         val result =
-            executor.executeWorkflow(
-                template = templateFileName,
-                context = context,
-            )
+            runBlocking {
+                executor.executeWorkflow(
+                    template = templateFileName,
+                    context = context,
+                )
+            }
 
         // Then
         assertThat(result.success).isTrue()

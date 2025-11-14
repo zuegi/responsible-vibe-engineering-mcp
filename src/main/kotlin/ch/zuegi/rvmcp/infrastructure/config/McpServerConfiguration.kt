@@ -6,6 +6,7 @@ import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
+import kotlinx.coroutines.runBlocking
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -45,7 +46,10 @@ class McpServerConfiguration {
                 )
 
             System.err.println("✅ MCP Server configured. Starting stdio transport...")
-            mcpServer.start()
+            // runBlocking needed here because CommandLineRunner.run() is not suspend
+            runBlocking {
+                mcpServer.start()
+            }
 
             // Keep application running - MCP server needs to stay alive
             System.err.println("⏳ MCP Server is running. Press Ctrl+C to stop.")

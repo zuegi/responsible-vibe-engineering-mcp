@@ -28,7 +28,7 @@ class ExecuteProcessPhaseService(
      * @param context The current execution context
      * @return PhaseResult
      */
-    fun execute(
+    suspend fun execute(
         phase: ProcessPhase,
         context: ExecutionContext,
     ): PhaseResult {

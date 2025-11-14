@@ -16,7 +16,6 @@ import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
-import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
@@ -64,99 +63,98 @@ class KoogWorkflowExecutor(
         }
     }
 
-    override fun executeWorkflow(
+    override suspend fun executeWorkflow(
         template: String,
         context: ExecutionContext,
-    ): WorkflowExecutionResult =
-        runBlocking {
-            val startTime = Instant.now()
+    ): WorkflowExecutionResult {
+        val startTime = Instant.now()
 
-            logger.info("▶ Executing Koog Workflow (REFACTORED): $template")
+        logger.info("▶ Executing Koog Workflow (REFACTORED): $template")
 
-            // 1. Parse and validate YAML workflow
-            val workflowTemplate = templateParser.parseTemplate(template)
-            templateParser.validateTemplate(workflowTemplate)
+        // 1. Parse and validate YAML workflow
+        val workflowTemplate = templateParser.parseTemplate(template)
+        templateParser.validateTemplate(workflowTemplate)
 
-            val llmNodeCount = workflowTemplate.nodes.count { it.type == NodeType.LLM }
-            logger.info("Template: ${workflowTemplate.name}")
-            logger.info("Total nodes: ${workflowTemplate.nodes.size} ($llmNodeCount LLM nodes)")
+        val llmNodeCount = workflowTemplate.nodes.count { it.type == NodeType.LLM }
+        logger.info("Template: ${workflowTemplate.name}")
+        logger.info("Total nodes: ${workflowTemplate.nodes.size} ($llmNodeCount LLM nodes)")
 
-            // 2. Translate YAML to Koog Strategy
-            logger.info("Translating YAML to Koog Strategy...")
-            val strategy = strategyTranslator.translate(workflowTemplate)
-            logger.info("Strategy created with $llmNodeCount LLM nodes")
+        // 2. Translate YAML to Koog Strategy
+        logger.info("Translating YAML to Koog Strategy...")
+        val strategy = strategyTranslator.translate(workflowTemplate)
+        logger.info("Strategy created with $llmNodeCount LLM nodes")
 
-            // 3. Build comprehensive system prompt
-            logger.info("Building workflow system prompt...")
-            val systemPrompt = promptBuilder.buildWorkflowSystemPrompt(workflowTemplate, context)
+        // 3. Build comprehensive system prompt
+        logger.info("Building workflow system prompt...")
+        val systemPrompt = promptBuilder.buildWorkflowSystemPrompt(workflowTemplate, context)
 
-            // 4. Create single agent for entire workflow
-            logger.info("Creating Koog agent for entire workflow...")
-            val agentStartTime = System.currentTimeMillis()
+        // 4. Create single agent for entire workflow
+        logger.info("Creating Koog agent for entire workflow...")
+        val agentStartTime = System.currentTimeMillis()
 
-            val agent =
-                AIAgent<String, String>(
-                    promptExecutor = llmExecutor,
-                    strategy = strategy,
-                    agentConfig =
-                        AIAgentConfig(
-                            prompt =
-                                prompt("workflow_${workflowTemplate.name}") {
-                                    system(systemPrompt)
-                                },
-                            model = OpenAIModels.Chat.GPT4o,
-                            // Generous iterations: start + (LLM nodes * 2) + finish
-                            maxAgentIterations = 1 + (llmNodeCount * 2) + 1,
-                        ),
-                    toolRegistry = ToolRegistry { },
-                    installFeatures = { install(Tracing) },
-                )
+        val agent =
+            AIAgent<String, String>(
+                promptExecutor = llmExecutor,
+                strategy = strategy,
+                agentConfig =
+                    AIAgentConfig(
+                        prompt =
+                            prompt("workflow_${workflowTemplate.name}") {
+                                system(systemPrompt)
+                            },
+                        model = OpenAIModels.Chat.GPT4o,
+                        // Generous iterations: start + (LLM nodes * 2) + finish
+                        maxAgentIterations = 1 + (llmNodeCount * 2) + 1,
+                    ),
+                toolRegistry = ToolRegistry { },
+                installFeatures = { install(Tracing) },
+            )
 
-            val agentCreationTime = System.currentTimeMillis() - agentStartTime
-            logger.info("Agent created in ${agentCreationTime}ms")
+        val agentCreationTime = System.currentTimeMillis() - agentStartTime
+        logger.info("Agent created in ${agentCreationTime}ms")
 
-            // 5. Execute entire workflow in single agent run
-            logger.info("Starting workflow execution...")
-            val workflowStartTime = System.currentTimeMillis()
+        // 5. Execute entire workflow in single agent run
+        logger.info("Starting workflow execution...")
+        val workflowStartTime = System.currentTimeMillis()
 
-            val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
-            val agentResponse =
-                try {
-                    agent.run(initialPrompt)
-                } catch (e: Exception) {
-                    logger.error("Workflow execution failed", e)
-                    throw IllegalStateException("Workflow execution failed: ${e.message}", e)
-                }
+        val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
+        val agentResponse =
+            try {
+                agent.run(initialPrompt)
+            } catch (e: Exception) {
+                logger.error("Workflow execution failed", e)
+                throw IllegalStateException("Workflow execution failed: ${e.message}", e)
+            }
 
-            val workflowDuration = System.currentTimeMillis() - workflowStartTime
-            logger.info("Workflow completed in ${workflowDuration}ms")
+        val workflowDuration = System.currentTimeMillis() - workflowStartTime
+        logger.info("Workflow completed in ${workflowDuration}ms")
 
-            // 6. Extract results and create decisions
-            val decisions = extractDecisions(workflowTemplate, agentResponse)
+        // 6. Extract results and create decisions
+        val decisions = extractDecisions(workflowTemplate, agentResponse)
 
-            val summary = generateSummary(workflowTemplate, context, agentResponse)
+        val summary = generateSummary(workflowTemplate, context, agentResponse)
 
-            val result =
-                WorkflowExecutionResult(
-                    success = true,
-                    summary = summary,
-                    decisions = decisions,
-                    vibeCheckResults = emptyList(),
-                    startedAt = startTime,
-                    completedAt = Instant.now(),
-                )
+        val result =
+            WorkflowExecutionResult(
+                success = true,
+                summary = summary,
+                decisions = decisions,
+                vibeCheckResults = emptyList(),
+                startedAt = startTime,
+                completedAt = Instant.now(),
+            )
 
-            lastExecution = result
+        lastExecution = result
 
-            logger.info("✅ Workflow '${workflowTemplate.name}' completed successfully")
-            logger.info("   Agent creation: ${agentCreationTime}ms")
-            logger.info("   Workflow execution: ${workflowDuration}ms")
-            logger.info("   Total duration: ${System.currentTimeMillis() - startTime.toEpochMilli()}ms")
+        logger.info("✅ Workflow '${workflowTemplate.name}' completed successfully")
+        logger.info("   Agent creation: ${agentCreationTime}ms")
+        logger.info("   Workflow execution: ${workflowDuration}ms")
+        logger.info("   Total duration: ${System.currentTimeMillis() - startTime.toEpochMilli()}ms")
 
-            result
-        }
+        return result
+    }
 
-    override fun getSummary(): WorkflowSummary =
+    override suspend fun getSummary(): WorkflowSummary =
         WorkflowSummary(
             compressed = lastExecution?.summary ?: "",
             decisions = lastExecution?.decisions ?: emptyList(),
