@@ -32,10 +32,6 @@ class McpServerConfiguration {
         processRepository: ProcessRepositoryPort,
     ): CommandLineRunner =
         CommandLineRunner {
-            System.err.println("🚀 Starting Responsible Vibe MCP Server...")
-            System.err.println("   Using Spring Boot context for dependency injection")
-            System.err.println()
-
             val mcpServer =
                 ResponsibleVibeMcpServer(
                     startProcessUseCase = startProcessUseCase,
@@ -45,14 +41,10 @@ class McpServerConfiguration {
                     processRepository = processRepository,
                 )
 
-            System.err.println("✅ MCP Server configured. Starting stdio transport...")
             // runBlocking needed here because CommandLineRunner.run() is not suspend
             runBlocking {
                 mcpServer.start()
             }
-
-            // Keep application running - MCP server needs to stay alive
-            System.err.println("⏳ MCP Server is running. Press Ctrl+C to stop.")
             val keepAlive = CountDownLatch(1)
             Runtime.getRuntime().addShutdownHook(
                 Thread {

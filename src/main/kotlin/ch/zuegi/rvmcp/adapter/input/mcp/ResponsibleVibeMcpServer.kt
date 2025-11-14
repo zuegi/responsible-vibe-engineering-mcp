@@ -65,18 +65,11 @@ class ResponsibleVibeMcpServer(
      * Blocks until the server is stopped.
      */
     suspend fun start() {
-        System.err.println("🚀 Starting Responsible Vibe MCP Server...")
-        System.err.println("   Version: 0.1.0")
-        System.err.println("   Transport: stdio")
-        System.err.println("   Listening for MCP clients (Claude Desktop, Warp Agent, etc.)")
-
         // Register all MCP Tools
         registerTools()
 
         // Register all MCP Resources
         registerResources()
-
-        System.err.println("✅ MCP Server configured. Ready to connect.")
 
         // Connect server with stdio transport (using kotlinx.io Source/Sink)
         val transport =
@@ -87,12 +80,10 @@ class ResponsibleVibeMcpServer(
 
         // Connect is a suspend function - this properly starts the async event loop
         server.connect(transport)
-        System.err.println("✅ MCP Server connected and ready.")
+        System.err.println("✅ MCP Server ready (v0.1.0)")
     }
 
     private fun registerTools() {
-        System.err.println("   📦 Registering MCP Tools...")
-
         // Tool 1: list_processes
         server.addTool(
             name = "list_processes",
@@ -113,8 +104,6 @@ class ResponsibleVibeMcpServer(
                     ),
             )
         }
-
-        System.err.println("      ✅ Registered: list_processes")
 
         // Tool 2: start_process
         server.addTool(
@@ -176,8 +165,6 @@ Status: ${processExecution.status}""",
                 )
             }
         }
-
-        System.err.println("      ✅ Registered: start_process")
 
         // Tool 3: execute_phase
         server.addTool(
@@ -255,23 +242,16 @@ Status: ${processExecution.status}""",
                 // Launch background coroutine for phase execution
                 jobScope.launch {
                     try {
-                        System.err.println("⏳ Job $jobId: Executing phase ${currentPhase.name}...")
-                        System.err.println("   Thread: ${Thread.currentThread().name}")
-                        System.err.println("   Dispatcher: ${coroutineContext[kotlinx.coroutines.CoroutineDispatcher]}")
                         val startTime = System.currentTimeMillis()
 
-                        System.err.println("   🔹 Calling executePhaseUseCase.execute...")
-                        // Explicit withContext to ensure proper dispatcher
+                        // Execute phase in IO dispatcher
                         val phaseResult =
                             withContext(Dispatchers.IO) {
-                                System.err.println("   🔹 Inside withContext(Dispatchers.IO)")
-                                System.err.println("      Thread: ${Thread.currentThread().name}")
                                 executePhaseUseCase.execute(currentPhase, context)
                             }
 
-                        System.err.println("   🔹 executePhaseUseCase.execute returned")
                         val duration = System.currentTimeMillis() - startTime
-                        System.err.println("✅ Job $jobId: Completed in ${duration}ms")
+                        System.err.println("✅ Job $jobId completed in ${duration}ms")
 
                         jobManager.completeJob(jobId, phaseResult)
                     } catch (e: Exception) {
@@ -304,8 +284,6 @@ Example: get_phase_result(jobId: "$jobId")""",
                 )
             }
         }
-
-        System.err.println("      ✅ Registered: execute_phase")
 
         // Tool 3b: get_phase_result
         server.addTool(
@@ -396,8 +374,6 @@ Error: ${job.error}""",
             }
         }
 
-        System.err.println("      ✅ Registered: get_phase_result")
-
         // Tool 4: complete_phase
         server.addTool(
             name = "complete_phase",
@@ -485,8 +461,6 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
             }
         }
 
-        System.err.println("      ✅ Registered: complete_phase")
-
         // Tool 5: get_context
         server.addTool(
             name = "get_context",
@@ -541,13 +515,9 @@ Artifacts: ${context.artifacts.size}""",
                 )
             }
         }
-
-        System.err.println("      ✅ Registered: get_context")
     }
 
     private fun registerResources() {
-        System.err.println("   📂 Registering MCP Resources...")
-        System.err.println("      ⚠️ Resource registration: API study needed")
         // TODO: Study MCP SDK samples to understand correct Resource registration API
         // - How to register resource templates
         // - How to handle resource requests

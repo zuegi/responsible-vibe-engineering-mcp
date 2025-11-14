@@ -16,7 +16,6 @@ class AutoPassVibeCheckEvaluator : VibeCheckEvaluatorPort {
         vibeCheck: VibeCheck,
         context: ExecutionContext,
     ): VibeCheckResult {
-        System.err.println("🔹 AutoPassVibeCheckEvaluator: ${vibeCheck.question} → PASS")
         return VibeCheckResult(
             check = vibeCheck,
             passed = true,
@@ -28,7 +27,6 @@ class AutoPassVibeCheckEvaluator : VibeCheckEvaluatorPort {
         vibeChecks: List<VibeCheck>,
         context: ExecutionContext,
     ): List<VibeCheckResult> {
-        System.err.println("🔹 AutoPassVibeCheckEvaluator: Evaluating ${vibeChecks.size} vibe checks")
         return vibeChecks.map { evaluate(it, context) }
     }
 }
