@@ -110,12 +110,16 @@ src/
     - In-Memory Persistence funktional
   - **58 Tests, alle passing**
 
-**Nächste Schritte**:
-- **Phase 2a: MCP Server Implementation** ⏳ (IN ARBEIT)
+- ✅ **Phase 2a: MCP Server Implementation** 
   - MCP Protocol Integration (JSON-RPC 2.0, stdio Transport)
-  - 5 MCP Tools (start_process, execute_phase, complete_phase, get_context, list_processes)
-  - 2 MCP Resources (context://, process://)
-  - Integration mit Claude Desktop / Warp Agent
+    - 5 MCP Tools (start_process, execute_phase, complete_phase, get_context, list_processes)
+    - 2 MCP Resources (context://, process://)
+    - Integration mit Claude Desktop / Warp Agent
+       - für die Verwendung des MCP Server im WARP Agent verwende
+        -  die [MCP Server Konfiguration für den WARP Agent](warp-mcp-config.json)
+        - eine [WARP Rule](warp-rule-mcp-server), welche besagt, dass der MCP Server verwendet werden soll
+ 
+**Nächste Schritte**:
 - Phase 2b: Memory & Persistenz (File-based Memory)
 - Phase 3: Workflows erweitern (Bug-Fix, Refactoring, Testing)
 - Phase 4: Tutorial & Documentation
