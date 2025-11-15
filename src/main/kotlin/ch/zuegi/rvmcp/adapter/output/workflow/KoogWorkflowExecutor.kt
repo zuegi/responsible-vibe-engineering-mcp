@@ -9,28 +9,45 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
-import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowNode
-import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
-import ch.zuegi.rvmcp.adapter.output.workflow.strategy.YamlWorkflowStrategy
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
-import ch.zuegi.rvmcp.infrastructure.logging.logger
-import kotlinx.coroutines.runBlocking
+import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
 import org.springframework.stereotype.Component
 import java.time.Instant
+import java.time.LocalDate
 
+/**
+ * Koog Workflow Executor that uses a single agent for entire workflow execution.
+ *
+ * Key features:
+ * - Single agent run preserves context across all workflow nodes
+ * - YAML workflow is translated to Koog Strategy Graph
+ * - Dramatically improved performance (no agent creation per node)
+ * - LLM can see full conversation history
+ *
+ * Architecture:
+ * 1. Parse YAML workflow template
+ * 2. Translate to Koog Strategy using YamlToKoogStrategyTranslator
+ * 3. Build comprehensive system prompt with WorkflowPromptBuilder
+ * 4. Create single AIAgent with translated strategy
+ * 5. Execute agent.run() once for entire workflow
+ * 6. Extract results from agent conversation history
+ */
 @Component
 class KoogWorkflowExecutor(
-    private val templateParser: WorkflowTemplateParser,
     private val llmProperties: LlmProperties,
 ) : WorkflowExecutionPort {
-    private val logger by logger()
+    private val logger by rvmcpLogger()
     private var lastExecution: WorkflowExecutionResult? = null
-    private val executionState = mutableMapOf<String, Any>()
+
+    // Helper classes (internal to this adapter)
+    private val templateParser = WorkflowTemplateParser()
+    private val strategyTranslator = YamlToKoogStrategyTranslator()
+    private val promptBuilder = WorkflowPromptBuilder()
 
     // Create LLM executor lazily and reuse (expensive to create)
     private val llmExecutor by lazy {
@@ -46,202 +63,143 @@ class KoogWorkflowExecutor(
         }
     }
 
-    override fun executeWorkflow(
+    override suspend fun executeWorkflow(
         template: String,
         context: ExecutionContext,
-    ): WorkflowExecutionResult =
-        runBlocking {
-            val startTime = Instant.now()
+    ): WorkflowExecutionResult {
+        val startTime = Instant.now()
 
-            logger.info("▶ Executing Koog Workflow: $template")
+        logger.info("▶ Executing Koog Workflow (REFACTORED): $template")
 
-            val workflowTemplate = templateParser.parseTemplate(template)
-            templateParser.validateTemplate(workflowTemplate)
+        // 1. Parse and validate YAML workflow
+        val workflowTemplate = templateParser.parseTemplate(template)
+        templateParser.validateTemplate(workflowTemplate)
 
-            logger.info("Template: ${workflowTemplate.name}")
-            logger.info("Nodes: ${workflowTemplate.nodes.size}")
+        val llmNodeCount = workflowTemplate.nodes.count { it.type == NodeType.LLM }
+        logger.info("Template: ${workflowTemplate.name}")
+        logger.info("Total nodes: ${workflowTemplate.nodes.size} ($llmNodeCount LLM nodes)")
 
-            val decisions = mutableListOf<Decision>()
-            var currentNodeId = workflowTemplate.graph.start
-            val visitedNodes = mutableSetOf<String>()
+        // 2. Translate YAML to Koog Strategy
+        logger.info("Translating YAML to Koog Strategy...")
+        val strategy = strategyTranslator.translate(workflowTemplate)
+        logger.info("Strategy created with $llmNodeCount LLM nodes")
 
-            while (currentNodeId != workflowTemplate.graph.end) {
-                if (currentNodeId in visitedNodes && visitedNodes.size > 100) {
-                    throw IllegalStateException("Workflow appears to be in infinite loop")
-                }
-                visitedNodes.add(currentNodeId)
+        // 3. Build comprehensive system prompt
+        logger.info("Building workflow system prompt...")
+        val systemPrompt = promptBuilder.buildWorkflowSystemPrompt(workflowTemplate, context)
 
-                val node =
-                    workflowTemplate.nodes.find { it.id == currentNodeId }
-                        ?: throw IllegalStateException("Node not found: $currentNodeId")
+        // 4. Create single agent for entire workflow
+        logger.info("Creating Koog agent for entire workflow...")
+        val agentStartTime = System.currentTimeMillis()
 
-                logger.info("→ Executing node: ${node.id} (${node.type})")
+        val agent =
+            AIAgent<String, String>(
+                promptExecutor = llmExecutor,
+                strategy = strategy,
+                agentConfig =
+                    AIAgentConfig(
+                        prompt =
+                            prompt("workflow_${workflowTemplate.name}") {
+                                system(systemPrompt)
+                            },
+                        model = OpenAIModels.Chat.GPT4o,
+                        // Generous iterations: start + (LLM nodes * 2) + finish
+                        maxAgentIterations = 1 + (llmNodeCount * 2) + 1,
+                    ),
+                toolRegistry = ToolRegistry { },
+                installFeatures = { install(Tracing) },
+            )
 
-                currentNodeId =
-                    when (node.type) {
-                        NodeType.LLM -> executeLLMNode(node, context, decisions, workflowTemplate)
-                        NodeType.CONDITIONAL -> executeConditionalNode(node, workflowTemplate)
-                        NodeType.HUMAN_INTERACTION -> executeHumanInteractionNode(node, workflowTemplate)
-                        NodeType.AGGREGATION -> executeAggregationNode(node, workflowTemplate)
-                        NodeType.SYSTEM_COMMAND -> executeSystemCommandNode(node, workflowTemplate)
-                    }
+        val agentCreationTime = System.currentTimeMillis() - agentStartTime
+        logger.info("Agent created in ${agentCreationTime}ms")
+
+        // 5. Execute entire workflow in single agent run
+        logger.info("Starting workflow execution...")
+        val workflowStartTime = System.currentTimeMillis()
+
+        val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
+        val agentResponse =
+            try {
+                agent.run(initialPrompt)
+            } catch (e: Exception) {
+                logger.error("Workflow execution failed", e)
+                throw IllegalStateException("Workflow execution failed: ${e.message}", e)
             }
 
-            val summary = generateSummary(workflowTemplate, context)
+        val workflowDuration = System.currentTimeMillis() - workflowStartTime
+        logger.info("Workflow completed in ${workflowDuration}ms")
 
-            val result =
-                WorkflowExecutionResult(
-                    success = true,
-                    summary = summary,
-                    decisions = decisions,
-                    vibeCheckResults = emptyList(),
-                    startedAt = startTime,
-                    completedAt = Instant.now(),
-                )
+        // 6. Extract results and create decisions
+        val decisions = extractDecisions(workflowTemplate, agentResponse)
 
-            lastExecution = result
-            result
-        }
+        val summary = generateSummary(workflowTemplate, context, agentResponse)
 
-    override fun getSummary(): WorkflowSummary =
+        val result =
+            WorkflowExecutionResult(
+                success = true,
+                summary = summary,
+                decisions = decisions,
+                vibeCheckResults = emptyList(),
+                startedAt = startTime,
+                completedAt = Instant.now(),
+            )
+
+        lastExecution = result
+
+        logger.info("✅ Workflow '${workflowTemplate.name}' completed successfully")
+        logger.info("   Agent creation: ${agentCreationTime}ms")
+        logger.info("   Workflow execution: ${workflowDuration}ms")
+        logger.info("   Total duration: ${System.currentTimeMillis() - startTime.toEpochMilli()}ms")
+
+        return result
+    }
+
+    override suspend fun getSummary(): WorkflowSummary =
         WorkflowSummary(
             compressed = lastExecution?.summary ?: "",
             decisions = lastExecution?.decisions ?: emptyList(),
             keyInsights = lastExecution?.decisions?.map { it.decision } ?: emptyList(),
         )
 
-    private suspend fun createKoogAgent(
-        template: WorkflowTemplate,
-        context: ExecutionContext,
-    ): AIAgent<String, String> {
-        // Lightweight agent creation - reuse existing executor (HTTP client)
-        val strategy = YamlWorkflowStrategy.simpleSingleShotStrategy()
+    /**
+     * Extracts decisions from agent response.
+     * For now, creates a decision per LLM node that was executed.
+     */
+    private fun extractDecisions(
+        workflow: ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate,
+        agentResponse: String,
+    ): List<Decision> {
+        val llmNodes = workflow.nodes.filter { it.type == NodeType.LLM }
 
-        val config =
-            AIAgentConfig(
-                prompt =
-                    prompt("workflow_${template.name}") {
-                        system(
-                            """
-                            You are an AI assistant executing: ${template.name}
-                            Project: ${context.projectPath}
-                            """.trimIndent(),
-                        )
-                    },
-                model = OpenAIModels.Chat.GPT4o,
-                maxAgentIterations = 5,
+        return llmNodes.map { node ->
+            Decision(
+                phase = workflow.name,
+                decision = "Completed step: ${node.id}",
+                reasoning = node.description ?: "No description",
+                date = LocalDate.now(),
             )
-
-        return AIAgent(
-            promptExecutor = llmExecutor, // Reuse shared executor
-            strategy = strategy,
-            agentConfig = config,
-            toolRegistry = ToolRegistry { },
-            installFeatures = { install(Tracing) },
-        )
-    }
-
-    private suspend fun executeLLMNode(
-        node: WorkflowNode,
-        context: ExecutionContext,
-        decisions: MutableList<Decision>,
-        template: WorkflowTemplate,
-    ): String {
-        val startTime = System.currentTimeMillis()
-        val prompt = interpolateVariables(node.prompt!!, context)
-
-        logger.info("   Creating agent for node ${node.id}...")
-        val agentStart = System.currentTimeMillis()
-        val agent = createKoogAgent(template, context)
-        logger.info("   Agent created in ${System.currentTimeMillis() - agentStart}ms")
-
-        logger.info("   Sending LLM request...")
-        val llmStart = System.currentTimeMillis()
-        val response: String =
-            try {
-                agent.run(prompt)
-            } catch (e: Exception) {
-                logger.error("LLM call failed", e)
-                "Error: ${e.message}"
-            }
-
-        val llmDuration = System.currentTimeMillis() - llmStart
-        val totalDuration = System.currentTimeMillis() - startTime
-        logger.info("   LLM response received in ${llmDuration}ms (total: ${totalDuration}ms)")
-
-        node.output?.let { executionState[it] = response }
-        decisions.add(Decision(template.name, "Completed ${node.id}", "LLM analysis"))
-
-        return findNextNode(node.id, template)
-    }
-
-    private fun executeConditionalNode(
-        node: WorkflowNode,
-        template: WorkflowTemplate,
-    ): String = if (evaluateCondition(node.condition!!)) node.ifTrue!! else node.ifFalse!!
-
-    private fun executeHumanInteractionNode(
-        node: WorkflowNode,
-        template: WorkflowTemplate,
-    ): String {
-        println("${node.prompt}")
-        val input = readlnOrNull() ?: ""
-        node.output?.let { executionState[it] = input }
-        return findNextNode(node.id, template)
-    }
-
-    private fun executeAggregationNode(
-        node: WorkflowNode,
-        template: WorkflowTemplate,
-    ): String {
-        val data = node.inputs?.mapNotNull { executionState[it] } ?: emptyList()
-        node.output?.let { executionState[it] = data }
-        return findNextNode(node.id, template)
-    }
-
-    private fun executeSystemCommandNode(
-        node: WorkflowNode,
-        template: WorkflowTemplate,
-    ): String = findNextNode(node.id, template)
-
-    private fun findNextNode(
-        currentNodeId: String,
-        template: WorkflowTemplate,
-    ): String =
-        template.graph.edges.find { it.from == currentNodeId }?.to
-            ?: throw IllegalStateException("No edge from: $currentNodeId")
-
-    private fun interpolateVariables(
-        text: String,
-        context: ExecutionContext,
-    ): String {
-        var result = text
-        result = result.replace("{{context.project_path}}", context.projectPath)
-        result = result.replace("{{context.git_branch}}", context.gitBranch ?: "main")
-        executionState.forEach { (key, value) ->
-            result = result.replace("{{$key}}", value.toString())
-        }
-        return result
-    }
-
-    private fun evaluateCondition(condition: String): Boolean {
-        val pattern = """contains\((\w+), "([^"]+)"\)""".toRegex()
-        val match = pattern.find(condition)
-        return if (match != null) {
-            val (varName, searchTerm) = match.destructured
-            executionState[varName]?.toString()?.contains(searchTerm, true) ?: false
-        } else {
-            false
         }
     }
 
+    /**
+     * Generates workflow summary from template and agent response.
+     */
     private fun generateSummary(
-        template: WorkflowTemplate,
+        workflow: ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate,
         context: ExecutionContext,
-    ): String =
-        """
-        Workflow: ${template.name}
-        Project: ${context.projectPath}
-        Executed ${executionState.size} nodes with Koog AIAgent.
-        """.trimIndent()
+        agentResponse: String,
+    ): String {
+        val llmNodeCount = workflow.nodes.count { it.type == NodeType.LLM }
+
+        return """
+Workflow: ${workflow.name}
+Project: ${context.projectPath}
+Branch: ${context.gitBranch ?: "main"}
+
+Executed $llmNodeCount LLM steps using Koog AIAgent with context preservation.
+
+Agent Response Summary:
+${agentResponse.take(500)}${if (agentResponse.length > 500) "..." else ""}
+            """.trimIndent()
+    }
 }

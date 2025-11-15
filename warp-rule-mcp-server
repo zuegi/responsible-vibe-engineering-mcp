@@ -1,0 +1,5 @@
+Wenn ich eine neue App, ein Feature oder ein neues Projekt entwickeln möchte, starte automatisch mit dem MCP Server:
+1. list_processes aufrufen
+2. Passenden Prozess auswählen (z.B. Feature Development)
+3. start_process mit projektPath und gitBranch aufrufen
+4. Den Phasen des Prozesses folgen

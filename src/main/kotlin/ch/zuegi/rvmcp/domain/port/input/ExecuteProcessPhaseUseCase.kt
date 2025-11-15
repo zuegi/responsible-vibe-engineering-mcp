@@ -22,7 +22,7 @@ interface ExecuteProcessPhaseUseCase {
      * @param context The current execution context
      * @return The phase result including vibe check results and summary
      */
-    fun execute(
+    suspend fun execute(
         phase: ProcessPhase,
         context: ExecutionContext,
     ): PhaseResult

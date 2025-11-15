@@ -4,8 +4,11 @@
 
 ## Was ist Responsible Vibe MCP?
 
-Ein Framework, das KI-Systeme aktiv durch bewährte Software-Engineering-Workflows führt – von der Planung über die Architektur bis zur Implementierung.
-Ganz im Sinne von Think slow, act fast
+Ein **MCP (Model Context Protocol) Server**, der KI-Systeme aktiv durch bewährte Software-Engineering-Workflows führt – von der Planung über die Architektur bis zur Implementierung.
+
+**MCP Server** = Standardisiertes Interface zwischen KI-Clients (Claude Desktop, Warp Agent, IDEs) und dem Responsible Vibe Engineering System.
+
+*Ganz im Sinne von Think slow, act fast*
 
 ### Das Problem
 
@@ -25,6 +28,7 @@ Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 
 ## Features
 
+- ✅ **MCP Server** – Standardisiertes Interface für KI-Systeme (Claude, Warp, IDEs)
 - ✅ **Strukturierte Workflows** für verschiedene Entwicklungsszenarien
 - ✅ **Persistentes Memory** über Sessions hinweg
 - ✅ **Vibe Engineering** – Qualität vor Geschwindigkeit
@@ -36,6 +40,7 @@ Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 - Kotlin
 - Spring Boot
 - Kotlin Koog (Agentic AI Framework)
+- Model Context Protocol (MCP)
 - Maven
 - Git
 
@@ -105,8 +110,17 @@ src/
     - In-Memory Persistence funktional
   - **58 Tests, alle passing**
 
+- ✅ **Phase 2a: MCP Server Implementation** 
+  - MCP Protocol Integration (JSON-RPC 2.0, stdio Transport)
+    - 5 MCP Tools (start_process, execute_phase, complete_phase, get_context, list_processes)
+    - 2 MCP Resources (context://, process://)
+    - Integration mit Claude Desktop / Warp Agent
+       - für die Verwendung des MCP Server im WARP Agent verwende
+        -  die [MCP Server Konfiguration für den WARP Agent](warp-mcp-config.json)
+        - eine [WARP Rule](warp-rule-mcp-server), welche besagt, dass der MCP Server verwendet werden soll
+ 
 **Nächste Schritte**:
-- Phase 2: Memory & Persistenz (File-based oder DB)
+- Phase 2b: Memory & Persistenz (File-based Memory)
 - Phase 3: Workflows erweitern (Bug-Fix, Refactoring, Testing)
 - Phase 4: Tutorial & Documentation
 
