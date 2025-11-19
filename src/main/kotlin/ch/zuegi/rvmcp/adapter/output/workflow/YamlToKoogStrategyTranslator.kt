@@ -2,8 +2,11 @@ package ch.zuegi.rvmcp.adapter.output.workflow
 
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
+import ai.koog.agents.core.dsl.extension.nodeExecuteTool
 import ai.koog.agents.core.dsl.extension.nodeLLMRequest
+import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
+import ai.koog.agents.core.dsl.extension.onToolCall
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
 import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
@@ -39,10 +42,29 @@ class YamlToKoogStrategyTranslator {
                 throw IllegalArgumentException("Workflow '${workflow.name}' has no LLM nodes")
             }
 
-            // For single-node workflows, use simple single-shot strategy
+            // For single-node workflows, use simple single-shot strategy with tool support
             if (llmNodes.size == 1) {
                 val singleNode by nodeLLMRequest(llmNodes.first().id, true)
+                val toolExecNode by nodeExecuteTool("execute-tool")
+                val toolResultNode by nodeLLMSendToolResult("send-tool-result")
+
                 edge(nodeStart forwardTo singleNode)
+
+                // Handle tool calls: LLM -> Execute Tool -> Send Result -> back to LLM
+                edge(
+                    singleNode forwardTo toolExecNode onToolCall { toolCall ->
+                        logger.debug("Tool call: ${toolCall.tool}")
+                        true
+                    },
+                )
+                edge(toolExecNode forwardTo toolResultNode)
+                edge(
+                    toolResultNode forwardTo singleNode onAssistantMessage {
+                        true
+                    },
+                )
+
+                // Handle completion: LLM -> Finish
                 edge(
                     singleNode forwardTo nodeFinish onAssistantMessage {
                         true
@@ -51,61 +73,60 @@ class YamlToKoogStrategyTranslator {
                 return@strategy
             }
 
-            // Multi-node workflow: Create all LLM nodes first
-            // Store in list to preserve order and avoid issues with delegated properties in loop
-            val firstNode by nodeLLMRequest(llmNodes[0].id, true)
-            logger.debug("Created Koog node '${llmNodes[0].id}'")
+            // Multi-node workflow: Create all LLM nodes dynamically with tool support
+            logger.debug("Creating ${llmNodes.size} LLM nodes...")
 
-            // Start edge
-            edge(nodeStart forwardTo firstNode)
+            // Create all nodes first (must be done before creating edges)
+            val koogNodes =
+                llmNodes.mapIndexed { index, yamlNode ->
+                    val node by nodeLLMRequest(yamlNode.id, true)
+                    logger.debug("Created Koog node '${yamlNode.id}' (${index + 1}/${llmNodes.size})")
+                    node
+                }
 
-            // For workflows with exactly 2 nodes
-            if (llmNodes.size == 2) {
-                val secondNode by nodeLLMRequest(llmNodes[1].id, true)
-                logger.debug("Created Koog node '${llmNodes[1].id}'")
+            // Create shared tool execution nodes for all LLM nodes
+            val toolExecNode by nodeExecuteTool("execute-tool")
+            val toolResultNode by nodeLLMSendToolResult("send-tool-result")
 
+            // Create edges: Start -> Node1 -> Node2 -> ... -> NodeN -> Finish
+            edge(nodeStart forwardTo koogNodes.first())
+            logger.debug("Edge: START -> ${llmNodes[0].id}")
+
+            // For each LLM node: add tool call support AND transition to next node
+            for (i in 0 until koogNodes.size) {
+                // Tool calls from this node: Node[i] -> Execute Tool -> Send Result -> back to Node[i]
                 edge(
-                    firstNode forwardTo secondNode onAssistantMessage {
+                    koogNodes[i] forwardTo toolExecNode onToolCall { toolCall ->
+                        logger.debug("Tool call from ${llmNodes[i].id}: ${toolCall.tool}")
                         true
                     },
                 )
+                edge(toolExecNode forwardTo toolResultNode)
                 edge(
-                    secondNode forwardTo nodeFinish onAssistantMessage {
-                        true
-                    },
-                )
-                return@strategy
-            }
-
-            // For workflows with 3+ nodes - limit to first 3 for now
-            // TODO: Support arbitrary number of nodes (requires dynamic edge creation)
-            if (llmNodes.size >= 3) {
-                val secondNode by nodeLLMRequest(llmNodes[1].id, true)
-                val thirdNode by nodeLLMRequest(llmNodes[2].id, true)
-
-                logger.debug("Created multi-node strategy with 3 nodes")
-
-                edge(
-                    firstNode forwardTo secondNode onAssistantMessage {
-                        true
-                    },
-                )
-                edge(
-                    secondNode forwardTo thirdNode onAssistantMessage {
-                        true
-                    },
-                )
-                edge(
-                    thirdNode forwardTo nodeFinish onAssistantMessage {
+                    toolResultNode forwardTo koogNodes[i] onAssistantMessage {
                         true
                     },
                 )
 
-                if (llmNodes.size > 3) {
-                    logger.warn(
-                        "Workflow has ${llmNodes.size} LLM nodes, but only first 3 are supported. Additional nodes will be skipped.",
+                // Transition to next node: Node[i] -> Node[i+1]
+                if (i < koogNodes.size - 1) {
+                    edge(
+                        koogNodes[i] forwardTo koogNodes[i + 1] onAssistantMessage {
+                            true
+                        },
                     )
+                    logger.debug("Edge: ${llmNodes[i].id} -> ${llmNodes[i + 1].id}")
                 }
             }
+
+            // Last node -> Finish
+            edge(
+                koogNodes.last() forwardTo nodeFinish onAssistantMessage {
+                    true
+                },
+            )
+            logger.debug("Edge: ${llmNodes.last().id} -> FINISH")
+
+            logger.info("✅ Created strategy with ${llmNodes.size} LLM nodes, tool support, and edges")
         }
 }
