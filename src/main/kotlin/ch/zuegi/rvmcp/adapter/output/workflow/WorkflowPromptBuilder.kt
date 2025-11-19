@@ -46,6 +46,13 @@ ${llmNodes.mapIndexed { index, node ->
 - Be thorough but concise in your responses
 - Document your reasoning and decisions
 
+## 👤 User Interaction (IMPORTANT!)
+- When you need information from the user, use the **ask_user** tool
+- Call ask_user with a clear, specific question
+- Wait for the user's response before proceeding
+- Example: ask_user(question="What should this feature do?")
+- Do NOT make assumptions - always ask when information is missing
+
 ## Current Project Context
 - **Project Path**: ${context.projectPath}
 - **Git Branch**: ${context.gitBranch ?: "main"}
