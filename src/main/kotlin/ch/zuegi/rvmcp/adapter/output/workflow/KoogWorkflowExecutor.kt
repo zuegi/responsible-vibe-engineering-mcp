@@ -9,6 +9,7 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.AskUserTool
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
@@ -102,11 +103,17 @@ class KoogWorkflowExecutor(
                             prompt("workflow_${workflowTemplate.name}") {
                                 system(systemPrompt)
                             },
+                        // FIXME Warum OpenAIModels.Chat.GBT40
                         model = OpenAIModels.Chat.GPT4o,
                         // Generous iterations: start + (LLM nodes * 2) + finish
                         maxAgentIterations = 1 + (llmNodeCount * 2) + 1,
                     ),
-                toolRegistry = ToolRegistry { },
+                toolRegistry =
+                    ToolRegistry {
+                        // Register ask_user tool for interactive workflows
+                        tool(AskUserTool())
+                        logger.info("✅ Registered ask_user tool for user interaction")
+                    },
                 installFeatures = { install(Tracing) },
             )
 
