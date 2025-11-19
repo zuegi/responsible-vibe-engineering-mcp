@@ -15,13 +15,26 @@ import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
 import kotlinx.coroutines.runBlocking
 
 /**
- * Manual test runner for testing the business logic without Spring Boot.
+ * ⚠️ LEGACY: Manual test runner for testing the business logic without LLM.
  *
- * This program:
- * 1. Sets up dummy adapters
+ * STATUS: This test runner uses ManualWorkflowExecutor (dummy) instead of the real
+ * KoogWorkflowExecutor. It does NOT test the actual production logic!
+ *
+ * ✅ USE INSTEAD: InteractiveTestRunner.kt
+ * - Uses KoogWorkflowExecutor (REAL LLM)
+ * - Executes ACTUAL YAML workflows
+ * - Tests EXACTLY the production logic
+ *
+ * This program (LEGACY):
+ * 1. Sets up dummy adapters (ManualWorkflowExecutor - not real!)
  * 2. Creates a sample engineering process (Feature Development)
- * 3. Executes the process phase by phase manually
+ * 3. Executes the process phase by phase manually (no real LLM interaction)
  * 4. Tests the complete flow: Start → Execute Phases → Complete
+ *
+ * REASON FOR KEEPING:
+ * - Historical reference (Proof-of-Concept ohne LLM)
+ * - Fast smoke test without LLM costs
+ * - Can be deleted if InteractiveTestRunner works well
  */
 fun main() {
     println("╔════════════════════════════════════════════════════════╗")
