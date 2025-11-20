@@ -58,6 +58,14 @@ class YamlToKoogStrategyTranslator {
                     },
                 )
                 edge(toolExecNode forwardTo toolResultNode)
+
+                // After tool result, LLM can make another tool call OR send assistant message
+                edge(
+                    toolResultNode forwardTo toolExecNode onToolCall { toolCall ->
+                        logger.debug("Follow-up tool call: ${toolCall.tool}")
+                        true
+                    },
+                )
                 edge(
                     toolResultNode forwardTo singleNode onAssistantMessage {
                         true
@@ -102,6 +110,14 @@ class YamlToKoogStrategyTranslator {
                     },
                 )
                 edge(toolExecNode forwardTo toolResultNode)
+
+                // After tool result, LLM can make another tool call OR send assistant message
+                edge(
+                    toolResultNode forwardTo toolExecNode onToolCall { toolCall ->
+                        logger.debug("Follow-up tool call: ${toolCall.tool}")
+                        true
+                    },
+                )
                 edge(
                     toolResultNode forwardTo koogNodes[i] onAssistantMessage {
                         true

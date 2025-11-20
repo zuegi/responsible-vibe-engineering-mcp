@@ -105,8 +105,9 @@ class KoogWorkflowExecutor(
                             },
                         // FIXME Warum OpenAIModels.Chat.GBT40
                         model = OpenAIModels.Chat.GPT4o,
-                        // Generous iterations: start + (LLM nodes * 2) + finish
-                        maxAgentIterations = 1 + (llmNodeCount * 2) + 1,
+                        // Generous iterations to allow multiple tool calls per node
+                        // Formula: base (5) + nodes (llmNodeCount * 10) to allow ~3 tool calls per node
+                        maxAgentIterations = 5 + (llmNodeCount * 10),
                     ),
                 toolRegistry =
                     ToolRegistry {
