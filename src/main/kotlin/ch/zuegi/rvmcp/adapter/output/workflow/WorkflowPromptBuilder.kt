@@ -52,6 +52,8 @@ ${llmNodes.mapIndexed { index, node ->
 - Wait for the user's response before proceeding
 - Example: ask_user(question="What should this feature do?")
 - Do NOT make assumptions - always ask when information is missing
+- **After gathering all information**: Provide a structured summary of what you learned
+- Format the summary clearly with sections (e.g., "## Requirements Summary", "### Functionality", etc.)
 
 ## Current Project Context
 - **Project Path**: ${context.projectPath}
