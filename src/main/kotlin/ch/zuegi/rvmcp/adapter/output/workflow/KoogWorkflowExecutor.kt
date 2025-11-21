@@ -137,6 +137,13 @@ class KoogWorkflowExecutor(
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
 
+        // Display full agent response to user
+        println("\n" + "=".repeat(80))
+        println("📋 WORKFLOW RESULT")
+        println("=".repeat(80))
+        println(agentResponse)
+        println("=".repeat(80) + "\n")
+
         // 6. Extract results and create decisions
         val decisions = extractDecisions(workflowTemplate, agentResponse)
 
@@ -206,8 +213,9 @@ Branch: ${context.gitBranch ?: "main"}
 
 Executed $llmNodeCount LLM steps using Koog AIAgent with context preservation.
 
-Agent Response Summary:
-${agentResponse.take(500)}${if (agentResponse.length > 500) "..." else ""}
+---
+
+$agentResponse
             """.trimIndent()
     }
 }

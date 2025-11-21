@@ -112,8 +112,6 @@ fun main() {
     // 5. Process starten
     println("\n" + "=".repeat(60))
     println("\n🚀 Bereit zum Starten des Feature Development Prozesses")
-    println("   Projekt: /Users/groot/test-project")
-    println("   Branch: feature/new-feature")
     println("\n💡 HINWEIS: Der LLM wird dich jetzt interviewen!")
     println("   - Beantworte die Fragen des LLMs")
     println("   - Am Ende jeder Phase: Vibe Checks bestätigen")
@@ -127,13 +125,19 @@ fun main() {
         println("\n⚠️ Fehler beim Lesen von stdin: ${e.message}")
         println("   Fahre trotzdem fort...")
     }
+    // TODO Ask for Project and Git branch
+    val project = "/Users/groot/test-project"
+    val gitBranch = "feature/new-feature"
+    println("Starte mit dem Projekt")
+    println("   Projekt: $project")
+    println("   Branch: $gitBranch")
 
     var processExecution =
         runBlocking {
             startService.execute(
                 processId = featureDevelopmentProcess.id,
-                projectPath = "/Users/groot/test-project",
-                gitBranch = "feature/new-feature",
+                projectPath = project,
+                gitBranch = gitBranch,
             )
         }
 
