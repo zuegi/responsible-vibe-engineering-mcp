@@ -3,12 +3,14 @@ package ch.zuegi.rvmcp.adapter.output.memory
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
+import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * In-memory storage for execution contexts.
- * Data is lost on application restart.
+ * In-memory implementation of MemoryRepositoryPort for testing.
+ * Data is lost when application restarts.
  */
+@Component
 class InMemoryMemoryRepository : MemoryRepositoryPort {
     private val storage = ConcurrentHashMap<String, ExecutionContext>()
 
@@ -24,6 +26,10 @@ class InMemoryMemoryRepository : MemoryRepositoryPort {
     ): ExecutionContext? {
         val key = buildKey(projectPath, gitBranch)
         return storage[key]
+    }
+
+    override fun findByExecutionId(executionId: ExecutionId): ExecutionContext? {
+        return storage.values.firstOrNull { it.executionId == executionId }
     }
 
     override fun delete(executionId: ExecutionId) {

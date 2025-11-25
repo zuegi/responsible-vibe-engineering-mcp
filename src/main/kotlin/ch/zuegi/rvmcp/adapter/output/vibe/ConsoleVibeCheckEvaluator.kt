@@ -6,8 +6,11 @@ import ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult
 import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
 
 /**
- * Console-based vibe check evaluator for manual testing.
- * Prompts user to answer quality gate questions.
+ * Console-based Vibe Check Evaluator for manual testing.
+ * Prompts the user via console to evaluate vibe checks.
+ *
+ * Note: Not annotated with @Component - should be manually created when needed.
+ * For MCP Server mode, use AutoPassVibeCheckEvaluator instead (non-interactive).
  */
 class ConsoleVibeCheckEvaluator : VibeCheckEvaluatorPort {
     override fun evaluate(
