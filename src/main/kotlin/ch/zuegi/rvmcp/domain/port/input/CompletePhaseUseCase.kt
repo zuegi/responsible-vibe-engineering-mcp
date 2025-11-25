@@ -22,7 +22,7 @@ interface CompletePhaseUseCase {
      * @param phaseResult The result of the completed phase
      * @return The updated process execution, advanced to next phase if available
      */
-    fun execute(
+    suspend fun execute(
         executionId: ExecutionId,
         phaseResult: PhaseResult,
     ): ProcessExecution

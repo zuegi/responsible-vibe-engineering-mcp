@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "responsible-vibe-mcp": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "/Users/groot/WS/zuegi/responsible-vibe-engineering-mcp/target/responsible-vibe-mcp-0.1.0-SNAPSHOT.jar"
+      ],
+      "env": {}
+    }
+  }
+}

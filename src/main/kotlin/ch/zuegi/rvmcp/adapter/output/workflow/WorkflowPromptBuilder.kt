@@ -3,7 +3,6 @@ package ch.zuegi.rvmcp.adapter.output.workflow
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
-import org.springframework.stereotype.Component
 
 /**
  * Builds comprehensive system prompts for Koog agents executing YAML workflows.
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component
  * - Project context
  * - Individual node prompts
  */
-@Component
 class WorkflowPromptBuilder {
     /**
      * Builds a complete system prompt for executing a workflow.

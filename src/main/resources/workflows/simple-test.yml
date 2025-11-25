@@ -1,0 +1,28 @@
+name: "Simple Test"
+description: "Minimal workflow for testing LLM integration with single node"
+version: "1.0"
+
+nodes:
+  - id: test_llm
+    type: llm
+    description: "Test LLM connection"
+    prompt: "You are testing the LLM connection. Respond with 'Connection successful!' in one sentence."
+    output: result
+  - id: done
+    type: aggregation
+    description: "End node"
+    inputs:
+      - result
+    output: final_result
+
+graph:
+  start: test_llm
+  end: done
+  
+  edges:
+    - from: test_llm
+      to: done
+
+vibe_checks:
+  - question: "Did the test complete successfully?"
+    type: "QUALITY"

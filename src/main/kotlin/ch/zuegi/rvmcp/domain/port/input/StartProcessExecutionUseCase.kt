@@ -21,7 +21,7 @@ interface StartProcessExecutionUseCase {
      * @param gitBranch The git branch name for branch-aware context
      * @return The initialized process execution
      */
-    fun execute(
+    suspend fun execute(
         processId: ProcessId,
         projectPath: String,
         gitBranch: String,
