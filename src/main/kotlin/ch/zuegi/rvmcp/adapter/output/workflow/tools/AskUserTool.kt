@@ -35,7 +35,8 @@ class AskUserTool : SimpleTool<AskUserTool.Args>() {
         val question: String,
     )
 
-    override val description: String = "Ask the user a question and wait for their response. Use this when you need information from the user to proceed."
+    override val description: String =
+        "Ask the user a question and wait for their response. Use this when you need information from the user to proceed."
 
     override val name: String = "ask_user"
 
