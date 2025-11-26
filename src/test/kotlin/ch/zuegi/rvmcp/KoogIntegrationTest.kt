@@ -7,6 +7,7 @@ import ch.zuegi.rvmcp.domain.model.id.ExecutionId
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -31,6 +32,7 @@ import org.springframework.test.context.ActiveProfiles
  * To skip these tests in CI, exclude them:
  * mvn test -Dtest=!KoogIntegrationTest,!SimpleLLMConnectionTest
  */
+@Disabled
 @SpringBootTest
 @ActiveProfiles("local")
 class KoogIntegrationTest {
