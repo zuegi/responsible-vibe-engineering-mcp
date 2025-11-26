@@ -28,6 +28,9 @@ Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 6. Testing
 7. Integration & Review
 
+
+Idee: Das Dokument soll zum Schluss in Tranchen aufgteilt werden, welche in Stories/Changes umgesetzt werden kann, bzw. eine LLM kann daraus Stories erstellen.
+
 ## Features
 
 - ✅ **MCP Server** – Standardisiertes Interface für KI-Systeme (Claude, Warp, IDEs)
