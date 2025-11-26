@@ -890,7 +890,9 @@ responsible-vibe-mcp/
 **Implementierung**: Memory-Adapter als Bridge zwischen beiden Ebenen
 
 ### ADR-006: End-to-End Tests mit Helper Evaluators
-**Entscheidung**: SimpleEndToEndTest mit AutoPassVibeCheckEvaluator und FailingVibeCheckEvaluator  
+**Datum**: DD-MM-YYYY   
+**Entscheidung**: SimpleEndToEndTest mit AutoPassVibeCheckEvaluator und FailingVibeCheckEvaluator   
+**Entscheider**: [@Person1, @Person2]  
 **Begründung**:
 - **Testbarkeit**: End-to-End Tests brauchen deterministische Vibe Check Ergebnisse
 - **Keine LLM-Calls für Vibe Checks**: Tests sollen unabhängig von LLM-Verfügbarkeit laufen
