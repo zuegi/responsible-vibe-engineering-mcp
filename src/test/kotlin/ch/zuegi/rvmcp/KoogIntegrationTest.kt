@@ -32,7 +32,7 @@ import org.springframework.test.context.ActiveProfiles
  * To skip these tests in CI, exclude them:
  * mvn test -Dtest=!KoogIntegrationTest,!SimpleLLMConnectionTest
  */
-@Disabled
+@Disabled("weil interaktive Test")
 @SpringBootTest
 @ActiveProfiles("local")
 class KoogIntegrationTest {
