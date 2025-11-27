@@ -21,10 +21,15 @@ KI-Tools generieren oft Code ohne methodisches Vorgehen. Das führt zu:
 
 Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 1. Anforderungsanalyse
-2. Architekturentwurf
-3. Implementierung
-4. Testing
-5. Integration & Review
+2. Planung
+3. Architekturentwurf
+4. Wiederhole Schritte 1 - 3 und verbessere
+5. Implementierung
+6. Testing
+7. Integration & Review
+
+
+Idee: Das Dokument soll zum Schluss in Tranchen aufgteilt werden, welche in Stories/Changes umgesetzt werden kann, bzw. eine LLM kann daraus Stories erstellen.
 
 ## Features
 

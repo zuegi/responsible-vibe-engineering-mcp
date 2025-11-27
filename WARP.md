@@ -17,9 +17,10 @@ Responsible Vibe MCP leitet die KI systematisch durch klar definierte Projektpha
 1. **Planung & Anforderungsanalyse**
 2. **Architekturentwurf**
 3. **Dokumentation des Projekts**
-3. **Implementierung**
-4. **Testing**
-5. **Integration & Review**
+4. **Wiederhole Schritte 1 - 3**
+5. **Implementierung**
+6. **Testing**
+7. **Integration & Review**
 
 ### Persistentes Gedächtnis
 
@@ -50,11 +51,12 @@ Die KI wird zum **aktiven Entwicklungspartner**, nicht bloß zum Code-Generator.
 Das System bietet mehrere Engineering-Workflows für verschiedene Szenarien:
 
 ### 1. Neues Projekt/Feature
-- definiere die Projekt-Sprache: Deutsch, Englisch,...
-- verbindliche Dokumentation definieren
+- Definiere die Projekt-Sprache: Deutsch, Englisch,...
+- Verbindliche Dokumentation definieren
 - Anforderungen definieren
 - Architektur entwerfen
 - Technologie-Stack evaluieren
+- Wiederhole vorherige Schritte bis alle Details verstanden sind
 - Implementierungsplan erstellen
 - Schrittweise Umsetzung mit Tests
 
@@ -888,7 +890,9 @@ responsible-vibe-mcp/
 **Implementierung**: Memory-Adapter als Bridge zwischen beiden Ebenen
 
 ### ADR-006: End-to-End Tests mit Helper Evaluators
-**Entscheidung**: SimpleEndToEndTest mit AutoPassVibeCheckEvaluator und FailingVibeCheckEvaluator  
+**Datum**: DD-MM-YYYY   
+**Entscheidung**: SimpleEndToEndTest mit AutoPassVibeCheckEvaluator und FailingVibeCheckEvaluator   
+**Entscheider**: [@Person1, @Person2]  
 **Begründung**:
 - **Testbarkeit**: End-to-End Tests brauchen deterministische Vibe Check Ergebnisse
 - **Keine LLM-Calls für Vibe Checks**: Tests sollen unabhängig von LLM-Verfügbarkeit laufen

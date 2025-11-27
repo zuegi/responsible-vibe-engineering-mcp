@@ -9,6 +9,7 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.AskUserTool
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
@@ -102,11 +103,18 @@ class KoogWorkflowExecutor(
                             prompt("workflow_${workflowTemplate.name}") {
                                 system(systemPrompt)
                             },
+                        // FIXME Warum OpenAIModels.Chat.GBT40
                         model = OpenAIModels.Chat.GPT4o,
-                        // Generous iterations: start + (LLM nodes * 2) + finish
-                        maxAgentIterations = 1 + (llmNodeCount * 2) + 1,
+                        // Generous iterations to allow multiple tool calls per node
+                        // Formula: base (5) + nodes (llmNodeCount * 10) to allow ~3 tool calls per node
+                        maxAgentIterations = 5 + (llmNodeCount * 10),
                     ),
-                toolRegistry = ToolRegistry { },
+                toolRegistry =
+                    ToolRegistry {
+                        // Register ask_user tool for interactive workflows
+                        tool(AskUserTool())
+                        logger.info("✅ Registered ask_user tool for user interaction")
+                    },
                 installFeatures = { install(Tracing) },
             )
 
@@ -128,6 +136,13 @@ class KoogWorkflowExecutor(
 
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
+
+        // Display full agent response to user
+        println("\n" + "=".repeat(80))
+        println("📋 WORKFLOW RESULT")
+        println("=".repeat(80))
+        println(agentResponse)
+        println("=".repeat(80) + "\n")
 
         // 6. Extract results and create decisions
         val decisions = extractDecisions(workflowTemplate, agentResponse)
@@ -198,8 +213,9 @@ Branch: ${context.gitBranch ?: "main"}
 
 Executed $llmNodeCount LLM steps using Koog AIAgent with context preservation.
 
-Agent Response Summary:
-${agentResponse.take(500)}${if (agentResponse.length > 500) "..." else ""}
+---
+
+$agentResponse
             """.trimIndent()
     }
 }
