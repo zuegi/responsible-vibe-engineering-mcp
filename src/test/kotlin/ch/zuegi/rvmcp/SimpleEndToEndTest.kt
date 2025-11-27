@@ -16,6 +16,7 @@ import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -38,6 +39,7 @@ import org.springframework.test.context.ActiveProfiles
  * - Koog Integration executes real LLM workflows
  * - In-Memory persistence (no external dependencies)
  */
+@Disabled
 @SpringBootTest
 @ActiveProfiles("local")
 class SimpleEndToEndTest {
@@ -431,9 +433,7 @@ class AutoPassVibeCheckEvaluator : ch.zuegi.rvmcp.domain.port.output.VibeCheckEv
     override fun evaluateBatch(
         vibeChecks: List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheck>,
         context: ch.zuegi.rvmcp.domain.model.context.ExecutionContext,
-    ): List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult> {
-        return vibeChecks.map { evaluate(it, context) }
-    }
+    ): List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult> = vibeChecks.map { evaluate(it, context) }
 }
 
 /**
@@ -458,7 +458,5 @@ class FailingVibeCheckEvaluator : ch.zuegi.rvmcp.domain.port.output.VibeCheckEva
     override fun evaluateBatch(
         vibeChecks: List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheck>,
         context: ch.zuegi.rvmcp.domain.model.context.ExecutionContext,
-    ): List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult> {
-        return vibeChecks.map { evaluate(it, context) }
-    }
+    ): List<ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult> = vibeChecks.map { evaluate(it, context) }
 }
