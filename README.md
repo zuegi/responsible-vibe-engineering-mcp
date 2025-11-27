@@ -4,11 +4,7 @@
 
 ## Was ist Responsible Vibe MCP?
 
-Ein **MCP (Model Context Protocol) Server**, der KI-Systeme aktiv durch bewährte Software-Engineering-Workflows führt – von der Planung über die Architektur bis zur Implementierung.
-
-**MCP Server** = Standardisiertes Interface zwischen KI-Clients (Claude Desktop, Warp Agent, IDEs) und dem Responsible Vibe Engineering System.
-
-*Ganz im Sinne von Think slow, act fast*
+Ein Framework, das KI-Systeme aktiv durch bewährte Software-Engineering-Workflows führt – von der Planung über die Architektur bis zur Implementierung.
 
 ### Das Problem
 
@@ -125,7 +121,12 @@ src/
         - eine [WARP Rule](warp-rule-mcp-server), welche besagt, dass der MCP Server verwendet werden soll
  
 **Nächste Schritte**:
-- Phase 2: Memory & Persistenz (File-based oder DB)
+- **Phase 2a: MCP Server Implementation** ⏳ (IN ARBEIT)
+  - MCP Protocol Integration (JSON-RPC 2.0, stdio Transport)
+  - 5 MCP Tools (start_process, execute_phase, complete_phase, get_context, list_processes)
+  - 2 MCP Resources (context://, process://)
+  - Integration mit Claude Desktop / Warp Agent
+- Phase 2b: Memory & Persistenz (File-based Memory)
 - Phase 3: Workflows erweitern (Bug-Fix, Refactoring, Testing)
 - Phase 4: Tutorial & Documentation
 
