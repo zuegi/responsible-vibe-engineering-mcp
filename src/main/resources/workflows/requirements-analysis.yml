@@ -41,6 +41,23 @@ nodes:
          - Welche typischen Nutzungsszenarien gibt es?
       
       Führe ein strukturiertes Interview und dokumentiere die Antworten.
+      
+      **WICHTIG:**
+      Nachdem du alle Fragen gestellt hast, erstelle eine strukturierte Zusammenfassung:
+      
+      ## Requirements Summary
+      
+      ### Funktionalität
+      - [Liste der gesammelten Features]
+      
+      ### Zielgruppe
+      - [Primäre Nutzer]
+      
+      ### Nicht-funktionale Anforderungen
+      - [Performance, Skalierung, etc.]
+      
+      ### Offene Fragen
+      - [Was noch geklärt werden muss]
     output: requirements_draft
     max_iterations: 3
     
