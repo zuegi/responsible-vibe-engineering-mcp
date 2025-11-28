@@ -10,6 +10,7 @@ import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.tools.AskUserTool
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.CreateFileTool
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
@@ -115,6 +116,27 @@ class KoogWorkflowExecutor(
                         tool(AskUserTool())
                         logger.info("✅ Registered ask_user tool for user interaction")
                     },
+                // TODO
+              /*  val tools = listOf(
+                    CreateFileTool(),
+                    AskUserTool(),
+                    // ... andere Tools )
+               */
+                /*
+                // Tool Calls verarbeiten
+        response.toolCalls?.forEach { toolCall ->
+            when (toolCall.function.name) {
+                "create_file" -> {
+                    val result = fileHandler.handleCreateFile(toolCall.function.arguments)
+                    context.addToolResult(toolCall.id, result)
+                }
+                "ask_user" -> {
+                    val result = handleAskUser(toolCall.function.arguments)
+                    context.addToolResult(toolCall.id, result)
+                }
+            }
+        }
+                 */
                 installFeatures = { install(Tracing) },
             )
 
