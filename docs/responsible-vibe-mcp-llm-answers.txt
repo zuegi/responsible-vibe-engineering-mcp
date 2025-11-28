@@ -1,0 +1,41 @@
+Main Purpose
+============
+	Die Applikation soll ein Software Entwicklung Projekt mit Hilfe von KI begleiten, von der Aufnahme der Anforderungen, der daraus resultierenden Planung bis hin zur Architektur. Diese Schritte sollen iterativ durchgeführt und verbessert werden. Wird die Planung und Architektur als reif empfunden, so soll das Tool die Software Entwickler bei der Entwicklung unterstützen und die in der Planung enstandenen Dokumente wie Architecture Decission Records und Architektur Zeichnungen berücksichtigen und in den Cod vorschlägen und Code Reviews mit einbeziehen.
+
+Key Inputs für die Applikation
+===============================
+	Die Applikation soll als MCP Server für Coding Agents wie Warp oder Claude Code eingesetzt werden können. Dabei werden im Coding Agent die Prompts erstellt und an den MCP Server übergeben.
+
+Was ist das Resultat was ich von dieser Applikation erwarte
+===========================================================
+	Als Resultat erwarte ich eine gut strutkturierte Dokumentation, in welcher vorgegebene Regeln (Architektur, Compliance, etc.) eingehalten werden, die Anforderungen klar und verständliche erfasst sind, sodass aus diesen Dokumenten die Projekt Planung ersichtlich ist. Zudem soll aus diesen Dokumenten die Stories für die Software Entwicklung extrahiert werden können. In der Entwicklungsphase sollen die Dokumente als auch die Applikation die Software Entwicklung für speditive Entwicklung unterstützen.
+
+Are there any specific performance expectations or scalability requirements for the feature (e.g., how many users or requests should it handle)?
+================================================================================================================================================
+	Die Software muss ein Projekt Team von bis zu 15 Personen in ihren Tätigkeiten unerstützen. Dabei sollen die Projekt Mitarbeiter immer wieder auf die schon erhobenen Daten zurückgreifen können und diese Erweitern
+
+Are there particular security considerations or standards that the feature must adhere to
+=========================================================================================
+	Es sollen die gänigen Security Richtlinien befolgt werden. Ansonsten noch keine besonderen Security Anforderungen
+
+Who are the primary users of this feature? Are there any specific roles or personas?
+=========================================================================================
+	Die Rollen für die Nutzung der Applikation lauten: Projektleiter/Application Manager, Business Analyst, Product Owner, , Software Architekt, Software Enwickler, Tester, DevOps
+
+
+Planungsphase: \
+Der Product Owner hat eine Vision/Vorstellung eines neuen Projekts und beschreibt das Ziel auf einer hohen Flughöhe.\
+Der Business Analyst verfeinert das Ziel und erfasst daraus die Business Anforderungen.\
+Der Software Architekt übernimmt die Anforderung und erstellt daraus eine Software Architektur \
+Der Software Entwickler/DevOps challenged die Software Architektur und verfeinerrn die Architektur \
+Der Projektleiter erstellt die Planung aufgrund der Business Anforderungen und Sofware Architektur, holt die entsprechenden Experten für Projekschätzung bzgl. Budget und Zeit ab \
+Die beschriebenen Schritte werden wiederholt bis die Planung und Architektur ausgereift sind und in die Entwicklungsphase übergeben werden kann. \
+Entwicklungsphase: \
+Der Product Owner erstellt die Prioritäten Liste der Stories \
+Der Business Analyst klärt Fragen des Projekt Teams mit dem Auftraggeber \
+Der Software Entwickler entwicklet anhand der generierten Stories die Software \
+Der Software Architekt unterstützt und überwacht die Software Entwicklung \
+Der Projektleiter plant die Stories ein und gibt Feedback/Status an die Auftraggeberschaft \
+Betriebsphase: \
+Der Betriebsverantwortliche übernimmt die Applikation in einen produktiven Betrieb \
+Der Applikation Manager organisiert die Einhaltung der Regulatorien \
