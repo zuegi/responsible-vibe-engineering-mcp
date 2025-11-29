@@ -75,14 +75,20 @@ class AskUserTool : SimpleTool<AskUserTool.Args>() {
         System.out.flush()
 
         // Wait for user input
-        val answer =
-            try {
-                readlnOrNull() ?: "[No answer provided]"
-            } catch (e: Exception) {
-                "[Error reading input: ${e.message}]"
+        val lines = mutableListOf<String>()
+        while (true) {
+            val line = readlnOrNull() ?: break
+            if (line.isBlank()) break
+            if (line.endsWith("\\")) {
+                lines.add(line.removeSuffix("\\"))
+            } else {
+                lines.add(line)
+                break // oder weiter einlesen, je nach gewünschtem Verhalten
             }
+        }
+        val answer = lines.joinToString(" ")
 
-        println("\n✓ Answer recorded: ${answer.take(100)}${if (answer.length > 100) "..." else ""}\n")
+        println("\n✓ Answer recorded: $answer\n")
 
         return answer
     }

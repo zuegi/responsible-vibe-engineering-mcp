@@ -115,28 +115,9 @@ class KoogWorkflowExecutor(
                         // Register ask_user tool for interactive workflows
                         tool(AskUserTool())
                         logger.info("✅ Registered ask_user tool for user interaction")
+                        tool(CreateFileTool())
+                        logger.info("✅ Registered create_file tool for user interaction")
                     },
-                // TODO
-              /*  val tools = listOf(
-                    CreateFileTool(),
-                    AskUserTool(),
-                    // ... andere Tools )
-               */
-                /*
-                // Tool Calls verarbeiten
-        response.toolCalls?.forEach { toolCall ->
-            when (toolCall.function.name) {
-                "create_file" -> {
-                    val result = fileHandler.handleCreateFile(toolCall.function.arguments)
-                    context.addToolResult(toolCall.id, result)
-                }
-                "ask_user" -> {
-                    val result = handleAskUser(toolCall.function.arguments)
-                    context.addToolResult(toolCall.id, result)
-                }
-            }
-        }
-                 */
                 installFeatures = { install(Tracing) },
             )
 
