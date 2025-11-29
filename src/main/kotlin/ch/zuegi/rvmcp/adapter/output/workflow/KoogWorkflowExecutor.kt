@@ -10,6 +10,7 @@ import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.tools.AskUserTool
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.CreateFileTool
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
@@ -70,7 +71,7 @@ class KoogWorkflowExecutor(
     ): WorkflowExecutionResult {
         val startTime = Instant.now()
 
-        logger.info("▶ Executing Koog Workflow (REFACTORED): $template")
+        logger.info("▶ Executing Koog Workflow: $template")
 
         // 1. Parse and validate YAML workflow
         val workflowTemplate = templateParser.parseTemplate(template)
@@ -114,6 +115,8 @@ class KoogWorkflowExecutor(
                         // Register ask_user tool for interactive workflows
                         tool(AskUserTool())
                         logger.info("✅ Registered ask_user tool for user interaction")
+                        tool(CreateFileTool { context.projectPath })
+                        logger.info("✅ Registered create_file tool for user interaction")
                     },
                 installFeatures = { install(Tracing) },
             )
