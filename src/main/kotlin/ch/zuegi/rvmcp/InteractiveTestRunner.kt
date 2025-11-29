@@ -126,7 +126,7 @@ fun main() {
         println("   Fahre trotzdem fort...")
     }
     // TODO Ask for Project and Git branch
-    val project = "/Users/groot/test-project"
+    val project = "/Users/groot/WS/responsible-vibe-test-project"
     val gitBranch = "feature/new-feature"
     println("Starte mit dem Projekt")
     println("   Projekt: $project")
@@ -144,8 +144,8 @@ fun main() {
     // 6. Context laden
     var context =
         memoryRepository.load(
-            projectPath = "/Users/groot/test-project",
-            gitBranch = "feature/new-feature",
+            projectPath = project,
+            gitBranch = gitBranch,
         ) ?: throw IllegalStateException("Context not found")
 
     // 7. Phasen durchlaufen
