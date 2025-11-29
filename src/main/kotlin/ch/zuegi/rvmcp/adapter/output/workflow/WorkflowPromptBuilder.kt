@@ -46,6 +46,17 @@ ${llmNodes.mapIndexed { index, node ->
 - Be thorough but concise in your responses
 - Document your reasoning and decisions
 
+## 📄 File Creation (IMPORTANT!)
+- When you need to create a file, use the **create_file** tool
+- Call create_file with:
+  - path: relative path from project root (e.g., "docs/requirements.md")
+  - content: the full file content
+  - mimeType: file type (e.g., "text/markdown", "text/plain", "application/json")
+- Example: create_file(path="docs/feature.md", content="# Feature\n...", mimeType="text/markdown")
+- **Always provide complete content** - do not use placeholders
+- For Markdown files: Use proper formatting (headers, lists, code blocks)
+- After creating a file, confirm to the user what was created
+
 ## 👤 User Interaction (IMPORTANT!)
 - When you need information from the user, use the **ask_user** tool
 - Call ask_user with a clear, specific question
@@ -88,8 +99,8 @@ ${if (node.output != null) "\n**Output Variable**: ${node.output}" else ""}
     fun buildInitialPrompt(
         workflow: WorkflowTemplate,
         context: ExecutionContext,
-    ): String {
-        return """
+    ): String =
+        """
 Execute workflow: ${workflow.name}
 
 Context:
@@ -97,6 +108,5 @@ Context:
 - Branch: ${context.gitBranch ?: "main"}
 
 Start with the first step.
-            """.trimIndent()
-    }
+        """.trimIndent()
 }
