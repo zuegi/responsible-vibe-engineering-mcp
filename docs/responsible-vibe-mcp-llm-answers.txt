@@ -1,28 +1,69 @@
-Main Purpose
-============
-	Die Applikation soll ein Software Entwicklung Projekt mit Hilfe von KI begleiten, von der Aufnahme der Anforderungen, der daraus resultierenden Planung bis hin zur Architektur. Diese Schritte sollen iterativ durchgeführt und verbessert werden. Wird die Planung und Architektur als reif empfunden, so soll das Tool die Software Entwickler bei der Entwicklung unterstützen und die in der Planung enstandenen Dokumente wie Architecture Decission Records und Architektur Zeichnungen berücksichtigen und in den Cod vorschlägen und Code Reviews mit einbeziehen.
+============================================================
+🤖 LLM Question:
+What is the specific goal or purpose of the new feature being developed? Can you describe what this feature should accomplish?
+============================================================
+Die Applikation soll ein Software Entwicklung Projekt mit Hilfe von KI begleiten, von der Aufnahme der Anforderungen, der daraus resultierenden Planung bis hin zur Architektur. \
+Diese Schritte sollen iterativ durchgeführt und verbessert werden. \
+Wird die Planung und Architektur als reif empfunden, so soll das Tool die Software Entwickler bei der Entwicklung unterstützen und die in der Planung enstandenen Dokumente wie Architecture Decision Records und Architektur Zeichnungen berücksichtigen und
+in den Cod vorschlägen und Code Reviews mit einbeziehen.
 
-Key Inputs für die Applikation
-===============================
-	Die Applikation soll als MCP Server für Coding Agents wie Warp oder Claude Code eingesetzt werden können. Dabei werden im Coding Agent die Prompts erstellt und an den MCP Server übergeben.
 
+==========================================================
+🤖 LLM Question:
+What inputs will the system require for each phase of the process (requirements gathering, planning, architecture, and development)? For example, user-provided information, existing documentation, or predefined configurations?
+==========================================================
+Die Applikation soll als MCP Server für Coding Agents wie Warp oder Claude Code eingesetzt werden können. \
+Dabei werden im Coding Agent die Prompts erstellt und an den MCP Server übergeben.
+
+============================================================
+🤖 LLM Question:
 Was ist das Resultat was ich von dieser Applikation erwarte
 ===========================================================
-	Als Resultat erwarte ich eine gut strutkturierte Dokumentation, in welcher vorgegebene Regeln (Architektur, Compliance, etc.) eingehalten werden, die Anforderungen klar und verständliche erfasst sind, sodass aus diesen Dokumenten die Projekt Planung ersichtlich ist. Zudem soll aus diesen Dokumenten die Stories für die Software Entwicklung extrahiert werden können. In der Entwicklungsphase sollen die Dokumente als auch die Applikation die Software Entwicklung für speditive Entwicklung unterstützen.
+Als Resultat erwarte ich eine gut strutkturierte Dokumentation, in welcher vorgegebene Regeln (Architektur, Compliance, etc.) eingehalten werden, die Anforderungen klar und\
+verständliche erfasst sind, sodass aus diesen Dokumenten die Projekt Planung ersichtlich ist. \
+Zudem soll aus diesen Dokumenten die Stories für die Software Entwicklung extrahiert werden können. \
+In der Entwicklungsphase sollen die Dokumente als auch die Applikation die Software Entwicklung für speditive Entwicklung unterstützen.
 
+============================================================
+🤖 LLM Question:
 Are there any specific performance expectations or scalability requirements for the feature (e.g., how many users or requests should it handle)?
 ================================================================================================================================================
-	Die Software muss ein Projekt Team von bis zu 15 Personen in ihren Tätigkeiten unerstützen. Dabei sollen die Projekt Mitarbeiter immer wieder auf die schon erhobenen Daten zurückgreifen können und diese Erweitern
+Die Software muss ein Projekt Team von bis zu 15 Personen in ihren Tätigkeiten unerstützen. \
+Dabei sollen die Projekt Mitarbeiter immer wieder auf die schon erhobenen Daten zurückgreifen können und diese Erweitern
 
+============================================================
+🤖 LLM Question:
 Are there particular security considerations or standards that the feature must adhere to
 =========================================================================================
-	Es sollen die gänigen Security Richtlinien befolgt werden. Ansonsten noch keine besonderen Security Anforderungen
+Es sollen die gänigen Security Richtlinien befolgt werden. Ansonsten noch keine besonderen Security Anforderungen
 
+============================================================
+🤖 LLM Question:
 Who are the primary users of this feature? Are there any specific roles or personas?
-=========================================================================================
-	Die Rollen für die Nutzung der Applikation lauten: Projektleiter/Application Manager, Business Analyst, Product Owner, , Software Architekt, Software Enwickler, Tester, DevOps
+============================================================
+Die Rollen für die Nutzung der Applikation lauten: Projektleiter/Application Manager, Business Analyst, Product Owner, , Software Architekt, Software Enwickler, Tester, DevOps
 
 
+============================================================
+🤖 LLM Question:
+What are the expected performance requirements for this feature? For example, should it operate in real-time, handle large-scale data, or process requests within a certain timeframe?
+============================================================
+Die Application muss via LLM Dokumente, Architekturzeichnungen und zum Schluss auch Code definieren.\
+Das bedingt, dass die Applikation auch Interaktionen zu anderen Systemen machen muss. \
+Je nach Projektgrösse können relative grosse Dokumenationen dabei erstellt werden. Da die Applikation immer interaktionen mit dem User hat, soll sie flüssig von statten gehen.
+
+============================================================
+🤖 LLM Question:
+What scalability needs do you foresee for this feature? For example, should it support multiple users or projects simultaneously?
+============================================================
+Ja, die Applikation soll verschiedene User gleichzeitig bedienen können. Die Applikation muss unterstützen, dass mehrere User gleichzeitig \
+an einem Projekt arbeiten können und allenfalls mehrere Projekte unterstützen
+
+
+============================================================
+🤖 LLM Question:
+Can you provide details of some typical use cases or user workflows for this feature?
+============================================================
 Planungsphase: \
 Der Product Owner hat eine Vision/Vorstellung eines neuen Projekts und beschreibt das Ziel auf einer hohen Flughöhe.\
 Der Business Analyst verfeinert das Ziel und erfasst daraus die Business Anforderungen.\
@@ -38,4 +79,54 @@ Der Software Architekt unterstützt und überwacht die Software Entwicklung \
 Der Projektleiter plant die Stories ein und gibt Feedback/Status an die Auftraggeberschaft \
 Betriebsphase: \
 Der Betriebsverantwortliche übernimmt die Applikation in einen produktiven Betrieb \
-Der Applikation Manager organisiert die Einhaltung der Regulatorien \
+Der Applikation Manager organisiert die Einhaltung der Regulatorien
+
+============================================================
+🤖 LLM Question:
+Could you confirm if there are particular types of input validations or error scenarios you are concerned about? For instance, invalid data formats, system downtime, or incorrect code generation by the application?
+============================================================
+Ja, die gibt es, z.B.: \
+Wenn die LLM nicht erreichbar ist.\
+Wenn die LLM keine korrekt formatierten Files zurückgibt - es muss markdown sein \
+Wenn die LLM unbrauchbaren Code zurückgibt
+
+
+============================================================
+🤖 LLM Question:
+Are there scenarios involving extremely large documentation or complicated architectures that we should consider as edge cases?
+============================================================
+ja, für die Applikation muss die LLM verfügbar sein, es kann zu grossen Dokumentationen kommen und die Architektur muss gezeichnet werden können,
+
+============================================================
+🤖 LLM Question:
+What kind of fallback behavior or error handling is expected if the LLM or other integrated systems become unavailable temporarily?
+============================================================
+Ohne LLM geht nichts
+
+
+============================================================
+🤖 LLM Question:
+What programming languages, frameworks, or libraries are being used in the current system? Are there specific tools already in place for architecture, data handling, or LLM integration?
+============================================================
+Kotlin, Maven, Spring Boot, Kotlin Koog as Agentic AI Framework, ArchUnit
+
+============================================================
+🤖 LLM Question:
+Are there any specific architectural design patterns implemented in the existing system (e.g., MVC, Microservices, Monolith, etc.)? If yes, please provide details about how it is currently structured.
+============================================================
+Bis jetzt gibt es dass noch nicht, ist aber genau Gegenstand dieses Prozesses das herauszufinden
+
+
+============================================================
+🤖 LLM Question:
+How is the flow of data and interaction currently managed, if applicable? Are there any predefined communication protocols or services?
+============================================================
+Das wollen wir genau in diesem Prozess herausfinden.
+
+============================================================
+🤖 LLM Question:
+Are there any third-party APIs or external systems that the application is expected to interact with? If yes, can you specify them?
+============================================================
+Wir brauchen definitiv Zugang zu einer LLM, dann könnte eine mögliche Idee sein, die Dokumentation in ein Git Repo abzulegen,\
+es braucht eine Interaktion mit Excalidraw für Architektur Zeichnungen zu erstellen.\
+Ob es diese sind oder ob es noch weitere braucht soll über diesen Prozess herausgefunden werden
