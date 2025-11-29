@@ -71,7 +71,7 @@ class KoogWorkflowExecutor(
     ): WorkflowExecutionResult {
         val startTime = Instant.now()
 
-        logger.info("▶ Executing Koog Workflow (REFACTORED): $template")
+        logger.info("▶ Executing Koog Workflow: $template")
 
         // 1. Parse and validate YAML workflow
         val workflowTemplate = templateParser.parseTemplate(template)
@@ -115,7 +115,7 @@ class KoogWorkflowExecutor(
                         // Register ask_user tool for interactive workflows
                         tool(AskUserTool())
                         logger.info("✅ Registered ask_user tool for user interaction")
-                        tool(CreateFileTool())
+                        tool(CreateFileTool { context.projectPath })
                         logger.info("✅ Registered create_file tool for user interaction")
                     },
                 installFeatures = { install(Tracing) },
