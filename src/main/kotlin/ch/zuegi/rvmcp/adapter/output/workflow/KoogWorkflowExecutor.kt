@@ -11,6 +11,8 @@ import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.tools.AskUserTool
 import ch.zuegi.rvmcp.adapter.output.workflow.tools.CreateFileTool
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.QuestionCatalogTool
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.questioncatalog.QuestionCatalog
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
@@ -117,6 +119,9 @@ class KoogWorkflowExecutor(
                         logger.info("✅ Registered ask_user tool for user interaction")
                         tool(CreateFileTool { context.projectPath })
                         logger.info("✅ Registered create_file tool for user interaction")
+                        //  TODO korrekter Pfad angeben, die Daten sind aktuell noch hard codiert im QuestionCatalogk
+                        tool(QuestionCatalogTool(QuestionCatalog.fromFile("src/main/resources/users.json")))
+                        logger.info("✅ Registered get_question tool for query a catalog")
                     },
                 installFeatures = { install(Tracing) },
             )
