@@ -1,0 +1,28 @@
+name: "instrument_collection"
+description: "Collect instrument data using approved questions"
+
+nodes:
+  - id: "ask_isin"
+    type: ASK_CATALOG_QUESTION
+    questionId: "Q001"
+    description: "Get ISIN from user"
+
+  - id: "ask_type"
+    type: ASK_CATALOG_QUESTION
+    questionId: "Q002"
+    description: "Get instrument type"
+
+  - id: "process"
+    type: LLM
+    prompt: "Create Instrument.kt file with collected data"
+    tools: ["create_file"]
+
+edges:
+  - from: START
+    to: ask_isin
+  - from: ask_isin
+    to: ask_type
+  - from: ask_type
+    to: process
+  - from: process
+    to: FINISH

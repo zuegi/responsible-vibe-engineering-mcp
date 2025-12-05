@@ -42,6 +42,12 @@ data class WorkflowNode(
     @JsonProperty("max_iterations")
     val maxIterations: Int? = null,
     val required: Boolean? = null,
+    // Für Katalog-basierte Nodes
+    val questionId: String? = null, // Referenz zu Frage im Katalog
+    val validationRules: List<String>? = null, // Optional: Override Katalog-Rules
+    val retryOnInvalid: Boolean = true,
+    val maxRetries: Int = 3,
+    val skipIfAnswered: Boolean = false,
 )
 
 /**
@@ -62,6 +68,18 @@ enum class NodeType {
 
     @JsonProperty("system_command")
     SYSTEM_COMMAND,
+
+    /** Frage aus Katalog laden */
+    @JsonProperty("get_queestion")
+    GET_QUESTION,
+
+    /** Katalog-Frage stellen */
+    @JsonProperty("ask_cataloq_question")
+    ASK_CATALOG_QUESTION,
+
+    /** Antwort validieren */
+    @JsonProperty("validate_answer")
+    VALIDATE_ANSWER,
 }
 
 /**
