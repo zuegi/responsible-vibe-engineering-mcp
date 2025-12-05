@@ -35,6 +35,10 @@ class YamlToKoogStrategyTranslator {
             logger.info("Translating YAML workflow '${workflow.name}' to Koog strategy...")
 
             // Filter to only LLM nodes (skip conditional, human-interaction, etc.)
+
+            val nodes = workflow.nodes
+            logger.info("Found ${nodes.size} nodes (${nodes.count { it.type == NodeType.LLM }} LLM nodes)")
+
             val llmNodes = workflow.nodes.filter { it.type == NodeType.LLM }
             logger.info("Found ${llmNodes.size} LLM nodes to translate")
 
@@ -87,9 +91,29 @@ class YamlToKoogStrategyTranslator {
             // Create all nodes first (must be done before creating edges)
             val koogNodes =
                 llmNodes.mapIndexed { index, yamlNode ->
-                    val node by nodeLLMRequest(yamlNode.id, true)
-                    logger.debug("Created Koog node '${yamlNode.id}' (${index + 1}/${llmNodes.size})")
-                    node
+                    when (yamlNode.type) {
+                        NodeType.LLM -> {
+                            val node by nodeLLMRequest(yamlNode.id, true)
+                            logger.debug("Created Koog node '${yamlNode.id}' (${index + 1}/${llmNodes.size})")
+                            node
+                        }
+
+                        // folgende Node Types
+                        NodeType.GET_QUESTION,
+                        NodeType.ASK_CATALOG_QUESTION,
+                        NodeType.VALIDATE_ANSWER,
+                        -> {
+                            // Diese Nodes werden als Tool-Calls behandelt
+                            // Der Agent ruft automatisch die entsprechenden Tools auf
+                            val node by nodeLLMRequest(yamlNode.id, true)
+                            logger.debug("Created catalog node '${yamlNode.id}' (type: ${yamlNode.type})")
+                            node
+                        }
+
+                        else -> {
+                            throw IllegalArgumentException("Unsupported node type: ${yamlNode.type}")
+                        }
+                    }
                 }
 
             // Create shared tool execution nodes for all LLM nodes
@@ -143,6 +167,6 @@ class YamlToKoogStrategyTranslator {
             )
             logger.debug("Edge: ${llmNodes.last().id} -> FINISH")
 
-            logger.info("✅ Created strategy with ${llmNodes.size} LLM nodes, tool support, and edges")
+            logger.info("✅ Strategy created with ${llmNodes.size} LLM nodes, tool support, and edges")
         }
 }
