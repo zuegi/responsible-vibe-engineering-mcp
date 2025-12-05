@@ -79,7 +79,7 @@ class KoogWorkflowExecutor(
         val workflowTemplate = templateParser.parseTemplate(template)
         templateParser.validateTemplate(workflowTemplate)
 
-        val llmNodeCount = workflowTemplate.nodes.count { it.type == NodeType.LLM }
+        val llmNodeCount = workflowTemplate.nodes.count { it.getNodeType() == NodeType.LLM }
         logger.info("Template: ${workflowTemplate.name}")
         logger.info("Total nodes: ${workflowTemplate.nodes.size} ($llmNodeCount LLM nodes)")
 
@@ -90,7 +90,7 @@ class KoogWorkflowExecutor(
 
         // 3. Build comprehensive system prompt
         logger.info("Building workflow system prompt...")
-        val systemPrompt = promptBuilder.buildWorkflowSystemPrompt(workflowTemplate, context)
+        val systemPrompt = promptBuilder.buildNodeSpecificInstructions(workflowTemplate.nodes)
 
         // 4. Create single agent for entire workflow
         logger.info("Creating Koog agent for entire workflow...")
@@ -192,7 +192,7 @@ class KoogWorkflowExecutor(
         workflow: ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate,
         agentResponse: String,
     ): List<Decision> {
-        val llmNodes = workflow.nodes.filter { it.type == NodeType.LLM }
+        val llmNodes = workflow.nodes.filter { it.getNodeType() == NodeType.LLM }
 
         return llmNodes.map { node ->
             Decision(
@@ -212,7 +212,7 @@ class KoogWorkflowExecutor(
         context: ExecutionContext,
         agentResponse: String,
     ): String {
-        val llmNodeCount = workflow.nodes.count { it.type == NodeType.LLM }
+        val llmNodeCount = workflow.nodes.count { it.getNodeType() == NodeType.LLM }
 
         return """
 Workflow: ${workflow.name}
