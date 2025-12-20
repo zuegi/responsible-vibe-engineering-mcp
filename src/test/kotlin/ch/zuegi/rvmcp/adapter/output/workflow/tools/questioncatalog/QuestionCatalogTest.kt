@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 class QuestionCatalogTest {
     // TODO Testdaten einlesen, die Daten sind aktuell noch hard codiert im QuestionCatalog
-    val catalog: QuestionCatalog = QuestionCatalog.fromFile("src/main/resources/questions.json")
+    val catalog: QuestionCatalog = QuestionCatalog.fromFile("workflows/instrument-collection-workflow.yml")
 
     @Test
     fun `getQuestion returns correct question`() {

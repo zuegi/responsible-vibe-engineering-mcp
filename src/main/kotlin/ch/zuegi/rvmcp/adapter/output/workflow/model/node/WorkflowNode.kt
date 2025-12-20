@@ -14,12 +14,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     property = "type",
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(value = LLMNode::class, name = "LLM"),
-    JsonSubTypes.Type(value = GetQuestionNode::class, name = "GET_QUESTION"),
-    JsonSubTypes.Type(value = AskCatalogQuestionNode::class, name = "ASK_CATALOG_QUESTION"),
-    JsonSubTypes.Type(value = ValidateAnswerNode::class, name = "VALIDATE_ANSWER"),
-    JsonSubTypes.Type(value = ConditionalNode::class, name = "CONDITIONAL"),
-    JsonSubTypes.Type(value = HumanInteractionNode::class, name = "HUMAN_INTERACTION"),
+    JsonSubTypes.Type(value = LLMNode::class, name = "llm"),
+    JsonSubTypes.Type(value = GetQuestionNode::class, name = "get_question"),
+    JsonSubTypes.Type(value = AskCatalogQuestionNode::class, name = "ask_catalog_question"),
+    JsonSubTypes.Type(value = ValidateAnswerNode::class, name = "validate_answer"),
+    JsonSubTypes.Type(value = ConditionalNode::class, name = "conditional"),
+    JsonSubTypes.Type(value = HumanInteractionNode::class, name = "human_interaction"),
+    JsonSubTypes.Type(value = AggregationNode::class, name = "aggregation"),
+    JsonSubTypes.Type(value = SystemCommandNode::class, name = "system_command"),
 )
 sealed class WorkflowNode {
     abstract val id: String
