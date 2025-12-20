@@ -1,11 +1,14 @@
 package ch.zuegi.rvmcp.adapter.output.workflow
 
-import ch.zuegi.rvmcp.adapter.output.workflow.model.*
+import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
+import ch.zuegi.rvmcp.adapter.output.workflow.model.getNodeIds
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AggregationNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AskCatalogQuestionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ConditionalNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.GetQuestionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.HumanInteractionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.LLMNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.SystemCommandNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ValidateAnswerNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -67,6 +70,8 @@ class WorkflowTemplateParser {
                 is ValidateAnswerNode -> validateValidateAnswerNode(node)
                 is ConditionalNode -> validateConditionalNode(node, nodeIds)
                 is HumanInteractionNode -> validateHumanInteractionNode(node)
+                is AggregationNode -> validateAggregationNode(node)
+                is SystemCommandNode -> validateSystemCommandNode(node)
             }
         }
     }
@@ -118,6 +123,7 @@ class WorkflowTemplateParser {
 
         // Optionally validate that targets exist (might be edge targets)
         // Commented out as edges might define the actual flow
+
         /*
         require(node.if_true in nodeIds) {
             "CONDITIONAL node '${node.id}' if_true target '${node.if_true}' not found in nodes"
@@ -131,6 +137,21 @@ class WorkflowTemplateParser {
     private fun validateHumanInteractionNode(node: HumanInteractionNode) {
         require(node.prompt.isNotBlank()) {
             "HUMAN_INTERACTION node '${node.id}' must have a non-empty prompt"
+        }
+    }
+
+    private fun validateAggregationNode(node: AggregationNode) {
+        require(node.inputs.isNotEmpty()) {
+            "AGGREGATION node '${node.id}' must have at least one input"
+        }
+        require(node.output.isNotBlank()) {
+            "AGGREGATION node '${node.id}' must have a non-empty output"
+        }
+    }
+
+    private fun validateSystemCommandNode(node: SystemCommandNode) {
+        require(node.command.isNotBlank()) {
+            "SYSTEM_COMMAND node '${node.id}' must have a non-empty command"
         }
     }
 }

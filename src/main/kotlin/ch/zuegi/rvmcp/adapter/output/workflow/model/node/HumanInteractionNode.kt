@@ -12,6 +12,8 @@ data class HumanInteractionNode(
     override val description: String? = null,
     val prompt: String,
     val inputs: List<String>? = null,
+    val output: String? = null,
+    val required: Boolean = false,
     val command: String? = null,
 ) : WorkflowNode() {
     override fun getNodeType() = NodeType.HUMAN_INTERACTION

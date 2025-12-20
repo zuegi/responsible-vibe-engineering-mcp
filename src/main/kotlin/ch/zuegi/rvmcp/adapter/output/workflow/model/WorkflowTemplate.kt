@@ -1,20 +1,27 @@
 package ch.zuegi.rvmcp.adapter.output.workflow.model
 
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AggregationNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AskCatalogQuestionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ConditionalNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.GetQuestionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.HumanInteractionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.LLMNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.SystemCommandNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ValidateAnswerNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.WorkflowNode
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.questioncatalog.Question
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Root model for YAML workflow templates.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class WorkflowTemplate(
     val name: String,
     val description: String,
+    val version: String,
+    val questions: List<Question> = emptyList(),
     val nodes: List<WorkflowNode>, // Jetzt polymorphe Liste
     val graph: WorkflowGraph,
     @JsonProperty("vibe_checks")
@@ -126,6 +133,10 @@ fun WorkflowNode.asValidateAnswerNode(): ValidateAnswerNode? = this as? Validate
 fun WorkflowNode.asConditionalNode(): ConditionalNode? = this as? ConditionalNode
 
 fun WorkflowNode.asHumanInteractionNode(): HumanInteractionNode? = this as? HumanInteractionNode
+
+fun WorkflowNode.asAggregationNode(): AggregationNode? = this as? AggregationNode
+
+fun WorkflowNode.asSystemCommandNode(): SystemCommandNode? = this as? SystemCommandNode
 
 /**
  * Get all LLM nodes from workflow

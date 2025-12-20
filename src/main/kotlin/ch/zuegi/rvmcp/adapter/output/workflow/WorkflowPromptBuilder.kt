@@ -1,13 +1,13 @@
 package ch.zuegi.rvmcp.adapter.output.workflow
 
-import aws.smithy.kotlin.runtime.util.type
-import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AggregationNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AskCatalogQuestionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ConditionalNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.GetQuestionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.HumanInteractionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.LLMNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.SystemCommandNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ValidateAnswerNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.WorkflowNode
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
@@ -86,6 +86,85 @@ ${node.on_failure?.let { "**On Failure**: $it" } ?: ""}
 ${node.inputs?.let { "**Inputs**: ${it.joinToString()}" } ?: ""}
                     """.trim()
                     }
+
+                    is AggregationNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [AGGREGATION]
+**Action**: Combine multiple inputs
+**Inputs**: ${node.inputs.joinToString()}
+**Output**: ${node.output}
+                    """.trim()
+                    }
+
+                    is SystemCommandNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [SYSTEM_COMMAND]
+**Command**: ${node.command}
+${node.expectedOutput?.let { "**Expected Output**: $it" } ?: ""}
+${node.onFailure?.let { "**On Failure**: $it" } ?: ""}
+                    """.trim()
+                    }
                 }
             }.joinToString("\n\n")
+
+    fun buildInitialPrompt(
+        workflow: WorkflowTemplate,
+        context: ExecutionContext,
+    ): String {
+        // Build step-by-step instructions for the workflow
+        val steps =
+            workflow.nodes
+                .mapIndexed { index, node ->
+                    val stepNumber = index + 1
+                    val instruction =
+                        when (node) {
+                            is AskCatalogQuestionNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - Call get_question(questionId="${node.questionId}")
+                                - Then call ask_user with the exact question text from the catalog
+                                - Wait for user response
+                                """.trimIndent()
+                            }
+
+                            is GetQuestionNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - Call get_question(questionId="${node.questionId}")
+                                """.trimIndent()
+                            }
+
+                            is LLMNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - ${node.prompt ?: node.description ?: "Execute this step"}
+                                """.trimIndent()
+                            }
+
+                            else -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - ${node.description ?: "Execute this step"}
+                                """.trimIndent()
+                            }
+                        }
+                    instruction
+                }.joinToString("\n\n")
+
+        return """
+Execute workflow: ${workflow.name}
+${workflow.description?.let { "Goal: $it\n" } ?: ""}
+Context:
+- Project: ${context.projectPath}
+- Branch: ${context.gitBranch ?: "main"}
+
+You will execute ${workflow.nodes.size} steps sequentially.
+IMPORTANT: Complete each step fully before moving to the next.
+
+Steps:
+$steps
+
+Now execute Step 1 ONLY. After completion, proceed to Step 2.
+            """.trimIndent()
+    }
 }
