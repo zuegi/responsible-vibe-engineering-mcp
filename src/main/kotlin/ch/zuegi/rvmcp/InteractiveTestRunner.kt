@@ -359,7 +359,8 @@ private fun createFeatureDevelopmentProcess(): EngineeringProcess {
                         required = false,
                     ),
                 ),
-            koogWorkflowTemplate = "requirements-analysis.yml", // Echte YAML-Datei!
+//            koogWorkflowTemplate = "requirements-analysis.yml", // Echte YAML-Datei!
+            koogWorkflowTemplate = "instrument-collection-workflow.yml", // Echte YAML-Datei!
             order = 0,
         )
 

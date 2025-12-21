@@ -1,47 +1,31 @@
 package ch.zuegi.rvmcp.adapter.output.workflow.model
 
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AggregationNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AskCatalogQuestionNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ConditionalNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.GetQuestionNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.HumanInteractionNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.LLMNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.SystemCommandNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ValidateAnswerNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.WorkflowNode
+import ch.zuegi.rvmcp.adapter.output.workflow.tools.questioncatalog.Question
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * Root model for YAML workflow templates.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class WorkflowTemplate(
     val name: String,
     val description: String,
     val version: String,
-    @JsonProperty("context_variables")
-    val contextVariables: List<String> = emptyList(),
-    val nodes: List<WorkflowNode>,
+    val questions: List<Question> = emptyList(),
+    val nodes: List<WorkflowNode>, // Jetzt polymorphe Liste
     val graph: WorkflowGraph,
-    val outputs: WorkflowOutputs? = null,
     @JsonProperty("vibe_checks")
     val vibeChecks: List<VibeCheckDefinition> = emptyList(),
-)
-
-/**
- * A single node in the workflow (e.g., LLM call, conditional, human interaction).
- */
-data class WorkflowNode(
-    val id: String,
-    val type: NodeType,
-    val description: String,
-    val prompt: String? = null,
-    val output: String? = null,
-    val condition: String? = null,
-    @JsonProperty("if_true")
-    val ifTrue: String? = null,
-    @JsonProperty("if_false")
-    val ifFalse: String? = null,
-    val inputs: List<String>? = null,
-    val command: String? = null,
-    @JsonProperty("expected_output")
-    val expectedOutput: String? = null,
-    @JsonProperty("on_failure")
-    val onFailure: String? = null,
-    val next: String? = null,
-    @JsonProperty("max_iterations")
-    val maxIterations: Int? = null,
-    val required: Boolean? = null,
 )
 
 /**
@@ -62,6 +46,18 @@ enum class NodeType {
 
     @JsonProperty("system_command")
     SYSTEM_COMMAND,
+
+    /** Frage aus Katalog laden */
+    @JsonProperty("get_question")
+    GET_QUESTION,
+
+    /** Katalog-Frage stellen */
+    @JsonProperty("ask_catalog_question")
+    ASK_CATALOG_QUESTION,
+
+    /** Antwort validieren */
+    @JsonProperty("validate_answer")
+    VALIDATE_ANSWER,
 }
 
 /**
@@ -118,3 +114,59 @@ data class VibeCheckDefinition(
     val question: String,
     val type: String,
 )
+
+// ============================================================================
+// HELPER EXTENSIONS
+// ============================================================================
+
+/**
+ * Extension functions to safely cast nodes to specific types
+ */
+fun WorkflowNode.asLLMNode(): LLMNode? = this as? LLMNode
+
+fun WorkflowNode.asGetQuestionNode(): GetQuestionNode? = this as? GetQuestionNode
+
+fun WorkflowNode.asAskCatalogQuestionNode(): AskCatalogQuestionNode? = this as? AskCatalogQuestionNode
+
+fun WorkflowNode.asValidateAnswerNode(): ValidateAnswerNode? = this as? ValidateAnswerNode
+
+fun WorkflowNode.asConditionalNode(): ConditionalNode? = this as? ConditionalNode
+
+fun WorkflowNode.asHumanInteractionNode(): HumanInteractionNode? = this as? HumanInteractionNode
+
+fun WorkflowNode.asAggregationNode(): AggregationNode? = this as? AggregationNode
+
+fun WorkflowNode.asSystemCommandNode(): SystemCommandNode? = this as? SystemCommandNode
+
+/**
+ * Get all LLM nodes from workflow
+ */
+fun WorkflowTemplate.getLLMNodes(): List<LLMNode> = nodes.filterIsInstance<LLMNode>()
+
+/**
+ * Get all catalog nodes from workflow
+ */
+fun WorkflowTemplate.getCatalogNodes(): List<WorkflowNode> =
+    nodes.filter {
+        it.getNodeType() in
+            listOf(
+                NodeType.GET_QUESTION,
+                NodeType.ASK_CATALOG_QUESTION,
+                NodeType.VALIDATE_ANSWER,
+            )
+    }
+
+/**
+ * Check if workflow uses question catalog
+ */
+fun WorkflowTemplate.usesCatalog(): Boolean = getCatalogNodes().isNotEmpty()
+
+/**
+ * Get node by ID
+ */
+fun WorkflowTemplate.getNodeById(id: String): WorkflowNode? = nodes.find { it.id == id }
+
+/**
+ * Get all node IDs
+ */
+fun WorkflowTemplate.getNodeIds(): Set<String> = nodes.map { it.id }.toSet()

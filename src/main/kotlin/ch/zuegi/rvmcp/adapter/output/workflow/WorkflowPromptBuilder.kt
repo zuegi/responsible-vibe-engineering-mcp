@@ -1,7 +1,15 @@
 package ch.zuegi.rvmcp.adapter.output.workflow
 
-import ch.zuegi.rvmcp.adapter.output.workflow.model.NodeType
 import ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AggregationNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.AskCatalogQuestionNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ConditionalNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.GetQuestionNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.HumanInteractionNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.LLMNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.SystemCommandNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ValidateAnswerNode
+import ch.zuegi.rvmcp.adapter.output.workflow.model.node.WorkflowNode
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 
 /**
@@ -10,103 +18,153 @@ import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
  * The prompt includes:
  * - Workflow overview and purpose
  * - All workflow steps with descriptions
- * - Execution instructions
+ * - Execution instructions (including catalog rules if applicable)
  * - Project context
  * - Individual node prompts
  */
 class WorkflowPromptBuilder {
-    /**
-     * Builds a complete system prompt for executing a workflow.
-     *
-     * @param workflow The workflow template
-     * @param context The execution context (project path, branch, etc.)
-     * @return A comprehensive system prompt
-     */
-    fun buildWorkflowSystemPrompt(
-        workflow: WorkflowTemplate,
-        context: ExecutionContext,
-    ): String {
-        val llmNodes = workflow.nodes.filter { it.type == NodeType.LLM }
-
-        return """
-You are an AI assistant executing a structured workflow: **${workflow.name}**
-
-## Workflow Purpose
-${workflow.description ?: "No description provided"}
-
-## Workflow Steps
-${llmNodes.mapIndexed { index, node ->
-            "${index + 1}. **${node.id}**: ${node.description ?: "No description"}"
-        }.joinToString("\n")}
-
-## Execution Instructions
-- Execute each step sequentially
-- Use the output of previous steps as context for the next step
-- Maintain conversation history to preserve context
-- Be thorough but concise in your responses
-- Document your reasoning and decisions
-
-## 📄 File Creation (IMPORTANT!)
-- When you need to create a file, use the **create_file** tool
-- Call create_file with:
-  - path: relative path from project root (e.g., "docs/requirements.md")
-  - content: the full file content
-  - mimeType: file type (e.g., "text/markdown", "text/plain", "application/json")
-- Example: create_file(path="docs/feature.md", content="# Feature\n...", mimeType="text/markdown")
-- **Always provide complete content** - do not use placeholders
-- For Markdown files: Use proper formatting (headers, lists, code blocks)
-- After creating a file, confirm to the user what was created
-
-## 👤 User Interaction (IMPORTANT!)
-- When you need information from the user, use the **ask_user** tool
-- Call ask_user with a clear, specific question
-- Wait for the user's response before proceeding
-- Example: ask_user(question="What should this feature do?")
-- Do NOT make assumptions - always ask when information is missing
-- **After gathering all information**: Provide a structured summary of what you learned
-- Format the summary clearly with sections (e.g., "## Requirements Summary", "### Functionality", etc.)
-
-## Current Project Context
-- **Project Path**: ${context.projectPath}
-- **Git Branch**: ${context.gitBranch ?: "main"}
-- **Execution ID**: ${context.executionId.value}
-${if (context.phaseHistory.isNotEmpty()) "- **Previous Phases**: ${context.phaseHistory.joinToString(", ")}" else ""}
-
-## Node-Specific Instructions
-
-${llmNodes.mapIndexed { index, node ->
-            """
-### Step ${index + 1}: ${node.id}
+    fun buildNodeSpecificInstructions(nodes: List<WorkflowNode>): String =
+        nodes
+            .mapIndexed { index, node ->
+                when (node) {
+                    is LLMNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [LLM]
 ${node.prompt ?: "No specific instructions"}
-${if (node.output != null) "\n**Output Variable**: ${node.output}" else ""}
-    """.trim()
-        }.joinToString("\n\n")}
+${node.tools?.let { "**Available Tools**: ${it.joinToString(", ")}" } ?: ""}
+${node.output?.let { "**Output Variable**: $it" } ?: ""}
+                    """.trim()
+                    }
 
----
+                    is GetQuestionNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [CATALOG-LOAD]
+**Action**: Load question from catalog
+**Question ID**: ${node.questionId}
+**Required Tool Call**: `get_question(questionId="${node.questionId}")`
+${if (node.skipIfAnswered) "**Skip if already answered**" else ""}
+                    """.trim()
+                    }
 
-**Begin with Step 1: ${llmNodes.firstOrNull()?.id ?: "N/A"}**
-            """.trimIndent()
-    }
+                    is AskCatalogQuestionNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [CATALOG-ASK]
+**Action**: Ask user catalog question
+**Question ID**: ${node.questionId}
+**Required**: ${node.required}
+**Process**:
+  1. Call `get_question(questionId="${node.questionId}")`
+  2. Call `ask_user(question="<text from step 1>")` with EXACT question text
+  3. Wait for user's answer
+${if (node.retryOnInvalid) "  4. If invalid, retry (max ${node.maxRetries} times)" else ""}
+                    """.trim()
+                    }
 
-    /**
-     * Builds a simplified prompt for the initial agent run.
-     * Individual node prompts will be injected during execution.
-     *
-     * @param workflow The workflow template
-     * @param context The execution context
-     * @return A simplified initial prompt
-     */
+                    is ValidateAnswerNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [VALIDATE]
+**Action**: Validate user's answer
+**Question ID**: ${node.questionId}
+${node.validationRules?.let { "**Custom Rules**: ${it.joinToString()}" } ?: ""}
+${node.on_failure?.let { "**On Failure**: $it" } ?: ""}
+                    """.trim()
+                    }
+
+                    is ConditionalNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [CONDITIONAL]
+**Condition**: ${node.condition}
+**If True**: ${node.if_true ?: "continue"}
+**If False**: ${node.if_false ?: "continue"}
+                    """.trim()
+                    }
+
+                    is HumanInteractionNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [HUMAN_INTERACTION]
+**Prompt**: ${node.prompt}
+${node.inputs?.let { "**Inputs**: ${it.joinToString()}" } ?: ""}
+                    """.trim()
+                    }
+
+                    is AggregationNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [AGGREGATION]
+**Action**: Combine multiple inputs
+**Inputs**: ${node.inputs.joinToString()}
+**Output**: ${node.output}
+                    """.trim()
+                    }
+
+                    is SystemCommandNode -> {
+                        """
+### Step ${index + 1}: ${node.id} [SYSTEM_COMMAND]
+**Command**: ${node.command}
+${node.expectedOutput?.let { "**Expected Output**: $it" } ?: ""}
+${node.onFailure?.let { "**On Failure**: $it" } ?: ""}
+                    """.trim()
+                    }
+                }
+            }.joinToString("\n\n")
+
     fun buildInitialPrompt(
         workflow: WorkflowTemplate,
         context: ExecutionContext,
-    ): String =
-        """
-Execute workflow: ${workflow.name}
+    ): String {
+        // Build step-by-step instructions for the workflow
+        val steps =
+            workflow.nodes
+                .mapIndexed { index, node ->
+                    val stepNumber = index + 1
+                    val instruction =
+                        when (node) {
+                            is AskCatalogQuestionNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - Call get_question(questionId="${node.questionId}")
+                                - Then call ask_user with the exact question text from the catalog
+                                - Wait for user response
+                                """.trimIndent()
+                            }
 
+                            is GetQuestionNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - Call get_question(questionId="${node.questionId}")
+                                """.trimIndent()
+                            }
+
+                            is LLMNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - ${node.prompt ?: node.description ?: "Execute this step"}
+                                """.trimIndent()
+                            }
+
+                            else -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - ${node.description ?: "Execute this step"}
+                                """.trimIndent()
+                            }
+                        }
+                    instruction
+                }.joinToString("\n\n")
+
+        return """
+Execute workflow: ${workflow.name}
+${workflow.description?.let { "Goal: $it\n" } ?: ""}
 Context:
 - Project: ${context.projectPath}
 - Branch: ${context.gitBranch ?: "main"}
 
-Start with the first step.
-        """.trimIndent()
+You will execute ${workflow.nodes.size} steps sequentially.
+IMPORTANT: Complete each step fully before moving to the next.
+
+Steps:
+$steps
+
+Now execute Step 1 ONLY. After completion, proceed to Step 2.
+            """.trimIndent()
+    }
 }
