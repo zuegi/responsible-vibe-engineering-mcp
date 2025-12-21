@@ -1,0 +1,80 @@
+name: "instrument_collection"
+description: "Collect instrument data using approved questions"
+version: "1.0"
+
+# Question Catalog - embedded in workflow
+questions:
+  - id: "Q001"
+    text: "What is the ISIN of the instrument?"
+    category: "instrument_identification"
+    validationRules:
+      - type: "REQUIRED"
+        required: true
+      - type: "REGEX"
+        pattern: "^[A-Z]{2}[A-Z0-9]{9}[0-9]$"
+  
+  - id: "Q002"
+    text: "What is the instrument type (BOND, STOCK, OPTION, FUTURE)?"
+    category: "instrument_identification"
+    validationRules:
+      - type: "ENUM"
+        values: ["BOND", "STOCK", "OPTION", "FUTURE"]
+    followUpQuestions: ["Q003"]
+  
+  - id: "Q003"
+    text: "What is the currency of the instrument?"
+    category: "instrument_details"
+    validationRules:
+      - type: "REGEX"
+        pattern: "^[A-Z]{3}$"
+  
+  - id: "Q004"
+    text: "What is the current market price?"
+    category: "pricing"
+    validationRules:
+      - type: "REQUIRED"
+        required: false
+
+# Workflow Nodes
+nodes:
+  - id: "ask_isin"
+    type: ask_catalog_question
+    questionId: "Q001"
+    description: "Get ISIN from user"
+
+  - id: "ask_type"
+    type: ask_catalog_question
+    questionId: "Q002"
+    description: "Get instrument type"
+
+  - id: "ask_currency"
+    type: ask_catalog_question
+    questionId: "Q003"
+    description: "Get currency from user"
+
+  - id: "ask_price"
+    type: ask_catalog_question
+    questionId: "Q004"
+    description: "Get market price from user"
+
+  - id: "process"
+    type: llm
+    description: "Create a Markdown File with the user Inputs"
+    prompt: "Create markdown file with collected data"
+    tools: ["create_file"]
+
+# Workflow Graph
+graph:
+  start: ask_isin
+  end: process
+  edges:
+    - from: ask_isin
+      to: ask_type
+    - from: ask_type
+      to: ask_currency
+    - from: ask_currency
+      to: ask_price
+    - from: ask_price
+      to: process
+
+vibe_checks: []

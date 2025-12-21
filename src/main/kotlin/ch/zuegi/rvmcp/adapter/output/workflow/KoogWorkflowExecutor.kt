@@ -44,6 +44,7 @@ import java.time.LocalDate
 @Component
 class KoogWorkflowExecutor(
     private val llmProperties: LlmProperties,
+    private val askUserTool: ai.koog.agents.core.tools.SimpleTool<*>? = null,
 ) : WorkflowExecutionPort {
     private val logger by rvmcpLogger()
     private var lastExecution: WorkflowExecutionResult? = null
@@ -79,7 +80,7 @@ class KoogWorkflowExecutor(
         val workflowTemplate = templateParser.parseTemplate(template)
         templateParser.validateTemplate(workflowTemplate)
 
-        val llmNodeCount = workflowTemplate.nodes.count { it.type == NodeType.LLM }
+        val llmNodeCount = workflowTemplate.nodes.count { it.getNodeType() == NodeType.LLM }
         logger.info("Template: ${workflowTemplate.name}")
         logger.info("Total nodes: ${workflowTemplate.nodes.size} ($llmNodeCount LLM nodes)")
 
@@ -90,7 +91,7 @@ class KoogWorkflowExecutor(
 
         // 3. Build comprehensive system prompt
         logger.info("Building workflow system prompt...")
-        val systemPrompt = promptBuilder.buildWorkflowSystemPrompt(workflowTemplate, context)
+        val systemPrompt = promptBuilder.buildNodeSpecificInstructions(workflowTemplate.nodes)
 
         // 4. Create single agent for entire workflow
         logger.info("Creating Koog agent for entire workflow...")
@@ -109,14 +110,15 @@ class KoogWorkflowExecutor(
                         // FIXME Warum OpenAIModels.Chat.GBT40
                         model = OpenAIModels.Chat.GPT4o,
                         // Generous iterations to allow multiple tool calls per node
-                        // Formula: base (5) + nodes (llmNodeCount * 10) to allow ~3 tool calls per node
-                        maxAgentIterations = 5 + (llmNodeCount * 10),
+                        // Formula: base (10) + nodes (llmNodeCount * 20) to allow ~5-10 tool calls per node
+                        maxAgentIterations = 10 + (llmNodeCount * 20),
                     ),
                 toolRegistry =
                     ToolRegistry {
-                        // Register ask_user tool for interactive workflows
-                        tool(AskUserTool())
-                        logger.info("✅ Registered ask_user tool for user interaction")
+                        // Register ask_user tool (configurable for tests)
+                        val userTool = askUserTool ?: AskUserTool()
+                        tool(userTool)
+                        logger.info("✅ Registered ask_user tool (${userTool.javaClass.simpleName})")
                         tool(CreateFileTool { context.projectPath })
                         logger.info("✅ Registered create_file tool for user interaction")
                         //  TODO korrekter Pfad angeben, die Daten sind aktuell noch hard codiert im QuestionCatalogk
@@ -192,7 +194,7 @@ class KoogWorkflowExecutor(
         workflow: ch.zuegi.rvmcp.adapter.output.workflow.model.WorkflowTemplate,
         agentResponse: String,
     ): List<Decision> {
-        val llmNodes = workflow.nodes.filter { it.type == NodeType.LLM }
+        val llmNodes = workflow.nodes.filter { it.getNodeType() == NodeType.LLM }
 
         return llmNodes.map { node ->
             Decision(
@@ -212,7 +214,7 @@ class KoogWorkflowExecutor(
         context: ExecutionContext,
         agentResponse: String,
     ): String {
-        val llmNodeCount = workflow.nodes.count { it.type == NodeType.LLM }
+        val llmNodeCount = workflow.nodes.count { it.getNodeType() == NodeType.LLM }
 
         return """
 Workflow: ${workflow.name}
