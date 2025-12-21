@@ -47,6 +47,16 @@ nodes:
     questionId: "Q002"
     description: "Get instrument type"
 
+  - id: "ask_currency"
+    type: ask_catalog_question
+    questionId: "Q003"
+    description: "Get currency from user"
+
+  - id: "ask_price"
+    type: ask_catalog_question
+    questionId: "Q004"
+    description: "Get market price from user"
+
   - id: "process"
     type: llm
     description: "Create a Markdown File with the user Inputs"
@@ -61,6 +71,10 @@ graph:
     - from: ask_isin
       to: ask_type
     - from: ask_type
+      to: ask_currency
+    - from: ask_currency
+      to: ask_price
+    - from: ask_price
       to: process
 
 vibe_checks: []
