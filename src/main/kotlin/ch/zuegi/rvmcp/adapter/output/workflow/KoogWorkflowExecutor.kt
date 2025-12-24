@@ -19,7 +19,7 @@ import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
-import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate

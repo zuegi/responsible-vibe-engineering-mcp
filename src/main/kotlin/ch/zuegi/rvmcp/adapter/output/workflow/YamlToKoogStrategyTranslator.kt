@@ -16,7 +16,7 @@ import ch.zuegi.rvmcp.adapter.output.workflow.model.node.HumanInteractionNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.LLMNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.SystemCommandNode
 import ch.zuegi.rvmcp.adapter.output.workflow.model.node.ValidateAnswerNode
-import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 
 /**
  * Translates YAML workflow templates into Koog agent strategies.
