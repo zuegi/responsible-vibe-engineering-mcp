@@ -1,0 +1,8 @@
+# Test profile configuration
+# Same LLM config as application-local.yml, but without MCP Server
+
+llm:
+  provider: azure-openai
+  base-url: https://aivs-llm-gateway-aivisorium-dev.apps.cp.rch.cloud/openai/shared-chn/openai/deployments/gpt-4o/
+  api-version: 2024-05-01-preview
+  api-token: dummy
