@@ -34,7 +34,7 @@ import org.springframework.test.context.ActiveProfiles
  */
 @Disabled("weil interaktive Test")
 @SpringBootTest
-@ActiveProfiles("local")
+@ActiveProfiles("test")
 class KoogIntegrationTest {
     @Autowired
     private lateinit var llmProperties: LlmProperties

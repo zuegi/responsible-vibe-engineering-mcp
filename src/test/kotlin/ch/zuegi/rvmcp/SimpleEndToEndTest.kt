@@ -41,7 +41,7 @@ import org.springframework.test.context.ActiveProfiles
  */
 @Disabled
 @SpringBootTest
-@ActiveProfiles("local")
+@ActiveProfiles("test")
 class SimpleEndToEndTest {
     @Autowired
     private lateinit var llmProperties: LlmProperties

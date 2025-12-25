@@ -6,10 +6,12 @@ import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import kotlinx.coroutines.runBlocking
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import java.util.concurrent.CountDownLatch
 
 /**
@@ -18,10 +20,13 @@ import java.util.concurrent.CountDownLatch
  * Starts the MCP Server automatically on application launch using Spring Boot context
  * for dependency injection.
  *
- * Note: Only active when NOT in 'local' profile (used for testing).
+ * Note: Only active when NOT in 'test' profile.
+ * - Default: MCP Server starts (for Claude Desktop / Warp integration)
+ * - local profile: MCP Server starts (local development with MCP)
+ * - test profile: MCP Server does NOT start (unit tests)
  */
+@Profile("!test")
 @Configuration
-@org.springframework.context.annotation.Profile("!local")
 class McpServerConfiguration {
     @Bean
     fun mcpServerStarter(
@@ -32,6 +37,7 @@ class McpServerConfiguration {
         processRepository: ProcessRepositoryPort,
     ): CommandLineRunner =
         CommandLineRunner {
+            val log by rvmcpLogger()
             val mcpServer =
                 ResponsibleVibeMcpServer(
                     startProcessUseCase = startProcessUseCase,
@@ -48,7 +54,7 @@ class McpServerConfiguration {
             val keepAlive = CountDownLatch(1)
             Runtime.getRuntime().addShutdownHook(
                 Thread {
-                    System.err.println("\n🛑 Shutting down MCP Server...")
+                    log.info("\n🛑 Shutting down MCP Server...")
                     keepAlive.countDown()
                 },
             )

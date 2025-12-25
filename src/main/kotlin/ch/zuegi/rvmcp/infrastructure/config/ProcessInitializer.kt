@@ -18,6 +18,7 @@ class ProcessInitializer(
 ) {
     private val log by rvmcpLogger()
 
+    // FIXME Will ich den wirklich schon zu Beginn gestartet haben??
     @PostConstruct
     fun initializeProcesses() {
         log.info("🔧 Initializing Engineering Processes from YAML workflows...")

@@ -1,7 +1,0 @@
-# Test configuration
-# Activates 'local' profile by default for tests
-# This ensures application-local.yml is loaded automatically
-
-spring:
-  profiles:
-    active: local
