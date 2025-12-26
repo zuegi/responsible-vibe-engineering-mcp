@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.infrastructure.config
 
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -17,6 +18,8 @@ import org.springframework.core.io.ClassPathResource
  * LLM configuration outside of Spring's dependency injection context.
  */
 object LlmSetup {
+    private val logger by rvmcpLogger()
+
     /**
      * Loads LLM properties from application-local.yml or application.yml.
      *
@@ -60,7 +63,7 @@ object LlmSetup {
                             @Suppress("UNCHECKED_CAST")
                             yamlMapper.readValue(inputStream, Map::class.java) as Map<String, Any>
                         }
-                    println("  Loaded from: $configFile")
+                    logger.info("Loaded LLM config from: {}", configFile)
                     break
                 }
             } catch (_: Exception) {
@@ -130,10 +133,12 @@ object LlmSetup {
     fun setupConfiguration(): LlmProperties {
         val llmProperties = loadFromYaml()
 
-        println("\n✓ LLM Configuration loaded")
-        println("  Provider: ${llmProperties.provider}")
-        println("  Base URL: ${llmProperties.baseUrl}")
-        println("  API Version: ${llmProperties.apiVersion}")
+        logger.info(
+            "LLM Configuration loaded - Provider: {}, Base URL: {}, API Version: {}",
+            llmProperties.provider,
+            llmProperties.baseUrl,
+            llmProperties.apiVersion,
+        )
 
         return llmProperties
     }
@@ -150,24 +155,23 @@ object LlmSetup {
         llmProperties: LlmProperties,
         promptOnFailure: Boolean = true,
     ): Boolean {
-        println("\n🔍 Testing LLM connection (this may take ~10 seconds)...")
+        logger.info("Testing LLM connection (this may take ~10 seconds)...")
         val healthCheck = LlmHealthCheck(llmProperties)
 
         try {
             healthCheck.checkLlmConnection()
-            println("✓ LLM connection verified")
+            logger.info("LLM connection verified")
             return true
         } catch (e: Exception) {
-            println("\n❌ LLM Health Check failed!")
-            println("   Error: ${e.message}")
+            logger.error("LLM Health Check failed: {}", e.message)
 
             if (!promptOnFailure) {
                 return false
             }
 
-            println("\n⚠️  Workflows will likely fail. Do you want to continue anyway?")
-            print("   Continue? (j/n): ")
-            System.out.flush()
+            System.err.println("\n⚠️  Workflows will likely fail. Do you want to continue anyway?")
+            System.err.print("   Continue? (j/n): ")
+            System.err.flush()
 
             val input =
                 try {
@@ -177,11 +181,11 @@ object LlmSetup {
                 }
 
             if (input?.lowercase() != "j" && input?.lowercase() != "y") {
-                println("\n⛔ Aborted by user")
+                logger.warn("LLM verification aborted by user")
                 return false
             }
 
-            println("\n⚠️  Continuing despite health check failure...")
+            logger.warn("Continuing despite health check failure...")
             return true
         }
     }

@@ -7,6 +7,7 @@ import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import java.time.Instant
 import java.util.UUID
 
@@ -23,6 +24,8 @@ class StartProcessExecutionService(
     private val processRepository: ProcessRepositoryPort,
     private val memoryRepository: MemoryRepositoryPort,
 ) {
+    private val logger by rvmcpLogger()
+
     /**
      * Starts a new process execution.
      *
@@ -37,18 +40,19 @@ class StartProcessExecutionService(
         projectPath: String,
         gitBranch: String,
     ): ProcessExecution {
-        println("\n🚀 Starting process execution")
-        println("   Process ID: ${processId.value}")
-        println("   Project: $projectPath")
-        println("   Branch: $gitBranch")
+        logger.info(
+            "Starting process execution - Process ID: {}, Project: {}, Branch: {}",
+            processId.value,
+            projectPath,
+            gitBranch,
+        )
 
         // 1. Load process definition
         val process =
             processRepository.findById(processId)
                 ?: throw IllegalArgumentException("Process not found: ${processId.value}")
 
-        println("   Process: ${process.name}")
-        println("   Phases: ${process.totalPhases()}")
+        logger.info("Process: {}, Phases: {}", process.name, process.totalPhases())
 
         // 2. Create or load execution context
         val executionContext =
@@ -73,9 +77,11 @@ class StartProcessExecutionService(
             )
         memoryRepository.save(updatedContext)
 
-        println("\n✓ Process execution initialized")
-        println("   Execution ID: ${processExecution.id.value}")
-        println("   Starting with phase: ${processExecution.currentPhase().name}")
+        logger.info(
+            "Process execution initialized - Execution ID: {}, Starting phase: {}",
+            processExecution.id.value,
+            processExecution.currentPhase().name,
+        )
 
         return processExecution
     }
