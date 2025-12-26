@@ -7,18 +7,14 @@ import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.domain.model.id.ProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
+import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
-import ch.zuegi.rvmcp.infrastructure.config.LlmHealthCheck
-import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import ch.zuegi.rvmcp.infrastructure.config.LlmSetup
 import kotlinx.coroutines.runBlocking
-import org.springframework.core.io.ClassPathResource
 
 /**
  * Interactive test runner for testing the business logic WITH real LLM.
@@ -50,47 +46,17 @@ fun main() {
     println("║   Testing Business Logic MIT ECHTEM LLM              ║")
     println("╚════════════════════════════════════════════════════════╝")
 
-    // 1. Setup: Load LLM configuration from application-local.yml
-    val llmProperties = loadLlmPropertiesFromYaml()
-    println("\n✓ LLM Configuration loaded (from application-local.yml)")
-    println("  Provider: ${llmProperties.provider}")
-    println("  Base URL: ${llmProperties.baseUrl}")
-    println("  API Version: ${llmProperties.apiVersion}")
+    // 1. Setup and verify LLM configuration
+    val llmProperties = LlmSetup.setupAndVerify() ?: return
+
+    println("\n✓ Initializing KoogWorkflowExecutor (with REAL LLM)...")
+    val workflowExecutor = KoogWorkflowExecutor(llmProperties)
+
+    val vibeCheckEvaluator = ConsoleVibeCheckEvaluator()
 
     // 2. Setup: Adapters initialisieren
     val processRepository = InMemoryProcessRepository()
     val memoryRepository = InMemoryMemoryRepository()
-
-    // 🔑 KEY CHANGE: KoogWorkflowExecutor statt ManualWorkflowExecutor
-    println("\n✓ Initializing KoogWorkflowExecutor (with REAL LLM)...")
-    val workflowExecutor = KoogWorkflowExecutor(llmProperties)
-
-    // Test LLM connection early (before user input)
-    println("\n🔍 Testing LLM connection (this may take ~10 seconds)...")
-    val healthCheck = LlmHealthCheck(llmProperties)
-    try {
-        healthCheck.checkLlmConnection()
-    } catch (e: Exception) {
-        println("\n❌ LLM Health Check failed!")
-        println("   Error: ${e.message}")
-        println("\n⚠️  Workflows will likely fail. Do you want to continue anyway?")
-        print("   Continue? (j/n): ")
-        System.out.flush()
-
-        val input =
-            try {
-                readlnOrNull()
-            } catch (ex: Exception) {
-                "n"
-            }
-        if (input?.lowercase() != "j" && input?.lowercase() != "y") {
-            println("\n⛔ Aborted by user")
-            return
-        }
-        println("\n⚠️  Continuing despite health check failure...")
-    }
-
-    val vibeCheckEvaluator = ConsoleVibeCheckEvaluator()
 
     // 3. Services initialisieren (unverändert - wie in Produktion)
     val startService = StartProcessExecutionService(processRepository, memoryRepository)
@@ -149,8 +115,8 @@ fun main() {
         ) ?: throw IllegalStateException("Context not found")
 
     // 7. Phasen durchlaufen
-    while (processExecution.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.IN_PROGRESS ||
-        processExecution.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.PHASE_COMPLETED
+    while (processExecution.status == ExecutionStatus.IN_PROGRESS ||
+        processExecution.status == ExecutionStatus.PHASE_COMPLETED
     ) {
         println("\n" + "=".repeat(60))
         println("📍 Current Phase: ${processExecution.currentPhase().name}")
@@ -158,12 +124,13 @@ fun main() {
         println("   Template: ${processExecution.currentPhase().koogWorkflowTemplate}")
 
         println("\n💡 ACHTUNG: Jetzt startet die LLM-Konversation!")
-        println("   Der LLM wird dir Fragen stellen (aus dem YAML-Workflow).")
+        println("   Die LLM wird dir Fragen stellen (aus dem YAML-Workflow).")
         println("   Beantworte sie so, als würdest du ein echtes Feature planen.")
         print("\nPhase starten? (Enter drücken): ")
         System.out.flush()
 
         try {
+            // Der Code wartet nur darauf, dass der User Enter drückt, um fortzufahren
             readlnOrNull()
         } catch (e: Exception) {
             println("\n⚠️ stdin nicht verfügbar, fahre automatisch fort...")
@@ -184,7 +151,7 @@ fun main() {
         context = context.addPhaseResult(phaseResult)
 
         // Wenn Phase fehlgeschlagen, frage ob wiederholen oder abbrechen
-        if (phaseResult.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.FAILED) {
+        if (phaseResult.status == ExecutionStatus.FAILED) {
             println("\n⚠️  Phase ist fehlgeschlagen!")
             print("Wiederholen? (j/n): ")
             val retry = readlnOrNull()?.lowercase()
@@ -241,100 +208,6 @@ fun main() {
     println("   - Domain Services (Start, Execute, Complete)")
     println("   - Vibe Checks (Quality Gates)")
     println("   - Memory Persistence (ExecutionContext)")
-}
-
-/**
- * Loads LLM properties from application-local.yml.
- *
- * Falls back to application.yml if application-local.yml not found.
- * Environment variables can override YAML values.
- *
- * Config structure in YAML:
- * ```yaml
- * llm:
- *   provider: azure-openai
- *   base-url: https://...
- *   api-version: 2024-05-01-preview
- *   api-token: dummy
- * ```
- */
-private fun loadLlmPropertiesFromYaml(): LlmProperties {
-    val yamlMapper =
-        ObjectMapper(YAMLFactory()).apply {
-            registerModule(KotlinModule.Builder().build())
-        }
-
-    // Try application-local.yml first, then application.yml
-    val configFiles = listOf("application-local.yml", "application.yml")
-    var config: Map<String, Any>? = null
-
-    for (configFile in configFiles) {
-        try {
-            val resource = ClassPathResource(configFile)
-            if (resource.exists()) {
-                config =
-                    resource.inputStream.use { inputStream ->
-                        yamlMapper.readValue(inputStream, Map::class.java) as Map<String, Any>
-                    }
-                println("  Loaded from: $configFile")
-                break
-            }
-        } catch (e: Exception) {
-            // Continue to next file
-        }
-    }
-
-    if (config == null) {
-        throw IllegalStateException(
-            """
-            Could not find application-local.yml or application.yml!
-            
-            Please create src/main/resources/application-local.yml with:
-            llm:
-              provider: azure-openai
-              base-url: https://your-gateway.example.com/openai/deployments/gpt-4o/
-              api-version: 2024-05-01-preview
-              api-token: dummy
-            """.trimIndent(),
-        )
-    }
-
-    // Extract llm config
-    @Suppress("UNCHECKED_CAST")
-    val llmConfig =
-        config["llm"] as? Map<String, Any>
-            ?: throw IllegalStateException("No 'llm' section found in config!")
-
-    // Extract values with optional environment variable overrides
-    val baseUrl =
-        System.getenv("AZURE_OPENAI_ENDPOINT")
-            ?: llmConfig["base-url"] as? String
-            ?: llmConfig["baseUrl"] as? String
-            ?: throw IllegalStateException("base-url not configured!")
-
-    val apiToken =
-        System.getenv("AZURE_OPENAI_API_KEY")
-            ?: llmConfig["api-token"] as? String
-            ?: llmConfig["apiToken"] as? String
-            ?: "dummy"
-
-    val apiVersion =
-        System.getenv("AZURE_OPENAI_API_VERSION")
-            ?: llmConfig["api-version"] as? String
-            ?: llmConfig["apiVersion"] as? String
-            ?: "2024-05-01-preview"
-
-    val provider =
-        System.getenv("LLM_PROVIDER")
-            ?: llmConfig["provider"] as? String
-            ?: "azure-openai"
-
-    return LlmProperties(
-        baseUrl = baseUrl,
-        apiVersion = apiVersion,
-        apiToken = apiToken,
-        provider = provider,
-    )
 }
 
 /**

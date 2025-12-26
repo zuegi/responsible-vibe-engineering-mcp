@@ -19,7 +19,7 @@ import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
-import ch.zuegi.rvmcp.infrastructure.logging.rvmcpLogger
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
@@ -147,12 +147,8 @@ class KoogWorkflowExecutor(
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
 
-        // Display full agent response to user
-        println("\n" + "=".repeat(80))
-        println("📋 WORKFLOW RESULT")
-        println("=".repeat(80))
-        println(agentResponse)
-        println("=".repeat(80) + "\n")
+        // Log full agent response
+        logger.info("Workflow result:\n{}", agentResponse)
 
         // 6. Extract results and create decisions
         val decisions = extractDecisions(workflowTemplate, agentResponse)

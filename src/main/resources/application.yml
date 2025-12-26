@@ -1,6 +1,11 @@
 spring:
   application:
     name: responsible-vibe-mcp
+  profiles:
+    active: local
+  # Disable banner for MCP stdio mode (stdout must be JSON-RPC only)
+  main:
+    banner-mode: off
 
 # Kotlin Koog Configuration
 koog:
@@ -24,8 +29,13 @@ llm:
   api-token: ${LLM_API_TOKEN:dummy}
 
 # Logging
+# CRITICAL: For MCP stdio mode, all logs MUST go to stderr (not stdout)
+# Stdout is reserved exclusively for JSON-RPC messages
 logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
   level:
     root: INFO
     ch.zuegi.rvmcp: DEBUG
     ai.koog: DEBUG
+    org.springframework: WARN
