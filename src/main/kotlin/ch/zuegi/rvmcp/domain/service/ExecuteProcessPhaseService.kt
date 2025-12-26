@@ -6,6 +6,7 @@ import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import java.time.Instant
 
 /**
@@ -21,6 +22,8 @@ class ExecuteProcessPhaseService(
     private val workflowExecutor: WorkflowExecutionPort,
     private val vibeCheckEvaluator: VibeCheckEvaluatorPort,
 ) {
+    private val logger by rvmcpLogger()
+
     /**
      * Executes a single process phase with the given context.
      *
@@ -33,8 +36,7 @@ class ExecuteProcessPhaseService(
         context: ExecutionContext,
     ): PhaseResult {
         val startTime = Instant.now()
-        println("\n▶ Starting phase: ${phase.name}")
-        println("  Description: ${phase.description}")
+        logger.info("Starting phase: {} - {}", phase.name, phase.description)
 
         // 1. Execute workflow
         val workflowResult =
@@ -54,15 +56,13 @@ class ExecuteProcessPhaseService(
 
         // 3. Human-in-the-loop if vibe checks failed
         if (!allVibeChecksPassed) {
-            println("\n⚠ Einige Vibe Checks sind fehlgeschlagen:")
+            logger.warn("Some vibe checks failed for phase: {}", phase.name)
             vibeCheckResults.filter { !it.passed }.forEach { result ->
-                println("  ✗ ${result.check.question}")
-                println("    → ${result.findings}")
+                logger.warn("Failed vibe check: {} - {}", result.check.question, result.findings)
             }
 
             if (phase.vibeChecks.any { it.required }) {
-                println("\n⛔ Obligatorische Vibe Checks nicht bestanden.")
-                println("   Phase muss wiederholt werden.")
+                logger.error("Required vibe checks not passed. Phase must be repeated.")
 
                 return createFailedPhaseResult(
                     phase = phase,
@@ -88,7 +88,7 @@ class ExecuteProcessPhaseService(
 
         // 5. Persistence handled externally
 
-        println("\n✓ Phase completed: ${phase.name}")
+        logger.info("Phase completed: {}", phase.name)
         return phaseResult
     }
 

@@ -147,12 +147,8 @@ class KoogWorkflowExecutor(
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
 
-        // Display full agent response to user
-        println("\n" + "=".repeat(80))
-        println("📋 WORKFLOW RESULT")
-        println("=".repeat(80))
-        println(agentResponse)
-        println("=".repeat(80) + "\n")
+        // Log full agent response
+        logger.info("Workflow result:\n{}", agentResponse)
 
         // 6. Extract results and create decisions
         val decisions = extractDecisions(workflowTemplate, agentResponse)

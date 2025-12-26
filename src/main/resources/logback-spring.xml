@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 
+        CRITICAL for MCP stdio mode:
+        ALL application logs MUST go to stderr (System.err)
+        stdout (System.out) is EXCLUSIVELY for JSON-RPC messages
+    -->
+    
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger: all logs to stderr -->
+    <root level="INFO">
+        <appender-ref ref="STDERR" />
+    </root>
+
+    <!-- Application-specific loggers -->
+    <logger name="ch.zuegi.rvmcp" level="DEBUG" />
+    <logger name="ai.koog" level="DEBUG" />
+    
+    <!-- Reduce Spring Boot noise -->
+    <logger name="org.springframework" level="WARN" />
+    <logger name="org.springframework.boot" level="WARN" />
+</configuration>

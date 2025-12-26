@@ -4,6 +4,7 @@ import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 
 /**
  * Domain service for completing a process phase.
@@ -17,6 +18,8 @@ import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 class CompletePhaseService(
     private val memoryRepository: MemoryRepositoryPort,
 ) {
+    private val logger by rvmcpLogger()
+
     /**
      * Completes a phase and advances execution.
      */
@@ -25,7 +28,7 @@ class CompletePhaseService(
         context: ExecutionContext,
         phaseResult: PhaseResult,
     ): ProcessExecution {
-        println("\n📋 Completing phase: ${phaseResult.phaseName}")
+        logger.info("Completing phase: {}", phaseResult.phaseName)
 
         // 1. Update context with phase result (if not already added)
         val contextWithResult =
@@ -38,11 +41,10 @@ class CompletePhaseService(
         // 2. Check if there are more phases
         val updatedContext =
             if (execution.process.hasNextPhase(execution.currentPhaseIndex)) {
-                println("   ➡ Moving to next phase")
+                logger.info("Moving to next phase")
                 contextWithResult.advanceToNextPhase()
             } else {
-                println("   ✓ All phases completed!")
-                println("   🎉 Process execution finished")
+                logger.info("All phases completed! Process execution finished")
                 contextWithResult
             }
 
@@ -52,7 +54,7 @@ class CompletePhaseService(
         // 4. Return updated execution
         return if (execution.process.hasNextPhase(execution.currentPhaseIndex)) {
             val nextExecution = execution.nextPhase()
-            println("   Next phase: ${nextExecution.currentPhase().name}")
+            logger.info("Next phase: {}", nextExecution.currentPhase().name)
             nextExecution
         } else {
             execution.complete()
@@ -70,7 +72,7 @@ class CompletePhaseService(
         execution: ProcessExecution,
         context: ExecutionContext,
     ): ProcessExecution {
-        println("\n❌ Process execution failed")
+        logger.error("Process execution failed")
 
         val failedExecution = execution.fail()
         memoryRepository.save(context)
