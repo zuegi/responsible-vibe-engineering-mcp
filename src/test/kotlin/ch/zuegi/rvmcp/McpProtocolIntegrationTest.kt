@@ -41,7 +41,7 @@ import org.springframework.test.context.ActiveProfiles
  * - No actual MCP protocol (tested separately)
  */
 @SpringBootTest
-@ActiveProfiles("local")
+@ActiveProfiles("test")
 class McpProtocolIntegrationTest {
     @Autowired
     private lateinit var llmProperties: LlmProperties

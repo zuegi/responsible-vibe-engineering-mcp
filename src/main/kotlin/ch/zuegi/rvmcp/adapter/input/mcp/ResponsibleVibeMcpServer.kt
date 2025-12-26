@@ -5,6 +5,7 @@ import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Implementation
@@ -39,6 +40,8 @@ class ResponsibleVibeMcpServer(
     private val memoryRepository: MemoryRepositoryPort,
     private val processRepository: ProcessRepositoryPort,
 ) {
+    private val log by rvmcpLogger()
+
     // Async Job Manager for background phase execution
     private val jobManager = AsyncJobManager()
 
@@ -80,7 +83,7 @@ class ResponsibleVibeMcpServer(
 
         // Connect is a suspend function - this properly starts the async event loop
         server.connect(transport)
-        System.err.println("✅ MCP Server ready (v0.1.0)")
+        log.info("✅ MCP Server ready (v0.1.0)")
     }
 
     private fun registerTools() {
@@ -139,7 +142,8 @@ class ResponsibleVibeMcpServer(
                 // MCP SDK has first-class coroutine support - no runBlocking needed!
                 val processExecution =
                     startProcessUseCase.execute(
-                        ch.zuegi.rvmcp.domain.model.id.ProcessId(processId),
+                        ch.zuegi.rvmcp.domain.model.id
+                            .ProcessId(processId),
                         projectPath,
                         gitBranch,
                     )
@@ -237,7 +241,7 @@ Status: ${processExecution.status}""",
 
                 // Create job for async execution
                 val jobId = jobManager.createJob()
-                System.err.println("🚀 Starting async job: $jobId for phase: ${currentPhase.name}")
+                log.info("🚀 Starting async job: $jobId for phase: ${currentPhase.name}")
 
                 // Launch background coroutine for phase execution
                 jobScope.launch {
@@ -251,11 +255,11 @@ Status: ${processExecution.status}""",
                             }
 
                         val duration = System.currentTimeMillis() - startTime
-                        System.err.println("✅ Job $jobId completed in ${duration}ms")
+                        log.info("✅ Job $jobId completed in ${duration}ms")
 
                         jobManager.completeJob(jobId, phaseResult)
                     } catch (e: Exception) {
-                        System.err.println("❌ Job $jobId: Failed - ${e.message}")
+                        log.error("❌ Job $jobId: Failed - ${e.message}")
                         e.printStackTrace(System.err)
                         jobManager.failJob(jobId, e.message ?: "Unknown error")
                     }
@@ -314,7 +318,7 @@ Example: get_phase_result(jobId: "$jobId")""",
 
                 // Return job status and result
                 when (job.status) {
-                    JobStatus.RUNNING ->
+                    JobStatus.RUNNING -> {
                         CallToolResult(
                             content =
                                 listOf(
@@ -328,6 +332,7 @@ Please wait and try again in a few seconds.""",
                                     ),
                                 ),
                         )
+                    }
 
                     JobStatus.COMPLETED -> {
                         val phaseResult = job.result!!
@@ -351,7 +356,7 @@ Duration: ${java.time.Duration.between(phaseResult.startedAt, phaseResult.comple
                         )
                     }
 
-                    JobStatus.FAILED ->
+                    JobStatus.FAILED -> {
                         CallToolResult(
                             content =
                                 listOf(
@@ -365,6 +370,7 @@ Error: ${job.error}""",
                                 ),
                             isError = true,
                         )
+                    }
                 }
             } catch (e: Exception) {
                 CallToolResult(

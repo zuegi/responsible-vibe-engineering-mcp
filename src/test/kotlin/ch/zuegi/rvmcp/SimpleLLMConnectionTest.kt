@@ -27,7 +27,7 @@ import org.springframework.test.context.ActiveProfiles
  * Test runs automatically when application-local.yml exists.
  */
 @SpringBootTest
-@ActiveProfiles("local")
+@ActiveProfiles("test")
 class SimpleLLMConnectionTest {
     @Autowired
     private lateinit var llmProperties: LlmProperties

@@ -8,6 +8,7 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.clients.openai.azure.AzureOpenAIServiceVersion
 import ai.koog.prompt.executor.llms.all.simpleAzureOpenAIExecutor
 import ch.zuegi.rvmcp.adapter.output.workflow.strategy.YamlWorkflowStrategy
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -22,12 +23,14 @@ import org.springframework.stereotype.Component
 class LlmHealthCheck(
     private val llmProperties: LlmProperties,
 ) {
+    private val log by rvmcpLogger()
+
     @PostConstruct
     fun checkLlmConnection() {
-        System.err.println("🔍 Checking LLM connection...")
-        System.err.println("   Provider: ${llmProperties.provider}")
-        System.err.println("   Base URL: ${llmProperties.baseUrl}")
-        System.err.println("   API Token: ${llmProperties.apiToken}")
+        log.info("🔍 Checking LLM connection...")
+        log.debug("   Provider: ${llmProperties.provider}")
+        log.debug("   Base URL: ${llmProperties.baseUrl}")
+        log.debug("   API Token: ${llmProperties.apiToken}")
 
         try {
             runBlocking {
@@ -38,23 +41,19 @@ class LlmHealthCheck(
                     }
 
                 if (result == true) {
-                    System.err.println("   ✅ LLM connection successful!")
-                    System.err.println()
+                    log.info("   ✅ LLM connection successful!")
                 } else {
-                    System.err.println("   ⚠️ LLM connection timed out or failed")
-                    System.err.println("   ⚠️ Workflows may fail - check configuration")
-                    System.err.println()
+                    log.error("   ⚠️ LLM connection timed out or failed")
+                    log.error("   ⚠️ Workflows may fail - check configuration")
                 }
             }
         } catch (e: Exception) {
-            System.err.println("   ❌ LLM connection failed: ${e.message}")
-            System.err.println("   ⚠️ Workflows WILL fail until LLM is properly configured")
-            System.err.println()
-            System.err.println("   Please check:")
-            System.err.println("   - LLM_BASE_URL is correct (current: ${llmProperties.baseUrl})")
-            System.err.println("   - LLM_API_TOKEN is valid")
-            System.err.println("   - Network connectivity")
-            System.err.println()
+            log.error("   ❌ LLM connection failed: ${e.message}")
+            log.error("   ⚠️ Workflows WILL fail until LLM is properly configured")
+            log.error("   Please check:")
+            log.error("   - LLM_BASE_URL is correct (current: ${llmProperties.baseUrl})")
+            log.error("   - LLM_API_TOKEN is valid")
+            log.error("   - Network connectivity")
         }
     }
 
@@ -90,7 +89,7 @@ class LlmHealthCheck(
             val response = agent.run("Health check")
             response.isNotBlank()
         } catch (e: Exception) {
-            System.err.println("   ❌ Test call failed: ${e.message}")
+            log.error("   ❌ Test call failed: ${e.message}")
             false
         }
 }
