@@ -167,7 +167,7 @@ class KoogWorkflowExecutor(
 
         lastExecution = result
 
-        logger.info("✅ Workflow '${workflowTemplate.name}' completed successfully")
+        logger.info("Workflow '${workflowTemplate.name}' completed successfully")
         logger.info("   Agent creation: ${agentCreationTime}ms")
         logger.info("   Workflow execution: ${workflowDuration}ms")
         logger.info("   Total duration: ${System.currentTimeMillis() - startTime.toEpochMilli()}ms")
