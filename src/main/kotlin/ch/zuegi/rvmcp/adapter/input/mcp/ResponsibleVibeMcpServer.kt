@@ -11,6 +11,7 @@ import io.modelcontextprotocol.kotlin.sdk.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.TextContent
+import io.modelcontextprotocol.kotlin.sdk.Tool
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
@@ -22,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 /**
@@ -83,7 +85,7 @@ class ResponsibleVibeMcpServer(
 
         // Connect is a suspend function - this properly starts the async event loop
         server.connect(transport)
-        log.info("✅ MCP Server ready (v0.1.0)")
+        log.info("MCP Server ready (v0.1.0)")
     }
 
     private fun registerTools() {
@@ -91,6 +93,11 @@ class ResponsibleVibeMcpServer(
         server.addTool(
             name = "list_processes",
             description = "Lists all available engineering processes (Feature Development, Bug Fix, etc.)",
+            inputSchema =
+                Tool.Input(
+                    properties = JsonObject(emptyMap()),
+                    required = emptyList(),
+                ),
         ) { _ ->
             // Call domain service to list processes
             val processes = processRepository.findAll()
@@ -112,6 +119,36 @@ class ResponsibleVibeMcpServer(
         server.addTool(
             name = "start_process",
             description = "Starts a new engineering process execution (requires processId, projectPath, gitBranch)",
+            inputSchema =
+                Tool.Input(
+                    properties =
+                        JsonObject(
+                            mapOf(
+                                "processId" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Process identifier (e.g., 'feature-development')"),
+                                        )
+                                    },
+                                "projectPath" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Absolute path to the project directory"),
+                                        )
+                                    },
+                                "gitBranch" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put("description", kotlinx.serialization.json.JsonPrimitive("Git branch name for this execution"))
+                                    },
+                            ),
+                        ),
+                    required = listOf("processId", "projectPath", "gitBranch"),
+                ),
         ) { request: CallToolRequest ->
             try {
                 val args =
@@ -174,6 +211,28 @@ Status: ${processExecution.status}""",
         server.addTool(
             name = "execute_phase",
             description = "Executes the current phase of an active process (requires projectPath, gitBranch)",
+            inputSchema =
+                Tool.Input(
+                    properties =
+                        JsonObject(
+                            mapOf(
+                                "projectPath" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Absolute path to the project directory"),
+                                        )
+                                    },
+                                "gitBranch" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put("description", kotlinx.serialization.json.JsonPrimitive("Git branch name"))
+                                    },
+                            ),
+                        ),
+                    required = listOf("projectPath", "gitBranch"),
+                ),
         ) { request: CallToolRequest ->
             try {
                 val args =
@@ -241,7 +300,7 @@ Status: ${processExecution.status}""",
 
                 // Create job for async execution
                 val jobId = jobManager.createJob()
-                log.info("🚀 Starting async job: $jobId for phase: ${currentPhase.name}")
+                log.info("Starting async job: $jobId for phase: ${currentPhase.name}")
 
                 // Launch background coroutine for phase execution
                 jobScope.launch {
@@ -255,11 +314,11 @@ Status: ${processExecution.status}""",
                             }
 
                         val duration = System.currentTimeMillis() - startTime
-                        log.info("✅ Job $jobId completed in ${duration}ms")
+                        log.info("Job $jobId completed in ${duration}ms")
 
                         jobManager.completeJob(jobId, phaseResult)
                     } catch (e: Exception) {
-                        log.error("❌ Job $jobId: Failed - ${e.message}")
+                        log.error("! Job $jobId: Failed - ${e.message}")
                         e.printStackTrace(System.err)
                         jobManager.failJob(jobId, e.message ?: "Unknown error")
                     }
@@ -293,6 +352,20 @@ Example: get_phase_result(jobId: "$jobId")""",
         server.addTool(
             name = "get_phase_result",
             description = "Gets the result of an async phase execution (requires jobId)",
+            inputSchema =
+                Tool.Input(
+                    properties =
+                        JsonObject(
+                            mapOf(
+                                "jobId" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put("description", kotlinx.serialization.json.JsonPrimitive("Job ID returned from execute_phase"))
+                                    },
+                            ),
+                        ),
+                    required = listOf("jobId"),
+                ),
         ) { request: CallToolRequest ->
             try {
                 val args =
@@ -384,6 +457,28 @@ Error: ${job.error}""",
         server.addTool(
             name = "complete_phase",
             description = "Completes the current phase and advances to next (requires projectPath, gitBranch)",
+            inputSchema =
+                Tool.Input(
+                    properties =
+                        JsonObject(
+                            mapOf(
+                                "projectPath" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Absolute path to the project directory"),
+                                        )
+                                    },
+                                "gitBranch" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put("description", kotlinx.serialization.json.JsonPrimitive("Git branch name"))
+                                    },
+                            ),
+                        ),
+                    required = listOf("projectPath", "gitBranch"),
+                ),
         ) { request: CallToolRequest ->
             try {
                 val args =
@@ -442,8 +537,10 @@ Error: ${job.error}""",
                 val updatedContext = memoryRepository.load(projectPath, gitBranch)!!
                 val process = processRepository.findById(processId)!!
 
-                val isCompleted = updatedExecution.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.COMPLETED
-                val nextPhase = if (!isCompleted) updatedExecution.currentPhase().name else "None (all phases completed)"
+                val isCompleted =
+                    updatedExecution.status == ch.zuegi.rvmcp.domain.model.status.ExecutionStatus.COMPLETED
+                val nextPhase =
+                    if (!isCompleted) updatedExecution.currentPhase().name else "None (all phases completed)"
 
                 CallToolResult(
                     content =
@@ -471,6 +568,28 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
         server.addTool(
             name = "get_context",
             description = "Retrieves stored memory/context for a process execution (requires projectPath, gitBranch)",
+            inputSchema =
+                Tool.Input(
+                    properties =
+                        JsonObject(
+                            mapOf(
+                                "projectPath" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Absolute path to the project directory"),
+                                        )
+                                    },
+                                "gitBranch" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put("description", kotlinx.serialization.json.JsonPrimitive("Git branch name"))
+                                    },
+                            ),
+                        ),
+                    required = listOf("projectPath", "gitBranch"),
+                ),
         ) { request: CallToolRequest ->
             try {
                 val args =

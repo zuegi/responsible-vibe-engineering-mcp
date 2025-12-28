@@ -4,6 +4,7 @@ import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult
 import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 
 /**
  * Console-based Vibe Check Evaluator for manual testing.
@@ -13,20 +14,22 @@ import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
  * For MCP Server mode, use AutoPassVibeCheckEvaluator instead (non-interactive).
  */
 class ConsoleVibeCheckEvaluator : VibeCheckEvaluatorPort {
+    private val log by rvmcpLogger()
+
     override fun evaluate(
         vibeCheck: VibeCheck,
         context: ExecutionContext,
     ): VibeCheckResult {
-        println("\n=== Vibe Check ===")
-        println("Frage: ${vibeCheck.question}")
-        println("Typ: ${vibeCheck.type}")
-        println("Obligatorisch: ${vibeCheck.required}")
+        log.info("\n=== Vibe Check ===")
+        log.info("Frage: ${vibeCheck.question}")
+        log.info("Typ: ${vibeCheck.type}")
+        log.info("Obligatorisch: ${vibeCheck.required}")
 
         // Show context
         if (context.phaseHistory.isNotEmpty()) {
-            println("\nBisherige Phasen:")
+            log.info("\nBisherige Phasen:")
             context.phaseHistory.forEach { phase ->
-                println("  - ${phase.phaseName}: ${phase.summary}")
+                log.info("  - ${phase.phaseName}: ${phase.summary}")
             }
         }
 
@@ -52,7 +55,5 @@ class ConsoleVibeCheckEvaluator : VibeCheckEvaluatorPort {
     override fun evaluateBatch(
         vibeChecks: List<VibeCheck>,
         context: ExecutionContext,
-    ): List<VibeCheckResult> {
-        return vibeChecks.map { evaluate(it, context) }
-    }
+    ): List<VibeCheckResult> = vibeChecks.map { evaluate(it, context) }
 }
