@@ -27,7 +27,7 @@ class LlmHealthCheck(
 
     @PostConstruct
     fun checkLlmConnection() {
-        log.info("🔍 Checking LLM connection...")
+        log.info("Checking LLM connection...")
         log.debug("   Provider: ${llmProperties.provider}")
         log.debug("   Base URL: ${llmProperties.baseUrl}")
         log.debug("   API Token: ${llmProperties.apiToken}")
@@ -41,15 +41,15 @@ class LlmHealthCheck(
                     }
 
                 if (result == true) {
-                    log.info("   ✅ LLM connection successful!")
+                    log.info("   LLM connection successful!")
                 } else {
-                    log.error("   ⚠️ LLM connection timed out or failed")
-                    log.error("   ⚠️ Workflows may fail - check configuration")
+                    log.error("   LLM connection timed out or failed")
+                    log.error("   Workflows may fail - check configuration")
                 }
             }
         } catch (e: Exception) {
-            log.error("   ❌ LLM connection failed: ${e.message}")
-            log.error("   ⚠️ Workflows WILL fail until LLM is properly configured")
+            log.error("   LLM connection failed: ${e.message}")
+            log.error("   Workflows WILL fail until LLM is properly configured")
             log.error("   Please check:")
             log.error("   - LLM_BASE_URL is correct (current: ${llmProperties.baseUrl})")
             log.error("   - LLM_API_TOKEN is valid")
@@ -89,7 +89,7 @@ class LlmHealthCheck(
             val response = agent.run("Health check")
             response.isNotBlank()
         } catch (e: Exception) {
-            log.error("   ❌ Test call failed: ${e.message}")
+            log.error("   Test call failed: ${e.message}")
             false
         }
 }

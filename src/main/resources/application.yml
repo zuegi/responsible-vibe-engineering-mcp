@@ -36,6 +36,7 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
   level:
     root: INFO
-    ch.zuegi.rvmcp: DEBUG
-    ai.koog: DEBUG
+    ch.zuegi.rvmcp: INFO
+    ai.koog: WARN
     org.springframework: WARN
+    org.springframework.boot: ERROR

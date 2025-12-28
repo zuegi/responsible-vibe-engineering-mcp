@@ -23,7 +23,7 @@ class InMemoryProcessRepository : ProcessRepositoryPort {
 
     override fun save(process: EngineeringProcess) {
         storage[process.id] = process
-        log.trace("✓ Process gespeichert: ${process.name}")
+        log.trace("Process gespeichert: ${process.name}")
     }
 
     override fun delete(processId: ProcessId) {
