@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration
  */
 @Configuration
 @ConfigurationProperties(prefix = "llm")
-data class LlmProperties(
+class LlmProperties(
     /**
      * Base URL for the LLM API.
      * Examples:
