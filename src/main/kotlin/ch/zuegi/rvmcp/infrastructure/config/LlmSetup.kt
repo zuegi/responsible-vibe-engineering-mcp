@@ -169,7 +169,7 @@ object LlmSetup {
                 return false
             }
 
-            System.err.println("\n⚠️  Workflows will likely fail. Do you want to continue anyway?")
+            System.err.println("\nWARNING: Workflows will likely fail. Do you want to continue anyway?")
             System.err.print("   Continue? (j/n): ")
             System.err.flush()
 
