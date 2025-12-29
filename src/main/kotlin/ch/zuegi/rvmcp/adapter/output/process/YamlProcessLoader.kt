@@ -21,8 +21,6 @@ class YamlProcessLoader(
     /**
      * Loads the "Feature Development" process from YAML workflows.
      *
-     * NOTE: Using simple-test.yml for all phases for fast MCP testing.
-     * Replace with full workflows (requirements-analysis.yml, etc.) for production.
      */
     fun loadFeatureDevelopmentProcess(): EngineeringProcess {
         val phases =
@@ -38,7 +36,7 @@ class YamlProcessLoader(
                                 required = true,
                             ),
                         ),
-                    koogWorkflowTemplate = "simple-test.yml",
+                    koogWorkflowTemplate = "requirements-analysis.yml",
                     order = 0,
                 ),
                 ProcessPhase(
@@ -52,7 +50,7 @@ class YamlProcessLoader(
                                 required = true,
                             ),
                         ),
-                    koogWorkflowTemplate = "simple-test.yml",
+                    koogWorkflowTemplate = "architecture-design.yml",
                     order = 1,
                 ),
                 ProcessPhase(
@@ -66,7 +64,7 @@ class YamlProcessLoader(
                                 required = true,
                             ),
                         ),
-                    koogWorkflowTemplate = "simple-test.yml",
+                    koogWorkflowTemplate = "implementation.yml",
                     order = 2,
                 ),
             )
