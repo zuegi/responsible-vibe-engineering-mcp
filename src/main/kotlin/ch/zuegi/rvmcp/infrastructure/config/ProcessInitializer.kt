@@ -21,12 +21,12 @@ class ProcessInitializer(
     // FIXME Will ich den wirklich schon zu Beginn gestartet haben??
     @PostConstruct
     fun initializeProcesses() {
-        log.info("🔧 Initializing Engineering Processes from YAML workflows...")
+        log.info("Initializing Engineering Processes from YAML workflows...")
 
         val featureDevelopment = yamlProcessLoader.loadFeatureDevelopmentProcess()
         processRepository.save(featureDevelopment)
 
-        log.info("   ✅ Loaded: ${featureDevelopment.name}")
+        log.info("   Loaded: ${featureDevelopment.name}")
         log.debug("      Phases: ${featureDevelopment.totalPhases()}")
         featureDevelopment.phases.forEach { phase ->
             log.debug("        - ${phase.name} (${phase.vibeChecks.size} vibe checks)")

@@ -54,7 +54,7 @@ class McpServerConfiguration {
             val keepAlive = CountDownLatch(1)
             Runtime.getRuntime().addShutdownHook(
                 Thread {
-                    log.info("\n🛑 Shutting down MCP Server...")
+                    log.info("\nShutting down MCP Server...")
                     keepAlive.countDown()
                 },
             )

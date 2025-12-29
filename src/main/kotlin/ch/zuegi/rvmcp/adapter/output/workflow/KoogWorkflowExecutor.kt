@@ -118,12 +118,12 @@ class KoogWorkflowExecutor(
                         // Register ask_user tool (configurable for tests)
                         val userTool = askUserTool ?: AskUserTool()
                         tool(userTool)
-                        logger.info("✅ Registered ask_user tool (${userTool.javaClass.simpleName})")
+                        logger.info("Registered ask_user tool (${userTool.javaClass.simpleName})")
                         tool(CreateFileTool { context.projectPath })
-                        logger.info("✅ Registered create_file tool for user interaction")
+                        logger.info("Registered create_file tool for user interaction")
                         //  TODO korrekter Pfad angeben, die Daten sind aktuell noch hard codiert im QuestionCatalogk
                         tool(QuestionCatalogTool(QuestionCatalog.fromFile("src/main/resources/users.json")))
-                        logger.info("✅ Registered get_question tool for query a catalog")
+                        logger.info("Registered get_question tool for query a catalog")
                     },
                 installFeatures = { install(Tracing) },
             )
@@ -167,7 +167,7 @@ class KoogWorkflowExecutor(
 
         lastExecution = result
 
-        logger.info("✅ Workflow '${workflowTemplate.name}' completed successfully")
+        logger.info("Workflow '${workflowTemplate.name}' completed successfully")
         logger.info("   Agent creation: ${agentCreationTime}ms")
         logger.info("   Workflow execution: ${workflowDuration}ms")
         logger.info("   Total duration: ${System.currentTimeMillis() - startTime.toEpochMilli()}ms")

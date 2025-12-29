@@ -112,6 +112,6 @@ class YamlToKoogStrategyTranslator {
                 }
             }
 
-            logger.info("✅ Strategy created")
+            logger.info("Strategy created")
         }
 }

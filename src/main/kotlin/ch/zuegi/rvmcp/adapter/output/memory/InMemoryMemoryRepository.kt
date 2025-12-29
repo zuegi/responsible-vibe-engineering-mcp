@@ -17,7 +17,7 @@ class InMemoryMemoryRepository : MemoryRepositoryPort {
     override fun save(context: ExecutionContext) {
         val key = buildKey(context.projectPath, context.gitBranch)
         storage[key] = context
-        println("✓ Context gespeichert: ${context.projectPath} (${context.gitBranch})")
+        println("Context gespeichert: ${context.projectPath} (${context.gitBranch})")
     }
 
     override fun load(
@@ -28,9 +28,8 @@ class InMemoryMemoryRepository : MemoryRepositoryPort {
         return storage[key]
     }
 
-    override fun findByExecutionId(executionId: ExecutionId): ExecutionContext? {
-        return storage.values.firstOrNull { it.executionId == executionId }
-    }
+    override fun findByExecutionId(executionId: ExecutionId): ExecutionContext? =
+        storage.values.firstOrNull { it.executionId == executionId }
 
     override fun delete(executionId: ExecutionId) {
         storage.values.removeIf { it.executionId == executionId }
@@ -47,7 +46,5 @@ class InMemoryMemoryRepository : MemoryRepositoryPort {
     private fun buildKey(
         projectPath: String,
         gitBranch: String,
-    ): String {
-        return "$projectPath::$gitBranch"
-    }
+    ): String = "$projectPath::$gitBranch"
 }
