@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.adapter.input.mcp
 
+import ch.zuegi.rvmcp.McpStdio
 import ch.zuegi.rvmcp.domain.port.input.CompletePhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
@@ -76,11 +77,12 @@ class ResponsibleVibeMcpServer(
         // Register all MCP Resources
         registerResources()
 
-        // Connect server with stdio transport (using kotlinx.io Source/Sink)
+        // Connect server with stdio transport (using FileDescriptor for REAL stdin/stdout)
+        // System.in/out are redirected to stderr for Spring Boot logs
         val transport =
             StdioServerTransport(
-                inputStream = System.`in`.asSource().buffered(),
-                outputStream = System.out.asSink().buffered(),
+                inputStream = McpStdio.stdin.asSource().buffered(),
+                outputStream = McpStdio.stdout.asSink().buffered(),
             )
 
         // Connect is a suspend function - this properly starts the async event loop

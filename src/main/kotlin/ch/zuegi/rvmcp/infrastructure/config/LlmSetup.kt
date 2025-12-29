@@ -169,24 +169,11 @@ object LlmSetup {
                 return false
             }
 
-            System.err.println("\nWARNING: Workflows will likely fail. Do you want to continue anyway?")
-            System.err.print("   Continue? (j/n): ")
-            System.err.flush()
-
-            val input =
-                try {
-                    readlnOrNull()
-                } catch (_: Exception) {
-                    "n"
-                }
-
-            if (input?.lowercase() != "j" && input?.lowercase() != "y") {
-                logger.warn("LLM verification aborted by user")
-                return false
-            }
-
-            logger.warn("Continuing despite health check failure...")
-            return true
+            // In MCP mode, we cannot prompt via stdin (it's used for JSON-RPC)
+            // Log warning to stderr and abort
+            System.err.println("\nERROR: LLM Health Check failed. Cannot continue in MCP mode.")
+            System.err.println("Please verify your LLM configuration and try again.")
+            return false
         }
     }
 
