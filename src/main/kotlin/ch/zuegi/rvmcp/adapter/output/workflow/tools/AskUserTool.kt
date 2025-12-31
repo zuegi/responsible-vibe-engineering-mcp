@@ -4,6 +4,7 @@ import ai.koog.agents.core.tools.SimpleTool
 import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.ToolParameterDescriptor
 import ai.koog.agents.core.tools.ToolParameterType
+import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -13,10 +14,15 @@ import kotlinx.serialization.serializer
  * Erlaubt dem LLM Agent, Fragen an den User zu stellen und auf Antworten zu warten.
  * Dies ist der Schlüssel für interaktive Requirements-Gathering Workflows.
  *
+ * Uses UserInteractionPort abstraction:
+ * - MCP Mode: Throws InteractionRequiredException (workflow pauses)
+ * - CLI Mode: Uses stdin/stdout (direct interaction)
+ * - Test Mode: Returns predefined answers
+ *
  * Usage in Koog Agent:
  * ```kotlin
  * val toolRegistry = ToolRegistry {
- *     tool(AskUserTool())
+ *     tool(AskUserTool(userInteractionPort))
  * }
  * ```
  *
@@ -29,7 +35,9 @@ import kotlinx.serialization.serializer
  * LLM: [verarbeitet Antwort weiter]
  * ```
  */
-class AskUserTool : SimpleTool<AskUserTool.Args>() {
+class AskUserTool(
+    private val userInteractionPort: UserInteractionPort,
+) : SimpleTool<AskUserTool.Args>() {
     @Serializable
     data class Args(
         val question: String,
@@ -66,30 +74,12 @@ class AskUserTool : SimpleTool<AskUserTool.Args>() {
         )
 
     override suspend fun doExecute(args: Args): String {
-        // Print question to console
-        println("\n" + "=".repeat(60))
-        println("🤖 LLM Question:")
-        println(args.question)
-        println("=".repeat(60))
-        print("\n👤 Your answer: ")
-        System.out.flush()
-
-        // Wait for user input
-        val lines = mutableListOf<String>()
-        while (true) {
-            val line = readlnOrNull() ?: break
-            if (line.isBlank()) break
-            if (line.endsWith("\\")) {
-                lines.add(line.removeSuffix("\\"))
-            } else {
-                lines.add(line)
-                break // oder weiter einlesen, je nach gewünschtem Verhalten
-            }
-        }
-        val answer = lines.joinToString(" ")
-
-        println("\n✓ Answer recorded: $answer\n")
-
-        return answer
+        // Delegate to UserInteractionPort
+        // In MCP mode: throws InteractionRequiredException (will be caught by executor)
+        // In CLI mode: uses stdin/stdout
+        return userInteractionPort.askUser(
+            question = args.question,
+            context = emptyMap(),
+        )
     }
 }

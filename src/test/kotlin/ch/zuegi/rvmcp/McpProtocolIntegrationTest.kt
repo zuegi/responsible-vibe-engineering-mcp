@@ -65,11 +65,11 @@ class McpProtocolIntegrationTest {
         processRepository = InMemoryProcessRepository()
         memoryRepository = InMemoryMemoryRepository()
 
-        // Initialize workflow executor with mock ask_user tool
+        // Initialize workflow executor with mock UserInteractionPort
         workflowExecutor =
             KoogWorkflowExecutor(
                 llmProperties = llmProperties,
-                askUserTool = MockAskUserTool(),
+                userInteractionPort = MockUserInteractionPort(),
             )
 
         // Use automatic vibe check evaluator for testing

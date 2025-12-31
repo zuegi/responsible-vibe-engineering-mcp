@@ -65,6 +65,7 @@ class SimpleEndToEndTest {
         workflowExecutor =
             KoogWorkflowExecutor(
                 llmProperties = llmProperties,
+                userInteractionPort = MockUserInteractionPort(),
             )
 
         // Use automatic vibe check evaluator for testing

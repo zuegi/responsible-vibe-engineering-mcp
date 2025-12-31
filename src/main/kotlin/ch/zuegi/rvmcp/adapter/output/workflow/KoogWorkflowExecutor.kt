@@ -15,6 +15,7 @@ import ch.zuegi.rvmcp.adapter.output.workflow.tools.QuestionCatalogTool
 import ch.zuegi.rvmcp.adapter.output.workflow.tools.questioncatalog.QuestionCatalog
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
+import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
@@ -44,7 +45,7 @@ import java.time.LocalDate
 @Component
 class KoogWorkflowExecutor(
     private val llmProperties: LlmProperties,
-    private val askUserTool: ai.koog.agents.core.tools.SimpleTool<*>? = null,
+    private val userInteractionPort: UserInteractionPort,
 ) : WorkflowExecutionPort {
     private val logger by rvmcpLogger()
     private var lastExecution: WorkflowExecutionResult? = null
@@ -115,10 +116,10 @@ class KoogWorkflowExecutor(
                     ),
                 toolRegistry =
                     ToolRegistry {
-                        // Register ask_user tool (configurable for tests)
-                        val userTool = askUserTool ?: AskUserTool()
+                        // Register ask_user tool with injected UserInteractionPort
+                        val userTool = AskUserTool(userInteractionPort)
                         tool(userTool)
-                        logger.info("Registered ask_user tool (${userTool.javaClass.simpleName})")
+                        logger.info("Registered ask_user tool with UserInteractionPort")
                         tool(CreateFileTool { context.projectPath })
                         logger.info("Registered create_file tool for user interaction")
                         //  TODO korrekter Pfad angeben, die Daten sind aktuell noch hard codiert im QuestionCatalogk
@@ -135,6 +136,9 @@ class KoogWorkflowExecutor(
         logger.info("Starting workflow execution...")
         val workflowStartTime = System.currentTimeMillis()
 
+        // Clear any previous interruption signals
+        WorkflowInterruptionSignal.clear()
+
         val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
         val agentResponse =
             try {
@@ -146,6 +150,24 @@ class KoogWorkflowExecutor(
 
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
+
+        // Check if workflow was interrupted for user interaction
+        if (WorkflowInterruptionSignal.hasPendingInteraction()) {
+            val interactionRequest = WorkflowInterruptionSignal.consumePendingInteraction()
+            if (interactionRequest != null) {
+                logger.info("Workflow paused for user interaction: ${interactionRequest.question}")
+                return WorkflowExecutionResult(
+                    success = true,
+                    summary = "Workflow paused - awaiting user input",
+                    decisions = emptyList(),
+                    vibeCheckResults = emptyList(),
+                    awaitingInput = true,
+                    interactionRequest = interactionRequest,
+                    startedAt = startTime,
+                    completedAt = Instant.now(),
+                )
+            }
+        }
 
         // Log full agent response
         logger.info("Workflow result:\n{}", agentResponse)

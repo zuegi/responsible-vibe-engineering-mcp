@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.domain.model.phase
 
+import ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheckResult
@@ -11,6 +12,8 @@ data class PhaseResult(
     val summary: String,
     val vibeCheckResults: List<VibeCheckResult>,
     val decisions: List<Decision> = emptyList(),
+    val awaitingInput: Boolean = false,
+    val interactionRequest: InteractionRequest? = null,
     val startedAt: Instant,
     val completedAt: Instant? = null,
 ) {

@@ -3,6 +3,7 @@ package ch.zuegi.rvmcp.infrastructure.config
 import ch.zuegi.rvmcp.adapter.input.mcp.ResponsibleVibeMcpServer
 import ch.zuegi.rvmcp.domain.port.input.CompletePhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
+import ch.zuegi.rvmcp.domain.port.input.ProvideAnswerUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
@@ -33,6 +34,7 @@ class McpServerConfiguration {
         startProcessUseCase: StartProcessExecutionUseCase,
         executePhaseUseCase: ExecuteProcessPhaseUseCase,
         completePhaseUseCase: CompletePhaseUseCase,
+        provideAnswerUseCase: ProvideAnswerUseCase,
         memoryRepository: MemoryRepositoryPort,
         processRepository: ProcessRepositoryPort,
     ): CommandLineRunner =
@@ -43,6 +45,7 @@ class McpServerConfiguration {
                     startProcessUseCase = startProcessUseCase,
                     executePhaseUseCase = executePhaseUseCase,
                     completePhaseUseCase = completePhaseUseCase,
+                    provideAnswerUseCase = provideAnswerUseCase,
                     memoryRepository = memoryRepository,
                     processRepository = processRepository,
                 )
