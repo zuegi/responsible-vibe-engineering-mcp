@@ -21,6 +21,8 @@ import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import ch.zuegi.rvmcp.shared.rvmcpLogger
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
@@ -132,28 +134,33 @@ class KoogWorkflowExecutor(
         val agentCreationTime = System.currentTimeMillis() - agentStartTime
         logger.info("Agent created in ${agentCreationTime}ms")
 
-        // 5. Execute entire workflow in single agent run
+        // 5. Execute entire workflow in single agent run with InteractionContext
         logger.info("Starting workflow execution...")
         val workflowStartTime = System.currentTimeMillis()
 
-        // Clear any previous interruption signals
-        WorkflowInterruptionSignal.clear()
-
         val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
+
+        // Execute workflow within InteractionContextElement to enable user interaction signaling
         val agentResponse =
             try {
-                agent.run(initialPrompt)
+                withContext(InteractionContextElement()) {
+                    agent.run(initialPrompt)
+                }
             } catch (e: Exception) {
                 logger.error("Workflow execution failed", e)
                 throw IllegalStateException("Workflow execution failed: ${e.message}", e)
+            } finally {
+                // Ensure cleanup even on exception
+                currentCoroutineContext()[InteractionContextElement]?.clear()
             }
 
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
 
         // Check if workflow was interrupted for user interaction
-        if (WorkflowInterruptionSignal.hasPendingInteraction()) {
-            val interactionRequest = WorkflowInterruptionSignal.consumePendingInteraction()
+        val interactionElement = currentCoroutineContext()[InteractionContextElement]
+        if (interactionElement?.hasRequest() == true) {
+            val interactionRequest = interactionElement.consumeRequest()
             if (interactionRequest != null) {
                 logger.info("Workflow paused for user interaction: ${interactionRequest.question}")
                 return WorkflowExecutionResult(
