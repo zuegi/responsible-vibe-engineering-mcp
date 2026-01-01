@@ -1,20 +1,23 @@
 package ch.zuegi.rvmcp.adapter.output.interaction
 
-import ch.zuegi.rvmcp.adapter.output.workflow.WorkflowInterruptionSignal
+import ch.zuegi.rvmcp.adapter.output.workflow.InteractionContextElement
 import ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest
 import ch.zuegi.rvmcp.domain.model.interaction.InteractionType
 import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
 import ch.zuegi.rvmcp.shared.rvmcpLogger
+import kotlinx.coroutines.currentCoroutineContext
 
 /**
  * MCP-aware implementation of UserInteractionPort.
  *
  * Two modes of operation:
- * 1. MCP Mode (mcpMode=true): Throws InteractionRequiredException to pause workflow
+ * 1. MCP Mode (mcpMode=true): Sets InteractionRequest in CoroutineContext to pause workflow
  * 2. CLI Mode (mcpMode=false): Uses stdin/stdout for direct interaction
  *
  * This adapter is the bridge between the domain (which just wants to ask questions)
  * and the MCP protocol (which requires pause/resume).
+ *
+ * Note: Uses CoroutineContext instead of ThreadLocal for proper coroutine support.
  */
 class McpAwareInteractionAdapter(
     private val mcpMode: Boolean = true,
@@ -28,9 +31,9 @@ class McpAwareInteractionAdapter(
         logger.info("askUser called: $question (mcpMode=$mcpMode)")
 
         return if (mcpMode) {
-            // MCP Mode: Signal interruption and return placeholder
+            // MCP Mode: Set interaction request in CoroutineContext and return placeholder
             val request = createInteractionRequest(question, null, context)
-            WorkflowInterruptionSignal.requestInteraction(request)
+            currentCoroutineContext()[InteractionContextElement]?.setRequest(request)
             logger.info("Workflow interruption signaled for question: $question")
             "[Awaiting user input: $question]"
         } else {
@@ -54,9 +57,9 @@ class McpAwareInteractionAdapter(
         logger.info("askCatalogQuestion called: $questionId (mcpMode=$mcpMode)")
 
         return if (mcpMode) {
-            // MCP Mode: Signal interruption with catalog metadata
+            // MCP Mode: Set interaction request with catalog metadata in CoroutineContext
             val request = createInteractionRequest(question, questionId, context)
-            WorkflowInterruptionSignal.requestInteraction(request)
+            currentCoroutineContext()[InteractionContextElement]?.setRequest(request)
             logger.info("Workflow interruption signaled for catalog question: $questionId")
             "[Awaiting catalog answer for: $questionId]"
         } else {
@@ -79,14 +82,14 @@ class McpAwareInteractionAdapter(
         logger.info("requestApproval called: $question (mcpMode=$mcpMode)")
 
         return if (mcpMode) {
-            // MCP Mode: Signal interruption for approval
+            // MCP Mode: Set interaction request for approval in CoroutineContext
             val request =
                 InteractionRequest(
                     type = InteractionType.APPROVAL,
                     question = question,
                     context = context,
                 )
-            WorkflowInterruptionSignal.requestInteraction(request)
+            currentCoroutineContext()[InteractionContextElement]?.setRequest(request)
             logger.info("Workflow interruption signaled for approval: $question")
             "[Awaiting approval: $question]"
         } else {
@@ -108,25 +111,30 @@ class McpAwareInteractionAdapter(
         context: Map<String, String>,
     ): InteractionRequest =
         when {
-            questionId != null ->
+            questionId != null -> {
                 InteractionRequest(
                     type = InteractionType.ASK_CATALOG_QUESTION,
                     question = question,
                     questionId = questionId,
                     context = context,
                 )
+            }
+
             question.contains("approve", ignoreCase = true) ||
-                question.contains("confirm", ignoreCase = true) ->
+                question.contains("confirm", ignoreCase = true) -> {
                 InteractionRequest(
                     type = InteractionType.APPROVAL,
                     question = question,
                     context = context,
                 )
-            else ->
+            }
+
+            else -> {
                 InteractionRequest(
                     type = InteractionType.ASK_USER,
                     question = question,
                     context = context,
                 )
+            }
         }
 }
