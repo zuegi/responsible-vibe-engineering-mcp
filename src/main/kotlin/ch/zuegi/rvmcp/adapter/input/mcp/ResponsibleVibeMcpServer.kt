@@ -643,7 +643,23 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
 
                 val executionId = ch.zuegi.rvmcp.domain.model.id.ExecutionId(executionIdStr)
 
-                // Provide answer via Use Case
+                // Resume suspended workflow via PendingInteractionManager
+                val resumed =
+                    ch.zuegi.rvmcp.adapter.output.interaction.PendingInteractionManager.provideAnswer(
+                        executionId.value,
+                        answer,
+                    )
+
+                if (!resumed) {
+                    return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "Error: No pending interaction found for executionId: $executionIdStr")),
+                        isError = true,
+                    )
+                }
+
+                log.info("Workflow resumed for executionId: $executionIdStr with answer: $answer")
+
+                // Also update domain model via Use Case
                 val resumedExecution = provideAnswerUseCase.execute(executionId, answer)
 
                 CallToolResult(

@@ -31,11 +31,17 @@ class McpAwareInteractionAdapter(
         logger.info("askUser called: $question (mcpMode=$mcpMode)")
 
         return if (mcpMode) {
-            // MCP Mode: Set interaction request in CoroutineContext and return placeholder
+            // MCP Mode: Suspend until user provides answer via PendingInteractionManager
             val request = createInteractionRequest(question, null, context)
-            currentCoroutineContext()[InteractionContextElement]?.setRequest(request)
-            logger.info("Workflow interruption signaled for question: $question")
-            "[Awaiting user input: $question]"
+            val contextElement = currentCoroutineContext()[InteractionContextElement]
+            val executionId =
+                contextElement?.executionId
+                    ?: throw IllegalStateException("executionId must be set in InteractionContextElement for MCP mode")
+
+            logger.info("Suspending workflow for user interaction: $question (executionId=$executionId)")
+
+            // This will suspend the coroutine until provideAnswer() is called
+            PendingInteractionManager.awaitAnswer(executionId, request)
         } else {
             // CLI Mode: Direct stdin interaction
             println("\n${"=".repeat(60)}")
