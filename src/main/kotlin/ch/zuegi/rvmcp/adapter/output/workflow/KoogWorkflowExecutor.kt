@@ -96,7 +96,10 @@ class KoogWorkflowExecutor(
         val systemPrompt = promptBuilder.buildNodeSpecificInstructions(workflowTemplate.nodes)
 
         // 4. Create InteractionContextElement for user interaction signaling
-        val interactionContext = InteractionContextElement()
+        val interactionContext =
+            InteractionContextElement(
+                executionId = context.executionId.value,
+            )
 
         // 5. Create single agent for entire workflow
         logger.info("Creating Koog agent for entire workflow...")

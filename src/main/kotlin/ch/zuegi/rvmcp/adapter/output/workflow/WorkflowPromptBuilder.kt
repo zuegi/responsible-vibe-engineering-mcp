@@ -161,6 +161,12 @@ Context:
 You will execute ${workflow.nodes.size} steps sequentially.
 IMPORTANT: Complete each step fully before moving to the next.
 
+CRITICAL: If the ask_user tool returns a message starting with "[Awaiting", this means the workflow is pausing for user input. 
+In this case, you MUST:
+1. STOP immediately - do NOT call any more tools
+2. Return a summary of what you've done so far
+3. Do NOT try to continue the workflow
+
 Steps:
 $steps
 

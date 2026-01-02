@@ -26,6 +26,7 @@ import kotlin.coroutines.CoroutineContext
  */
 class InteractionContextElement(
     initialRequest: InteractionRequest? = null,
+    var executionId: String? = null,
 ) : ThreadContextElement<InteractionRequest?>,
     CoroutineContext.Element {
     // Use AtomicReference for thread-safe access
