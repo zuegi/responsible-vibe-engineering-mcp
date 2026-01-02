@@ -4,7 +4,9 @@ import ai.koog.agents.core.tools.SimpleTool
 import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.ToolParameterDescriptor
 import ai.koog.agents.core.tools.ToolParameterType
+import ch.zuegi.rvmcp.adapter.output.workflow.InteractionContextElement
 import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -15,14 +17,15 @@ import kotlinx.serialization.serializer
  * Dies ist der Schlüssel für interaktive Requirements-Gathering Workflows.
  *
  * Uses UserInteractionPort abstraction:
- * - MCP Mode: Throws InteractionRequiredException (workflow pauses)
+ * - MCP Mode: Sets InteractionRequest in InteractionContextElement (workflow pauses)
  * - CLI Mode: Uses stdin/stdout (direct interaction)
  * - Test Mode: Returns predefined answers
  *
  * Usage in Koog Agent:
  * ```kotlin
+ * val interactionContext = InteractionContextElement()
  * val toolRegistry = ToolRegistry {
- *     tool(AskUserTool(userInteractionPort))
+ *     tool(AskUserTool(userInteractionPort, interactionContext))
  * }
  * ```
  *
@@ -37,7 +40,10 @@ import kotlinx.serialization.serializer
  */
 class AskUserTool(
     private val userInteractionPort: UserInteractionPort,
+    private val interactionContext: InteractionContextElement? = null,
 ) : SimpleTool<AskUserTool.Args>() {
+    private val logger by rvmcpLogger()
+
     @Serializable
     data class Args(
         val question: String,
@@ -74,12 +80,20 @@ class AskUserTool(
         )
 
     override suspend fun doExecute(args: Args): String {
+        logger.info("ask_user tool called with question: ${args.question}")
+
         // Delegate to UserInteractionPort
-        // In MCP mode: throws InteractionRequiredException (will be caught by executor)
-        // In CLI mode: uses stdin/stdout
-        return userInteractionPort.askUser(
-            question = args.question,
-            context = emptyMap(),
-        )
+        val answer =
+            userInteractionPort.askUser(
+                question = args.question,
+                context = emptyMap(),
+            )
+
+        // If InteractionContextElement was provided and request was set, log it
+        if (interactionContext?.hasRequest() == true) {
+            logger.info("InteractionRequest captured in context for question: ${args.question}")
+        }
+
+        return answer
     }
 }

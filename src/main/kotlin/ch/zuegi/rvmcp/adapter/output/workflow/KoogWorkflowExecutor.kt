@@ -95,7 +95,10 @@ class KoogWorkflowExecutor(
         logger.info("Building workflow system prompt...")
         val systemPrompt = promptBuilder.buildNodeSpecificInstructions(workflowTemplate.nodes)
 
-        // 4. Create single agent for entire workflow
+        // 4. Create InteractionContextElement for user interaction signaling
+        val interactionContext = InteractionContextElement()
+
+        // 5. Create single agent for entire workflow
         logger.info("Creating Koog agent for entire workflow...")
         val agentStartTime = System.currentTimeMillis()
 
@@ -117,10 +120,10 @@ class KoogWorkflowExecutor(
                     ),
                 toolRegistry =
                     ToolRegistry {
-                        // Register ask_user tool with injected UserInteractionPort
-                        val userTool = AskUserTool(userInteractionPort)
+                        // Register ask_user tool with InteractionContextElement for direct signaling
+                        val userTool = AskUserTool(userInteractionPort, interactionContext)
                         tool(userTool)
-                        logger.info("Registered ask_user tool with UserInteractionPort")
+                        logger.info("Registered ask_user tool with InteractionContextElement")
                         tool(CreateFileTool { context.projectPath })
                         logger.info("Registered create_file tool for user interaction")
                         //  TODO korrekter Pfad angeben, die Daten sind aktuell noch hard codiert im QuestionCatalogk
@@ -133,16 +136,11 @@ class KoogWorkflowExecutor(
         val agentCreationTime = System.currentTimeMillis() - agentStartTime
         logger.info("Agent created in ${agentCreationTime}ms")
 
-        // 5. Execute entire workflow in single agent run with InteractionContext
+        // 6. Execute entire workflow in single agent run with InteractionContext
         logger.info("Starting workflow execution...")
         val workflowStartTime = System.currentTimeMillis()
 
         val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
-
-        // Create InteractionContextElement that will be used during workflow execution
-        val interactionContext = InteractionContextElement()
-
-        // Execute workflow within InteractionContextElement to enable user interaction signaling
         val agentResponse =
             try {
                 withContext(interactionContext) {
