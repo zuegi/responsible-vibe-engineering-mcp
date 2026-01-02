@@ -21,7 +21,6 @@ import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import ch.zuegi.rvmcp.shared.rvmcpLogger
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -140,27 +139,27 @@ class KoogWorkflowExecutor(
 
         val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
 
+        // Create InteractionContextElement that will be used during workflow execution
+        val interactionContext = InteractionContextElement()
+
         // Execute workflow within InteractionContextElement to enable user interaction signaling
         val agentResponse =
             try {
-                withContext(InteractionContextElement()) {
+                withContext(interactionContext) {
                     agent.run(initialPrompt)
                 }
             } catch (e: Exception) {
                 logger.error("Workflow execution failed", e)
                 throw IllegalStateException("Workflow execution failed: ${e.message}", e)
-            } finally {
-                // Ensure cleanup even on exception
-                currentCoroutineContext()[InteractionContextElement]?.clear()
             }
 
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
 
         // Check if workflow was interrupted for user interaction
-        val interactionElement = currentCoroutineContext()[InteractionContextElement]
-        if (interactionElement?.hasRequest() == true) {
-            val interactionRequest = interactionElement.consumeRequest()
+        // Note: interactionContext is accessible here because it was created outside withContext
+        if (interactionContext.hasRequest()) {
+            val interactionRequest = interactionContext.consumeRequest()
             if (interactionRequest != null) {
                 logger.info("Workflow paused for user interaction: ${interactionRequest.question}")
                 return WorkflowExecutionResult(
@@ -244,7 +243,7 @@ class KoogWorkflowExecutor(
         return """
 Workflow: ${workflow.name}
 Project: ${context.projectPath}
-Branch: ${context.gitBranch ?: "main"}
+Branch: ${context.gitBranch}
 
 Executed $llmNodeCount LLM steps using Koog AIAgent with context preservation.
 

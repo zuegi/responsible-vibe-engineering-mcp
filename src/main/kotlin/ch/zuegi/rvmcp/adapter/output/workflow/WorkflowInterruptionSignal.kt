@@ -2,6 +2,7 @@ package ch.zuegi.rvmcp.adapter.output.workflow
 
 import ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest
 import kotlinx.coroutines.ThreadContextElement
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -11,19 +12,25 @@ import kotlin.coroutines.CoroutineContext
  * without relying on ThreadLocal, which doesn't work reliably with Kotlin Coroutines
  * (especially when switching dispatchers).
  *
+ * Uses AtomicReference for thread-safe mutations across coroutine contexts.
+ *
  * Usage:
  * ```
- * withContext(InteractionContextElement()) {
+ * val interactionContext = InteractionContextElement()
+ * withContext(interactionContext) {
  *     // Workflow execution
  *     // Tools can set: coroutineContext[InteractionContextElement]?.setRequest(request)
- *     // Executor can check: coroutineContext[InteractionContextElement]?.consumeRequest()
  * }
+ * // After withContext, check: interactionContext.hasRequest()
  * ```
  */
 class InteractionContextElement(
-    private var pendingRequest: InteractionRequest? = null,
+    initialRequest: InteractionRequest? = null,
 ) : ThreadContextElement<InteractionRequest?>,
     CoroutineContext.Element {
+    // Use AtomicReference for thread-safe access
+    private val pendingRequest = AtomicReference<InteractionRequest?>(initialRequest)
+
     companion object Key : CoroutineContext.Key<InteractionContextElement>
 
     override val key: CoroutineContext.Key<*>
@@ -33,41 +40,39 @@ class InteractionContextElement(
      * Signal that workflow should pause for user interaction.
      */
     fun setRequest(request: InteractionRequest) {
-        pendingRequest = request
+        pendingRequest.set(request)
     }
 
     /**
      * Check if there's a pending interaction request.
      */
-    fun hasRequest(): Boolean = pendingRequest != null
+    fun hasRequest(): Boolean = pendingRequest.get() != null
 
     /**
      * Get and clear the pending interaction request.
      */
-    fun consumeRequest(): InteractionRequest? {
-        val request = pendingRequest
-        pendingRequest = null
-        return request
-    }
+    fun consumeRequest(): InteractionRequest? = pendingRequest.getAndSet(null)
 
     /**
      * Clear any pending interaction.
      */
     fun clear() {
-        pendingRequest = null
+        pendingRequest.set(null)
     }
 
-    // ThreadContextElement implementation (for thread-local backup)
+    // ThreadContextElement implementation
     override fun updateThreadContext(context: CoroutineContext): InteractionRequest? {
-        val oldState = pendingRequest
-        return oldState
+        // Save current value when entering this thread
+        return pendingRequest.get()
     }
 
     override fun restoreThreadContext(
         context: CoroutineContext,
         oldState: InteractionRequest?,
     ) {
-        pendingRequest = oldState
+        // Restore old value when leaving this thread
+        // Note: We don't restore here because we want to keep changes made during execution
+        // The AtomicReference ensures thread-safety
     }
 }
 
@@ -91,19 +96,19 @@ object WorkflowInterruptionSignal {
         )
 
     @Deprecated("Use CoroutineContext approach", level = DeprecationLevel.WARNING)
-    fun hasPendingInteraction(): Boolean =
+    fun hasPendingInteraction(): Nothing =
         throw UnsupportedOperationException(
             "ThreadLocal approach deprecated. Use coroutineContext[InteractionContextElement]?.hasRequest()",
         )
 
     @Deprecated("Use CoroutineContext approach", level = DeprecationLevel.WARNING)
-    fun consumePendingInteraction(): InteractionRequest? =
+    fun consumePendingInteraction(): Nothing =
         throw UnsupportedOperationException(
             "ThreadLocal approach deprecated. Use coroutineContext[InteractionContextElement]?.consumeRequest()",
         )
 
     @Deprecated("Use CoroutineContext approach", level = DeprecationLevel.WARNING)
-    fun clear(): Unit =
+    fun clear(): Nothing =
         throw UnsupportedOperationException(
             "ThreadLocal approach deprecated. Use coroutineContext[InteractionContextElement]?.clear()",
         )
