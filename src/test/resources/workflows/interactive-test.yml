@@ -1,0 +1,31 @@
+name: "Interactive Requirements Test"
+description: "Test workflow with user interaction via ask_user tool"
+version: "1.0"
+
+nodes:
+  - id: ask_requirement
+    type: llm
+    description: "Ask user about feature requirements"
+    prompt: |
+      You are a requirements analyst. You need to gather information about a new feature.
+      
+      Use the ask_user tool to ask: "What should this feature do?"
+      
+      After receiving the answer, summarize it briefly and say "Requirements captured successfully."
+    output: requirements
+
+  - id: done
+    type: aggregation
+    description: "End node"
+    inputs:
+      - requirements
+    output: final_result
+
+graph:
+  start: ask_requirement
+  end: done
+
+  edges:
+    - from: ask_requirement
+      to: done
+

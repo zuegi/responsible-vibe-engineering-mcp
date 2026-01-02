@@ -6,6 +6,7 @@ import ch.zuegi.rvmcp.domain.model.memory.Artifact
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.model.memory.Interaction
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
+import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 
 data class ExecutionContext(
     val executionId: ExecutionId,
@@ -13,6 +14,7 @@ data class ExecutionContext(
     val gitBranch: String,
     val processId: ProcessId? = null,
     val currentPhaseIndex: Int = 0,
+    val currentExecution: ProcessExecution? = null,
     val phaseResults: Map<String, PhaseResult> = emptyMap(),
     val architecturalDecisions: List<Decision> = emptyList(),
     val interactions: List<Interaction> = emptyList(),

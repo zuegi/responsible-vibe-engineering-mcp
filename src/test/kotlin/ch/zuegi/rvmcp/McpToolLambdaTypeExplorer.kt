@@ -7,7 +7,6 @@ import io.modelcontextprotocol.kotlin.sdk.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.TextContent
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 
@@ -51,23 +50,17 @@ class McpToolLambdaTypeExplorer {
 
             // Try to access arguments
             val arguments = request.arguments
-            if (arguments != null) {
-                println("Arguments is not null")
-                arguments.forEach { (key, value) ->
-                    println("  $key: $value")
+            println("Arguments is not null")
+            arguments.forEach { (key, value) ->
+                println("  $key: $value")
 
-                    // Try to extract as primitive
-                    if (value is JsonElement) {
-                        try {
-                            val stringValue = value.jsonPrimitive.content
-                            println("    -> String value: $stringValue")
-                        } catch (e: Exception) {
-                            println("    -> Not a primitive: ${e.message}")
-                        }
-                    }
+                // Try to extract as primitive
+                try {
+                    val stringValue = value.jsonPrimitive.content
+                    println("    -> String value: $stringValue")
+                } catch (e: Exception) {
+                    println("    -> Not a primitive: ${e.message}")
                 }
-            } else {
-                println("Arguments is null")
             }
 
             CallToolResult(

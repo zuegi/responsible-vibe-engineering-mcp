@@ -4,6 +4,9 @@ import ai.koog.agents.core.tools.SimpleTool
 import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.ToolParameterDescriptor
 import ai.koog.agents.core.tools.ToolParameterType
+import ch.zuegi.rvmcp.adapter.output.workflow.InteractionContextElement
+import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
+import ch.zuegi.rvmcp.shared.rvmcpLogger
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -13,10 +16,16 @@ import kotlinx.serialization.serializer
  * Erlaubt dem LLM Agent, Fragen an den User zu stellen und auf Antworten zu warten.
  * Dies ist der Schlüssel für interaktive Requirements-Gathering Workflows.
  *
+ * Uses UserInteractionPort abstraction:
+ * - MCP Mode: Sets InteractionRequest in InteractionContextElement (workflow pauses)
+ * - CLI Mode: Uses stdin/stdout (direct interaction)
+ * - Test Mode: Returns predefined answers
+ *
  * Usage in Koog Agent:
  * ```kotlin
+ * val interactionContext = InteractionContextElement()
  * val toolRegistry = ToolRegistry {
- *     tool(AskUserTool())
+ *     tool(AskUserTool(userInteractionPort, interactionContext))
  * }
  * ```
  *
@@ -29,7 +38,12 @@ import kotlinx.serialization.serializer
  * LLM: [verarbeitet Antwort weiter]
  * ```
  */
-class AskUserTool : SimpleTool<AskUserTool.Args>() {
+class AskUserTool(
+    private val userInteractionPort: UserInteractionPort,
+    private val interactionContext: InteractionContextElement? = null,
+) : SimpleTool<AskUserTool.Args>() {
+    private val logger by rvmcpLogger()
+
     @Serializable
     data class Args(
         val question: String,
@@ -66,29 +80,19 @@ class AskUserTool : SimpleTool<AskUserTool.Args>() {
         )
 
     override suspend fun doExecute(args: Args): String {
-        // Print question to console
-        println("\n" + "=".repeat(60))
-        println("🤖 LLM Question:")
-        println(args.question)
-        println("=".repeat(60))
-        print("\n👤 Your answer: ")
-        System.out.flush()
+        logger.info("ask_user tool called with question: ${args.question}")
 
-        // Wait for user input
-        val lines = mutableListOf<String>()
-        while (true) {
-            val line = readlnOrNull() ?: break
-            if (line.isBlank()) break
-            if (line.endsWith("\\")) {
-                lines.add(line.removeSuffix("\\"))
-            } else {
-                lines.add(line)
-                break // oder weiter einlesen, je nach gewünschtem Verhalten
-            }
+        // Delegate to UserInteractionPort
+        val answer =
+            userInteractionPort.askUser(
+                question = args.question,
+                context = emptyMap(),
+            )
+
+        // If InteractionContextElement was provided and request was set, log it
+        if (interactionContext?.hasRequest() == true) {
+            logger.info("InteractionRequest captured in context for question: ${args.question}")
         }
-        val answer = lines.joinToString(" ")
-
-        println("\n✓ Answer recorded: $answer\n")
 
         return answer
     }

@@ -44,6 +44,7 @@ class KoogIntegrationTest {
     private val executor by lazy {
         KoogWorkflowExecutor(
             llmProperties = llmProperties,
+            userInteractionPort = MockUserInteractionPort(),
         )
     }
 

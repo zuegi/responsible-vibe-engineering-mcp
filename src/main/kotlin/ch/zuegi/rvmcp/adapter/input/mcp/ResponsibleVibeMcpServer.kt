@@ -40,6 +40,7 @@ class ResponsibleVibeMcpServer(
     private val startProcessUseCase: StartProcessExecutionUseCase,
     private val executePhaseUseCase: ExecuteProcessPhaseUseCase,
     private val completePhaseUseCase: CompletePhaseUseCase,
+    private val provideAnswerUseCase: ch.zuegi.rvmcp.domain.port.input.ProvideAnswerUseCase,
     private val memoryRepository: MemoryRepositoryPort,
     private val processRepository: ProcessRepositoryPort,
 ) {
@@ -315,10 +316,15 @@ Status: ${processExecution.status}""",
                                 executePhaseUseCase.execute(currentPhase, context)
                             }
 
-                        val duration = System.currentTimeMillis() - startTime
-                        log.info("Job $jobId completed in ${duration}ms")
-
-                        jobManager.completeJob(jobId, phaseResult)
+                        // Check if phase result is awaiting input
+                        if (phaseResult.awaitingInput && phaseResult.interactionRequest != null) {
+                            log.info("Job $jobId paused for user interaction: ${phaseResult.interactionRequest.question}")
+                            jobManager.pauseJobForInput(jobId, phaseResult.interactionRequest)
+                        } else {
+                            val duration = System.currentTimeMillis() - startTime
+                            log.info("Job $jobId completed in ${duration}ms")
+                            jobManager.completeJob(jobId, phaseResult)
+                        }
                     } catch (e: Exception) {
                         log.error("! Job $jobId: Failed - ${e.message}")
                         e.printStackTrace(System.err)
@@ -404,6 +410,28 @@ Job ID: ${job.id}
 Status: RUNNING
 
 Please wait and try again in a few seconds.""",
+                                    ),
+                                ),
+                        )
+                    }
+
+                    JobStatus.AWAITING_INPUT -> {
+                        val interactionRequest = job.interactionRequest!!
+                        CallToolResult(
+                            content =
+                                listOf(
+                                    TextContent(
+                                        text =
+                                            """Workflow is awaiting user input!
+Job ID: ${job.id}
+Status: AWAITING_INPUT
+
+Question: ${interactionRequest.question}
+Interaction Type: ${interactionRequest.type}
+Question ID: ${interactionRequest.questionId ?: "N/A"}
+
+Please use the provide_answer tool to provide an answer.
+Note: You'll need the executionId from the process context.""",
                                     ),
                                 ),
                         )
@@ -566,7 +594,108 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
             }
         }
 
-        // Tool 5: get_context
+        // Tool 5: provide_answer
+        server.addTool(
+            name = "provide_answer",
+            description = "Provides a user answer to resume a paused workflow (requires executionId, answer)",
+            inputSchema =
+                Tool.Input(
+                    properties =
+                        JsonObject(
+                            mapOf(
+                                "executionId" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put("description", kotlinx.serialization.json.JsonPrimitive("Execution ID of the paused workflow"))
+                                    },
+                                "answer" to
+                                    kotlinx.serialization.json.buildJsonObject {
+                                        put("type", kotlinx.serialization.json.JsonPrimitive("string"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("User's answer to the interaction request"),
+                                        )
+                                    },
+                            ),
+                        ),
+                    required = listOf("executionId", "answer"),
+                ),
+        ) { request: CallToolRequest ->
+            try {
+                val args =
+                    request.arguments ?: return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "Error: No arguments provided")),
+                        isError = true,
+                    )
+
+                val executionIdStr =
+                    args["executionId"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "Error: executionId parameter is required")),
+                            isError = true,
+                        )
+                val answer =
+                    args["answer"]?.jsonPrimitive?.content
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent(text = "Error: answer parameter is required")),
+                            isError = true,
+                        )
+
+                val executionId = ch.zuegi.rvmcp.domain.model.id.ExecutionId(executionIdStr)
+
+                // Resume suspended workflow via PendingInteractionManager
+                val resumed =
+                    ch.zuegi.rvmcp.adapter.output.interaction.PendingInteractionManager.provideAnswer(
+                        executionId.value,
+                        answer,
+                    )
+
+                if (!resumed) {
+                    return@addTool CallToolResult(
+                        content = listOf(TextContent(text = "Error: No pending interaction found for executionId: $executionIdStr")),
+                        isError = true,
+                    )
+                }
+
+                log.info("Workflow resumed for executionId: $executionIdStr with answer: $answer")
+
+                // Also update domain model via Use Case
+                val resumedExecution = provideAnswerUseCase.execute(executionId, answer)
+
+                CallToolResult(
+                    content =
+                        listOf(
+                            TextContent(
+                                text =
+                                    """Answer provided successfully!
+ Execution ID: ${resumedExecution.id.value}
+State: ${resumedExecution.state}
+Interaction History: ${resumedExecution.interactionHistory.size} interactions
+Last Answer: $answer
+
+Workflow has been resumed. Use execute_phase to continue.""",
+                            ),
+                        ),
+                )
+            } catch (e: IllegalStateException) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "Error: ${e.message}")),
+                    isError = true,
+                )
+            } catch (e: NoSuchElementException) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "Error: ${e.message}")),
+                    isError = true,
+                )
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "Error providing answer: ${e.message}")),
+                    isError = true,
+                )
+            }
+        }
+
+        // Tool 6: get_context
         server.addTool(
             name = "get_context",
             description = "Retrieves stored memory/context for a process execution (requires projectPath, gitBranch)",

@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.adapter.input.mcp
 
+import ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import java.util.concurrent.ConcurrentHashMap
 
@@ -43,6 +44,23 @@ class AsyncJobManager {
     }
 
     /**
+     * Marks a job as awaiting user input (paused for interaction).
+     */
+    fun pauseJobForInput(
+        jobId: String,
+        interactionRequest: InteractionRequest,
+    ) {
+        jobs[jobId] =
+            AsyncJob(
+                id = jobId,
+                status = JobStatus.AWAITING_INPUT,
+                result = null,
+                error = null,
+                interactionRequest = interactionRequest,
+            )
+    }
+
+    /**
      * Marks a job as failed with error.
      */
     fun failJob(
@@ -78,6 +96,7 @@ class AsyncJobManager {
  */
 enum class JobStatus {
     RUNNING,
+    AWAITING_INPUT,
     COMPLETED,
     FAILED,
 }
@@ -88,6 +107,7 @@ enum class JobStatus {
 data class AsyncJob(
     val id: String,
     val status: JobStatus,
-    val result: PhaseResult?,
-    val error: String?,
+    val result: PhaseResult? = null,
+    val error: String? = null,
+    val interactionRequest: InteractionRequest? = null,
 )

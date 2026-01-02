@@ -15,11 +15,13 @@ import ch.zuegi.rvmcp.adapter.output.workflow.tools.QuestionCatalogTool
 import ch.zuegi.rvmcp.adapter.output.workflow.tools.questioncatalog.QuestionCatalog
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.memory.Decision
+import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowExecutionResult
 import ch.zuegi.rvmcp.domain.port.output.model.WorkflowSummary
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
 import ch.zuegi.rvmcp.shared.rvmcpLogger
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
@@ -44,7 +46,7 @@ import java.time.LocalDate
 @Component
 class KoogWorkflowExecutor(
     private val llmProperties: LlmProperties,
-    private val askUserTool: ai.koog.agents.core.tools.SimpleTool<*>? = null,
+    private val userInteractionPort: UserInteractionPort,
 ) : WorkflowExecutionPort {
     private val logger by rvmcpLogger()
     private var lastExecution: WorkflowExecutionResult? = null
@@ -93,7 +95,13 @@ class KoogWorkflowExecutor(
         logger.info("Building workflow system prompt...")
         val systemPrompt = promptBuilder.buildNodeSpecificInstructions(workflowTemplate.nodes)
 
-        // 4. Create single agent for entire workflow
+        // 4. Create InteractionContextElement for user interaction signaling
+        val interactionContext =
+            InteractionContextElement(
+                executionId = context.executionId.value,
+            )
+
+        // 5. Create single agent for entire workflow
         logger.info("Creating Koog agent for entire workflow...")
         val agentStartTime = System.currentTimeMillis()
 
@@ -115,10 +123,10 @@ class KoogWorkflowExecutor(
                     ),
                 toolRegistry =
                     ToolRegistry {
-                        // Register ask_user tool (configurable for tests)
-                        val userTool = askUserTool ?: AskUserTool()
+                        // Register ask_user tool with InteractionContextElement for direct signaling
+                        val userTool = AskUserTool(userInteractionPort, interactionContext)
                         tool(userTool)
-                        logger.info("Registered ask_user tool (${userTool.javaClass.simpleName})")
+                        logger.info("Registered ask_user tool with InteractionContextElement")
                         tool(CreateFileTool { context.projectPath })
                         logger.info("Registered create_file tool for user interaction")
                         //  TODO korrekter Pfad angeben, die Daten sind aktuell noch hard codiert im QuestionCatalogk
@@ -131,14 +139,16 @@ class KoogWorkflowExecutor(
         val agentCreationTime = System.currentTimeMillis() - agentStartTime
         logger.info("Agent created in ${agentCreationTime}ms")
 
-        // 5. Execute entire workflow in single agent run
+        // 6. Execute entire workflow in single agent run with InteractionContext
         logger.info("Starting workflow execution...")
         val workflowStartTime = System.currentTimeMillis()
 
         val initialPrompt = promptBuilder.buildInitialPrompt(workflowTemplate, context)
         val agentResponse =
             try {
-                agent.run(initialPrompt)
+                withContext(interactionContext) {
+                    agent.run(initialPrompt)
+                }
             } catch (e: Exception) {
                 logger.error("Workflow execution failed", e)
                 throw IllegalStateException("Workflow execution failed: ${e.message}", e)
@@ -146,6 +156,25 @@ class KoogWorkflowExecutor(
 
         val workflowDuration = System.currentTimeMillis() - workflowStartTime
         logger.info("Workflow completed in ${workflowDuration}ms")
+
+        // Check if workflow was interrupted for user interaction
+        // Note: interactionContext is accessible here because it was created outside withContext
+        if (interactionContext.hasRequest()) {
+            val interactionRequest = interactionContext.consumeRequest()
+            if (interactionRequest != null) {
+                logger.info("Workflow paused for user interaction: ${interactionRequest.question}")
+                return WorkflowExecutionResult(
+                    success = true,
+                    summary = "Workflow paused - awaiting user input",
+                    decisions = emptyList(),
+                    vibeCheckResults = emptyList(),
+                    awaitingInput = true,
+                    interactionRequest = interactionRequest,
+                    startedAt = startTime,
+                    completedAt = Instant.now(),
+                )
+            }
+        }
 
         // Log full agent response
         logger.info("Workflow result:\n{}", agentResponse)
@@ -215,7 +244,7 @@ class KoogWorkflowExecutor(
         return """
 Workflow: ${workflow.name}
 Project: ${context.projectPath}
-Branch: ${context.gitBranch ?: "main"}
+Branch: ${context.gitBranch}
 
 Executed $llmNodeCount LLM steps using Koog AIAgent with context preservation.
 
