@@ -1,9 +1,6 @@
 package ch.zuegi.rvmcp.adapter.output.workflow.tools
 
 import ai.koog.agents.core.tools.SimpleTool
-import ai.koog.agents.core.tools.ToolDescriptor
-import ai.koog.agents.core.tools.ToolParameterDescriptor
-import ai.koog.agents.core.tools.ToolParameterType
 import ch.zuegi.rvmcp.adapter.output.workflow.InteractionContextElement
 import ch.zuegi.rvmcp.domain.port.output.UserInteractionPort
 import ch.zuegi.rvmcp.shared.rvmcpLogger
@@ -41,7 +38,11 @@ import kotlinx.serialization.serializer
 class AskUserTool(
     private val userInteractionPort: UserInteractionPort,
     private val interactionContext: InteractionContextElement? = null,
-) : SimpleTool<AskUserTool.Args>() {
+) : SimpleTool<AskUserTool.Args>(
+        argsSerializer = serializer<Args>(),
+        name = "ask_user",
+        description = "Ask the user a question and wait for their response. Use this when you need information from the user to proceed.",
+    ) {
     private val logger by rvmcpLogger()
 
     @Serializable
@@ -49,37 +50,7 @@ class AskUserTool(
         val question: String,
     )
 
-    override val description: String =
-        "Ask the user a question and wait for their response. Use this when you need information from the user to proceed."
-
-    override val name: String = "ask_user"
-
-    override val argsSerializer = serializer<Args>()
-
-    override val descriptor =
-        ToolDescriptor(
-            name = "ask_user",
-            description =
-                """
-                Ask the user a question and wait for their response.
-                Use this when you need information from the user to proceed.
-                
-                Examples:
-                - "What should this feature do?"
-                - "Which authentication providers should be supported?"
-                - "What are the performance requirements?"
-                """.trimIndent(),
-            requiredParameters =
-                listOf(
-                    ToolParameterDescriptor(
-                        name = "question",
-                        description = "The question to ask the user. Be specific and clear.",
-                        type = ToolParameterType.String,
-                    ),
-                ),
-        )
-
-    override suspend fun doExecute(args: Args): String {
+    override suspend fun execute(args: Args): String {
         logger.info("ask_user tool called with question: ${args.question}")
 
         // Delegate to UserInteractionPort

@@ -27,7 +27,7 @@ class CreateFileToolTest {
                     mimeType = "text/plain",
                 )
 
-            val result = tool.doExecute(args)
+            val result = tool.execute(args)
 
             // Assertions
             assertTrue(expectedFile.exists(), "Expected file to be created")

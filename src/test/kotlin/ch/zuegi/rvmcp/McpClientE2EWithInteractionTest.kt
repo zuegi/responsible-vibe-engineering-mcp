@@ -69,14 +69,12 @@ class McpClientE2EWithInteractionTest {
         processRepository = InMemoryProcessRepository()
         memoryRepository = InMemoryMemoryRepository()
 
-        // Initialize workflow executor with MCP-mode UserInteractionPort
-        // Note: mcpMode=true will trigger AWAITING_INPUT state
+        // Initialize workflow executor with Test UserInteractionPort
+        // This port returns immediate test answers without suspending
         workflowExecutor =
             KoogWorkflowExecutor(
                 llmProperties = llmProperties,
-                userInteractionPort =
-                    ch.zuegi.rvmcp.adapter.output.interaction
-                        .McpAwareInteractionAdapter(mcpMode = true),
+                userInteractionPort = TestUserInteractionPort(),
             )
 
         // Use automatic vibe check evaluator
@@ -432,5 +430,60 @@ class McpClientE2EWithInteractionTest {
 
         processRepository.save(process)
         println("✅ Interactive Feature Development Process setup complete")
+    }
+}
+
+/**
+ * Test implementation of UserInteractionPort that returns immediate answers
+ * without suspending. This allows tests to run without PendingInteractionManager.
+ */
+class TestUserInteractionPort : ch.zuegi.rvmcp.domain.port.output.UserInteractionPort {
+    private val answers = mutableListOf<String>()
+    private var currentIndex = 0
+
+    init {
+        // Pre-populate with test answers
+        answers.add("Test answer 1: Initial requirements")
+        answers.add("Test answer 2: Additional details")
+        answers.add("Test answer 3: More information")
+    }
+
+    override suspend fun askUser(
+        question: String,
+        context: Map<String, String>,
+    ): String {
+        val answer = answers.getOrElse(currentIndex) { "Default test answer" }
+        currentIndex++
+        return answer
+    }
+
+    override suspend fun askCatalogQuestion(
+        questionId: String,
+        question: String,
+        context: Map<String, String>,
+    ): String {
+        val answer = answers.getOrElse(currentIndex) { "Default catalog answer" }
+        currentIndex++
+        return answer
+    }
+
+    override suspend fun requestApproval(
+        question: String,
+        context: Map<String, String>,
+    ): String {
+        return "yes"
+    }
+
+    override fun createInteractionRequest(
+        question: String,
+        questionId: String?,
+        context: Map<String, String>,
+    ): ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest {
+        return ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest(
+            type = ch.zuegi.rvmcp.domain.model.interaction.InteractionType.ASK_USER,
+            question = question,
+            questionId = questionId,
+            context = context,
+        )
     }
 }

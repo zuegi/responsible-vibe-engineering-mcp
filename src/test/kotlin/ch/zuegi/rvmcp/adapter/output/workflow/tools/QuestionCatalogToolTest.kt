@@ -15,7 +15,7 @@ class QuestionCatalogToolTest {
     fun `doExecute returns correct question string`() {
         runBlocking {
             val args = QuestionCatalogTool.Args(questionId = "Q001")
-            val result = tool.doExecute(args)
+            val result = tool.execute(args)
             assertThat(result).contains("Q001")
             assertThat(result).contains("What is the ISIN of the instrument?")
         }
@@ -26,7 +26,7 @@ class QuestionCatalogToolTest {
         runBlocking {
             val args = QuestionCatalogTool.Args(questionId = "Q999")
             assertThatThrownBy {
-                runBlocking { tool.doExecute(args) }
+                runBlocking { tool.execute(args) }
             }.isInstanceOf(IllegalArgumentException::class.java)
         }
     }

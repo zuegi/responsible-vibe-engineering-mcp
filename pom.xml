@@ -25,7 +25,13 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
         <kotlin.version>2.2.0</kotlin.version>
-        <kotlin-koog.version>0.5.1</kotlin-koog.version>
+        <!--
+            * JDK 17 or higher is required to use the framework on JVM.
+            * kotlinx-coroutines 1.10.2 and kotlinx-serialization 1.8.1 versions should be set explicitly in existing projects.
+        -->
+        <kotlin-koog.version>0.6.0</kotlin-koog.version>
+        <kotlinx-coroutines>1.10.2</kotlinx-coroutines>
+        <kotlinx-serialization>1.8.1</kotlinx-serialization>
         <kotlin-mcp-sdk.version>0.8.1</kotlin-mcp-sdk.version>
         <ktor.version>3.1.3</ktor.version>
     </properties>
@@ -76,24 +82,24 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core-jvm</artifactId>
-            <version>1.10.2</version>
+            <version>${kotlinx-coroutines}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-slf4j</artifactId>
-            <version>1.10.2</version>
+            <version>${kotlinx-coroutines}</version>
         </dependency>
 
         <!-- Force compatible kotlinx-serialization version for Koog (matches working nf-system-monitor) -->
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-json-jvm</artifactId>
-            <version>1.8.1</version>
+            <version>${kotlinx-serialization}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-core-jvm</artifactId>
-            <version>1.8.1</version>
+            <version>${kotlinx-serialization}</version>
         </dependency>
 
         <!-- Ktor CIO Engine for HTTP client (used by Koog for Azure OpenAI) -->
