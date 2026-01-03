@@ -1,5 +1,8 @@
 # Vollständiger Software Engineering Prozess
 
+> 📖 **Für Output-Templates (Requirements, Architecture, Features) siehe:**  
+> [Planungsprozess Software-Projekt](../Planungsprozess-Software-Projekt.md) - Dokumenten-Templates und Strukturen
+
 ## 🔄 AGILE/SCRUM Prozess (Komplett)
 
 ```

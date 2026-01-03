@@ -66,20 +66,29 @@ The CI build excludes LLM integration tests since they require credentials:
 ```
 
 This ensures:
-- ✅ All unit tests (47 tests) run in CI
+- ✅ Unit and integration tests run in CI (without LLM)
 - ✅ No LLM credentials needed in CI
 - ✅ Fast CI builds
 
 ### Local Testing
 
 With `application-local.yml` configured:
-- All 54 tests run automatically
-- LLM integration tests included
+- All tests run automatically including LLM integration tests
 - No profile specification needed (auto-activated via `src/test/resources/application.yml`)
 
 ```bash
-mvn test  # Runs all 54 tests
+# Run all tests (including LLM integration)
+mvn test
+
+# Run without LLM integration tests
+mvn test -Dtest='!KoogIntegrationTest,!SimpleLLMConnectionTest'
 ```
+
+**Test Files:** 15 test classes covering:
+- Domain model tests (ProcessExecution, EngineeringProcess, ExecutionContext, etc.)
+- Tool tests (QuestionCatalog, CreateFile, etc.)
+- Integration tests (McpProtocol, Koog, SimpleEndToEnd)
+- E2E tests (McpClientE2E, InteractionContext)
 
 ## Security Notes
 

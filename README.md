@@ -16,20 +16,21 @@ KI-Tools generieren oft Code ohne methodisches Vorgehen. Das führt zu:
 - Fehlender Architekturplanung
 - Unnötigem Refactoring
 - Unstrukturierter Entwicklung
+- **Unvollständige Requirements**: LLM stellt zufällige Fragen statt systematischer Kataloge
+- **Fehlende Dokumentation**: Antworten werden nicht strukturiert festgehalten
 
 ### Die Lösung
 
 Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
-1. Anforderungsanalyse
-2. Planung
-3. Architekturentwurf
-4. Wiederhole Schritte 1 - 3 und verbessere
-5. Implementierung
-6. Testing
+1. **Anforderungsanalyse** mit strukturierten Question Catalogs
+2. **Architekturentwurf** mit dokumentierten Entscheidungen
+3. **Dokumentation** als versionierte Markdown-Files (für AI-Coding-Tools nutzbar)
+4. Wiederhole Schritte 1-3 und verbessere
+5. **Implementierung** basierend auf dokumentierten Requirements
+6. **Testing** mit definierter Strategie
 7. Integration & Review
 
-
-Idee: Das Dokument soll zum Schluss in Tranchen aufgteilt werden, welche in Stories/Changes umgesetzt werden kann, bzw. eine LLM kann daraus Stories erstellen.
+**Neu: Question Catalogs** – Strukturierte Fragelisten pro Phase garantieren Vollständigkeit und erzeugen wiederverwendbare Projektdokumentation.
 
 ## Features
 
@@ -44,7 +45,7 @@ Idee: Das Dokument soll zum Schluss in Tranchen aufgteilt werden, welche in Stor
 
 - Kotlin
 - Spring Boot
-- Kotlin Koog (Agentic AI Framework)
+- Kotlin Koog 0.6.0 (Agentic AI Framework)
 - Model Context Protocol (MCP)
 - Maven
 - Git
@@ -94,7 +95,12 @@ src/
   - 36 Unit Tests
 
 - ✅ **Phase 1.5: Kotlin Koog Integration**
-  - YAML Workflow Templates (simple-test, multi-node-test, three-node-test)
+  - YAML Workflow Templates:
+    - `simple-test.yml` - Basic LLM connection test
+    - `multi-node-test.yml` - Multi-node workflow test
+    - `three-node-test.yml` - Complex workflow test
+    - `interactive-test.yml` - User interaction test
+    - `requirement-question-catalog.yml` - Question catalog workflow
   - RefactoredKoogWorkflowExecutor mit Single-Agent-Architektur
   - YamlToKoogStrategyTranslator
   - WorkflowPromptBuilder
@@ -117,14 +123,29 @@ src/
 
 - ✅ **Phase 2a: MCP Server Implementation** 
   - MCP Protocol Integration (JSON-RPC 2.0, stdio Transport)
-    - 5 MCP Tools (start_process, execute_phase, complete_phase, get_context, list_processes)
-    - 2 MCP Resources (context://, process://)
+    - 6 MCP Tools:
+      - `list_processes` - List available engineering processes
+      - `start_process` - Start a new process execution
+      - `execute_phase` - Execute current phase (async)
+      - `get_phase_result` - Get async execution results
+      - `complete_phase` - Complete phase and advance
+      - `provide_answer` - Resume paused workflows
     - Integration mit Claude Desktop / Warp Agent
        - für die Verwendung des MCP Server im WARP Agent verwende
         -  die [MCP Server Konfiguration für den WARP Agent](warp-mcp-config.json)
         - eine [WARP Rule](warp-rule-mcp-server), welche besagt, dass der MCP Server verwendet werden soll
- 
-**Nächste Schritte**:
+
+- ✅ **Phase 2c: Question Catalogs & Document Generation**
+  - QuestionCatalogTool für strukturierte Fragelisten
+  - QuestionCatalog Domain Model
+  - Workflow Templates für Question-Driven Requirements
+  - Integration mit Koog Workflow Executor
+
+**Nächste Schritte (Current Focus)**:
+- 🎯 **Phase 2d: Automatische Markdown-Dokumenten-Generierung**
+  - Markdown-Files aus Workflow-Ergebnissen generieren
+  - Git-Integration für versionierte Projektdokumentation
+  - Context für AI-Coding-Tools (Cursor, Windsurf, etc.)
 - Phase 2b: Memory & Persistenz (File-based Memory)
 - Phase 3: Workflows erweitern (Bug-Fix, Refactoring, Testing)
 - Phase 4: Tutorial & Documentation

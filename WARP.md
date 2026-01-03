@@ -4,9 +4,17 @@
 
 Viele KI-Codier-Tools funktionieren als „Autocompletes on Steroids" – sie durchsuchen Code, recherchieren online und generieren Lösungen. Doch **Softwareengineering umfasst weit mehr**: Architekturdenken, methodisches Vorgehen, Refactoring-Vermeidung und bewusste Planung.
 
-**Das Problem**: Der Planungsschritt wird oft übersprungen → „Zehn Minuten Design hätten drei Stunden Refactoring vermieden"
+**Das Problem**: 
+- Der Planungsschritt wird oft übersprungen → „Zehn Minuten Design hätten drei Stunden Refactoring vermieden"
+- LLMs stellen **zufällige Fragen** statt systematischer Requirements-Erhebung
+- **Keine strukturierte Dokumentation** der Anforderungen und Architektur-Entscheidungen
+- AI-Coding-Tools fehlt der Kontext früherer Entscheidungen
 
-**Die Lösung**: Responsible Vibe MCP führt KI-Systeme aktiv durch bewährte Engineering-Workflows, sodass das Ergebnis nicht nur Code, sondern eine durchdachte, nachhaltige Lösung ist.
+**Die Lösung**: Responsible Vibe MCP führt KI-Systeme aktiv durch bewährte Engineering-Workflows mit:
+- **Strukturierten Question Catalogs** für jede Phase
+- **Automatischer Dokumenten-Generierung** (Requirements, Architecture, etc.)
+- **Git-versionierte Projektdokumentation** als Context für AI-Coding-Tools
+- **Persistentem Memory** über Sessions hinweg
 
 ---
 
@@ -692,6 +700,29 @@ responsible-vibe-mcp/
 - [ ] Kontext-Speicherung & -Wiederherstellung
 - [ ] Branch-Awareness (Git-Integration)
 
+### Phase 2c: Question Catalogs & Document Generation 🎯 CURRENT FOCUS
+- [ ] **Question Catalogs erstellen**
+  - [ ] Requirements Analysis Catalog (JSON)
+  - [ ] Architecture Design Catalog (JSON)
+  - [ ] Implementation Planning Catalog (JSON)
+  - [ ] Testing Strategy Catalog (JSON)
+- [ ] **Workflow Integration**
+  - [ ] requirements-analysis.yml mit Catalog-Nodes
+  - [ ] architecture-design.yml mit Catalog-Nodes
+  - [ ] Koog Workflow Nodes: get_question, ask_catalog_question
+- [ ] **Document Generator**
+  - [ ] Domain Model: EngineeringDocument, DocumentType
+  - [ ] DocumentGeneratorService (LLM-basierte Markdown-Generierung)
+  - [ ] Integration in ExecutePhaseService
+  - [ ] File-Speicherung in `{project}/docs/`
+- [ ] **Git Integration**
+  - [ ] Auto-Commit nach Document-Generierung
+  - [ ] Branch-spezifische Dokumentation
+- [ ] **End-to-End Test**
+  - [ ] Complete Flow: Questions → Answers → Document
+  - [ ] Manuelle Verifikation mit MCP Server
+  - [ ] Integration mit AI-Coding-Tools (Cursor, Windsurf)
+
 ### Phase 3: Workflows erweitern
 - [ ] Bug-Fix Workflow
 - [ ] Refactoring Workflow
@@ -903,6 +934,24 @@ responsible-vibe-mcp/
 - `AutoPassVibeCheckEvaluator`: Alle Checks passen automatisch (Success-Pfad)
 - `FailingVibeCheckEvaluator`: Required Checks failen automatisch (Error-Pfad)
 - Helper Klassen im Test-File, wiederverwendbar für weitere Tests
+
+### ADR-007: Question Catalogs für strukturierte Requirements
+**Datum**: 2026-01-03  
+**Entscheidung**: Vordefinierte JSON-basierte Question Catalogs pro Engineering-Phase  
+**Begründung**:
+- **Problem**: LLM stellt zufällige Fragen → keine Garantie für Vollständigkeit
+- **Lösung**: AIUP-inspirierte strukturierte Fragelisten
+- **Pflichtfragen vs. Optional**: Garantiert minimale Requirements-Abdeckung
+- **Wiederverwendbarkeit**: Templates für ähnliche Projekte
+- **Dokumenten-Generierung**: Antworten werden zu strukturierten Markdown-Docs (für AI-Coding-Tools)
+
+**Implementierung**:
+- JSON Catalogs: `requirements-analysis.json`, `architecture-design.json`, etc.
+- Workflow Nodes: `get_question`, `ask_catalog_question`, `validate_answer`
+- DocumentGeneratorService: LLM generiert Markdown aus Frage-Antwort-Paaren
+- Git-Integration: Auto-Commit der generierten Dokumentation
+
+**Referenz**: Plan 5be60baa (Structured Question Catalogs)
 
 ---
 

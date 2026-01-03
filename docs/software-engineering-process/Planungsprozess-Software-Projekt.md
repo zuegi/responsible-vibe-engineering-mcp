@@ -1,6 +1,9 @@
 # Planungsprozess für Software Projekte
 Unter der Verwendung einer Agentic AI Software (responsible-vibe-engineering-mcp) und einer LLM.
 
+> 📖 **Für detaillierte Sprint-Planung und Day-by-Day Breakdown siehe:**  
+> [Software Engineering Process Guide](ai-generated-docs/software-engineering-process.md) - Vollständiger Agile/Scrum Prozess mit Timings
+
 ## 📊 Output: Dokumentenstruktur
 Aus dem Fragenkatalog erstellt nachfolgende Dokumente.
 Erzwinge bei der LLM, dass sie immer diese Dokumente referenziert und auch erweitert.
