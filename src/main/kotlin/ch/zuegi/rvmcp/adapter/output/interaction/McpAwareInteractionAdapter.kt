@@ -8,51 +8,33 @@ import ch.zuegi.rvmcp.shared.rvmcpLogger
 import kotlinx.coroutines.currentCoroutineContext
 
 /**
- * MCP-aware implementation of UserInteractionPort.
+ * MCP implementation of UserInteractionPort.
  *
- * Two modes of operation:
- * 1. MCP Mode (mcpMode=true): Sets InteractionRequest in CoroutineContext to pause workflow
- * 2. CLI Mode (mcpMode=false): Uses stdin/stdout for direct interaction
+ * Suspends workflow execution when user interaction is needed via PendingInteractionManager.
+ * The workflow remains suspended until provide_answer is called through the MCP server.
  *
- * This adapter is the bridge between the domain (which just wants to ask questions)
- * and the MCP protocol (which requires pause/resume).
- *
- * Note: Uses CoroutineContext instead of ThreadLocal for proper coroutine support.
+ * This adapter is the bridge between the domain (which wants to ask questions)
+ * and the MCP protocol (which requires pause/resume via coroutine suspension).
  */
-class McpAwareInteractionAdapter(
-    private val mcpMode: Boolean = true,
-) : UserInteractionPort {
+class McpAwareInteractionAdapter : UserInteractionPort {
     private val logger by rvmcpLogger()
 
     override suspend fun askUser(
         question: String,
         context: Map<String, String>,
     ): String {
-        logger.info("askUser called: $question (mcpMode=$mcpMode)")
+        logger.info("askUser called: $question")
 
-        return if (mcpMode) {
-            // MCP Mode: Suspend until user provides answer via PendingInteractionManager
-            val request = createInteractionRequest(question, null, context)
-            val contextElement = currentCoroutineContext()[InteractionContextElement]
-            val executionId =
-                contextElement?.executionId
-                    ?: throw IllegalStateException("executionId must be set in InteractionContextElement for MCP mode")
+        val request = createInteractionRequest(question, null, context)
+        val contextElement = currentCoroutineContext()[InteractionContextElement]
+        val executionId =
+            contextElement?.executionId
+                ?: throw IllegalStateException("executionId must be set in InteractionContextElement")
 
-            logger.info("Suspending workflow for user interaction: $question (executionId=$executionId)")
+        logger.info("Suspending workflow for user interaction (executionId=$executionId)")
 
-            // This will suspend the coroutine until provideAnswer() is called
-            PendingInteractionManager.awaitAnswer(executionId, request)
-        } else {
-            // CLI Mode: Direct stdin interaction
-            println("\n${"=".repeat(60)}")
-            println("🤖 Question:")
-            println(question)
-            println("=".repeat(60))
-            print("\n👤 Your answer: ")
-            System.out.flush()
-
-            readlnOrNull()?.trim() ?: ""
-        }
+        // Suspend coroutine until provideAnswer() is called via MCP
+        return PendingInteractionManager.awaitAnswer(executionId, request)
     }
 
     override suspend fun askCatalogQuestion(
@@ -60,55 +42,41 @@ class McpAwareInteractionAdapter(
         question: String,
         context: Map<String, String>,
     ): String {
-        logger.info("askCatalogQuestion called: $questionId (mcpMode=$mcpMode)")
+        logger.info("askCatalogQuestion called: $questionId")
 
-        return if (mcpMode) {
-            // MCP Mode: Set interaction request with catalog metadata in CoroutineContext
-            val request = createInteractionRequest(question, questionId, context)
-            currentCoroutineContext()[InteractionContextElement]?.setRequest(request)
-            logger.info("Workflow interruption signaled for catalog question: $questionId")
-            "[Awaiting catalog answer for: $questionId]"
-        } else {
-            // CLI Mode: Show catalog question
-            println("\n${"=".repeat(60)}")
-            println("📋 Catalog Question [$questionId]:")
-            println(question)
-            println("=".repeat(60))
-            print("\n👤 Your answer: ")
-            System.out.flush()
+        val request = createInteractionRequest(question, questionId, context)
+        val contextElement = currentCoroutineContext()[InteractionContextElement]
+        val executionId =
+            contextElement?.executionId
+                ?: throw IllegalStateException("executionId must be set in InteractionContextElement")
 
-            readlnOrNull()?.trim() ?: ""
-        }
+        logger.info("Suspending workflow for catalog question: $questionId (executionId=$executionId)")
+
+        // Suspend coroutine until provideAnswer() is called via MCP
+        return PendingInteractionManager.awaitAnswer(executionId, request)
     }
 
     override suspend fun requestApproval(
         question: String,
         context: Map<String, String>,
     ): String {
-        logger.info("requestApproval called: $question (mcpMode=$mcpMode)")
+        logger.info("requestApproval called: $question")
 
-        return if (mcpMode) {
-            // MCP Mode: Set interaction request for approval in CoroutineContext
-            val request =
-                InteractionRequest(
-                    type = InteractionType.APPROVAL,
-                    question = question,
-                    context = context,
-                )
-            currentCoroutineContext()[InteractionContextElement]?.setRequest(request)
-            logger.info("Workflow interruption signaled for approval: $question")
-            "[Awaiting approval: $question]"
-        } else {
-            // CLI Mode: Show approval request
-            println("\n${"=".repeat(60)}")
-            println("⚠️  Approval Required:")
-            println(question)
-            println("=".repeat(60))
-            print("\n👤 Approve? (yes/no): ")
-            System.out.flush()
+        val request =
+            InteractionRequest(
+                type = InteractionType.APPROVAL,
+                question = question,
+                context = context,
+            )
+        val contextElement = currentCoroutineContext()[InteractionContextElement]
+        val executionId =
+            contextElement?.executionId
+                ?: throw IllegalStateException("executionId must be set in InteractionContextElement")
 
-            readlnOrNull()?.trim()?.lowercase() ?: "no"
-        }
+        logger.info("Suspending workflow for approval (executionId=$executionId)")
+
+        // Suspend coroutine until provideAnswer() is called via MCP
+        return PendingInteractionManager.awaitAnswer(executionId, request)
     }
 
     override fun createInteractionRequest(
