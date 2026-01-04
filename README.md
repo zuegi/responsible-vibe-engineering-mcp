@@ -59,39 +59,40 @@ Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 - Confluence Client
 - File System
 
+## Architecture
+
+**Hexagonal Architecture (Ports & Adapters)**
+
+```
+Domain (Core) → Ports (Interfaces) → Adapters (MCP Server, Koog, In-Memory)
+```
+
+Siehe [WARP.md - Architektur](WARP.md#architektur) für Details.
+
 ## Getting Started
 
-Siehe [WARP.md](WARP.md) für detaillierte Informationen und nächste Schritte.
+### Quick Start
 
-## Projektstruktur
+```bash
+# 1. Clone Repository
+git clone https://github.com/your-org/responsible-vibe-mcp.git
+cd responsible-vibe-mcp
 
+# 2. Configure LLM
+cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
+# Edit application-local.yml with your Azure OpenAI endpoint
+
+# 3. Build & Run
+mvn clean package
+java -jar target/responsible-vibe-mcp-0.1.0-SNAPSHOT.jar
 ```
-src/
-├── main/kotlin/ch/zuegi/rvmcp/
-│   ├── domain/                       # ✅ Domain Layer
-│   │   ├── model/                    # Entities & Value Objects
-│   │   │   ├── process/              # EngineeringProcess, ProcessExecution
-│   │   │   ├── phase/                # ProcessPhase, PhaseResult
-│   │   │   ├── context/              # ExecutionContext
-│   │   │   └── ...
-│   │   ├── port/                     # ✅ Port Interfaces
-│   │   │   ├── input/                # Use Cases
-│   │   │   └── output/               # Repository Ports
-│   │   └── service/                  # ✅ Domain Services
-│   ├── adapter/                      # ✅ Adapters
-│   │   ├── input/mcp/                # MCP Server (6 Tools)
-│   │   └── output/
-│   │       ├── workflow/             # KoogWorkflowExecutor
-│   │       ├── tools/                # Koog Tools (AskUser, CreateFile, QuestionCatalog)
-│   │       ├── memory/               # InMemoryMemoryRepository
-│   │       ├── vibe/                 # AutoPassVibeCheckEvaluator
-│   │       └── process/              # YamlProcessLoader
-│   ├── infrastructure/               # Spring Boot Configuration
-│   └── InteractiveTestRunner.kt     # ✅ Test Runner
-├── test/kotlin/ch/zuegi/rvmcp/       # ✅ 15 Test Classes
-└── resources/
-    └── workflows/                    # ✅ YAML Workflow Templates
-```
+
+### Detailed Documentation
+
+- **Vision & Roadmap:** [WARP.md](WARP.md)
+- **Setup:** [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+- **Koog Integration:** [docs/KOOG_INTEGRATION.md](docs/KOOG_INTEGRATION.md)
+- **Architecture Decisions:** [docs/adr/](docs/adr/)
 
 ## Status
 
