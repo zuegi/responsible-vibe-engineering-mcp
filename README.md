@@ -24,7 +24,7 @@ KI-Tools generieren oft Code ohne methodisches Vorgehen. Das führt zu:
 Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 1. **Anforderungsanalyse** mit strukturierten Question Catalogs
 2. **Architekturentwurf** mit dokumentierten Entscheidungen
-3. **Dokumentation** als versionierte Markdown-Files (für AI-Coding-Tools nutzbar)
+3. **Dokumentation** als Markdown-Files (in Entwicklung)
 4. Wiederhole Schritte 1-3 und verbessere
 5. **Implementierung** basierend auf dokumentierten Requirements
 6. **Testing** mit definierter Strategie
@@ -35,20 +35,29 @@ Responsible Vibe MCP strukturiert KI-gestützte Entwicklung in klare Phasen:
 ## Features
 
 - ✅ **MCP Server** – Standardisiertes Interface für KI-Systeme (Claude, Warp, IDEs)
-- ✅ **Strukturierte Workflows** für verschiedene Entwicklungsszenarien
-- ✅ **Persistentes Memory** über Sessions hinweg
+- ✅ **Strukturierte Workflows** – Engineering-Prozesse für Feature Development, Bug-Fix, Refactoring
+- ✅ **Question Catalogs** – Strukturierte Requirements-Erhebung garantiert Vollständigkeit
 - ✅ **Vibe Engineering** – Qualität vor Geschwindigkeit
-- ✅ **Git-Integration** für Branch-Awareness
-- ✅ **Agentic AI** powered by Kotlin Koog
+- ✅ **Hexagonal Architecture** – Domain unabhängig, flexible Backend-Wahl
+- ✅ **Agentic AI** powered by Kotlin Koog 0.6.0
+
+**In Entwicklung:**
+- 🔄 **Document Generation** – Automatische Markdown-Dokumentation
+- 🔄 **Flexible Persistence** – User wählt Backend (Git, Confluence, File) - aktuell In-Memory
 
 ## Tech Stack
 
+**Core:**
 - Kotlin
 - Spring Boot
 - Kotlin Koog 0.6.0 (Agentic AI Framework)
 - Model Context Protocol (MCP)
 - Maven
-- Git
+
+**Optional Backends (Post-MVP):**
+- JGit (Git Integration)
+- Confluence Client
+- File System
 
 ## Getting Started
 
@@ -59,28 +68,29 @@ Siehe [WARP.md](WARP.md) für detaillierte Informationen und nächste Schritte.
 ```
 src/
 ├── main/kotlin/ch/zuegi/rvmcp/
-│   ├── domain/                # ✅ Domain Layer (vollständig)
-│   │   ├── model/             # Entities & Value Objects
-│   │   │   ├── process/       # EngineeringProcess, ProcessExecution
-│   │   │   ├── phase/         # ProcessPhase, PhaseResult
-│   │   │   ├── context/       # ExecutionContext
-│   │   │   ├── vibe/          # VibeCheck, VibeCheckResult
-│   │   │   ├── memory/        # Decision, Interaction, Artifact
-│   │   │   ├── id/            # ProcessId, ExecutionId
-│   │   │   └── status/        # ExecutionStatus, VibeCheckType
-│   │   ├── port/              # ✅ Port Interfaces (vollständig)
-│   │   │   ├── input/         # 3 Use Cases
-│   │   │   └── output/        # 4 Repositories/Providers
-│   │   └── service/           # ✅ Domain Services (3 Services)
-│   ├── adapter/               # ✅ Dummy-Adapter (Testing)
-│   │   └── output/            # 4 In-Memory Implementierungen
-│   │       ├── workflow/      # ManualWorkflowExecutor
-│   │       ├── memory/        # InMemoryMemoryRepository
-│   │       ├── vibe/          # ConsoleVibeCheckEvaluator
-│   │       └── process/       # InMemoryProcessRepository
-│   ├── ManualTestRunner.kt    # ✅ CLI Test Program
-│   └── application/           # 🚧 Application Layer (nächster Schritt)
-└── test/kotlin/ch/zuegi/rvmcp/  # ✅ 36 Unit Tests
+│   ├── domain/                       # ✅ Domain Layer
+│   │   ├── model/                    # Entities & Value Objects
+│   │   │   ├── process/              # EngineeringProcess, ProcessExecution
+│   │   │   ├── phase/                # ProcessPhase, PhaseResult
+│   │   │   ├── context/              # ExecutionContext
+│   │   │   └── ...
+│   │   ├── port/                     # ✅ Port Interfaces
+│   │   │   ├── input/                # Use Cases
+│   │   │   └── output/               # Repository Ports
+│   │   └── service/                  # ✅ Domain Services
+│   ├── adapter/                      # ✅ Adapters
+│   │   ├── input/mcp/                # MCP Server (6 Tools)
+│   │   └── output/
+│   │       ├── workflow/             # KoogWorkflowExecutor
+│   │       ├── tools/                # Koog Tools (AskUser, CreateFile, QuestionCatalog)
+│   │       ├── memory/               # InMemoryMemoryRepository
+│   │       ├── vibe/                 # AutoPassVibeCheckEvaluator
+│   │       └── process/              # YamlProcessLoader
+│   ├── infrastructure/               # Spring Boot Configuration
+│   └── InteractiveTestRunner.kt     # ✅ Test Runner
+├── test/kotlin/ch/zuegi/rvmcp/       # ✅ 15 Test Classes
+└── resources/
+    └── workflows/                    # ✅ YAML Workflow Templates
 ```
 
 ## Status
