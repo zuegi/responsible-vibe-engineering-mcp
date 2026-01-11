@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp
 
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryMemoryRepository
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
 import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.application.usecase.CompletePhaseUseCaseImpl
@@ -11,6 +11,7 @@ import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
+import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
@@ -47,7 +48,7 @@ class McpProtocolIntegrationTest {
     private lateinit var llmProperties: LlmProperties
 
     private lateinit var processRepository: InMemoryProcessRepository
-    private lateinit var memoryRepository: InMemoryMemoryRepository
+    private lateinit var memoryRepository: MemoryRepositoryPort
     private lateinit var workflowExecutor: KoogWorkflowExecutor
     private lateinit var vibeCheckEvaluator: AutoPassVibeCheckEvaluator
 
@@ -63,7 +64,7 @@ class McpProtocolIntegrationTest {
 
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
-        memoryRepository = InMemoryMemoryRepository()
+        memoryRepository = InMemoryPersistencePort()
 
         // Initialize workflow executor with mock UserInteractionPort
         workflowExecutor =

@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp
 
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryMemoryRepository
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
 import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.application.usecase.CompletePhaseUseCaseImpl
@@ -14,6 +14,7 @@ import ch.zuegi.rvmcp.domain.model.status.ExecutionState
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
+import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
@@ -50,7 +51,7 @@ class McpClientE2EWithInteractionTest {
     private lateinit var llmProperties: LlmProperties
 
     private lateinit var processRepository: InMemoryProcessRepository
-    private lateinit var memoryRepository: InMemoryMemoryRepository
+    private lateinit var memoryRepository: MemoryRepositoryPort
     private lateinit var workflowExecutor: KoogWorkflowExecutor
     private lateinit var vibeCheckEvaluator: AutoPassVibeCheckEvaluator
 
@@ -67,7 +68,7 @@ class McpClientE2EWithInteractionTest {
 
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
-        memoryRepository = InMemoryMemoryRepository()
+        memoryRepository = InMemoryPersistencePort()
 
         // Initialize workflow executor with Test UserInteractionPort
         // This port returns immediate test answers without suspending
@@ -358,7 +359,7 @@ class McpClientE2EWithInteractionTest {
         }
 
     @Test
-    fun testErrorHandlingWhenProvidingAnswerToNonPausedWorkflow() =
+    fun testErrorHandlingWhenProvidingAnswerToNonPausedWorkflow(): Unit =
         runBlocking<Unit> {
             println("\n" + "=".repeat(80))
             println("🚀 E2E TEST: Error Handling - Invalid State")
@@ -470,20 +471,17 @@ class TestUserInteractionPort : ch.zuegi.rvmcp.domain.port.output.UserInteractio
     override suspend fun requestApproval(
         question: String,
         context: Map<String, String>,
-    ): String {
-        return "yes"
-    }
+    ): String = "yes"
 
     override fun createInteractionRequest(
         question: String,
         questionId: String?,
         context: Map<String, String>,
-    ): ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest {
-        return ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest(
+    ): ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest =
+        ch.zuegi.rvmcp.domain.model.interaction.InteractionRequest(
             type = ch.zuegi.rvmcp.domain.model.interaction.InteractionType.ASK_USER,
             question = question,
             questionId = questionId,
             context = context,
         )
-    }
 }

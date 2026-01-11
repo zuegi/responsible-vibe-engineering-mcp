@@ -171,10 +171,10 @@ Das Projekt folgt dem **Hexagonal Architecture**-Pattern für maximale Flexibili
 > **Strategie:** Interface-First Approach  
 > Ports jetzt definieren, Adapters später implementieren (User wählt Backend)
 
-### Phase 1: Foundation (Week 1) - **IN PROGRESS**
+### Phase 1: Foundation (Week 1) - **✅ COMPLETED**
 
 **Dauer:** 2-3 Tage  
-**Ziel:** Persistence & Collaboration Ports definieren, In-Memory Dummy
+**Ziel:** Persistence Ports definieren, In-Memory Dummy implementieren
 
 #### Core Ports (Interfaces)
 
@@ -239,10 +239,18 @@ class InMemoryPersistence :
 ```
 
 **Acceptance Criteria:**
-- ✅ Alle Ports definiert mit KDoc
-- ✅ In-Memory Dummy implementiert mit Logging
-- ✅ Tests für Dummy
+- ✅ Alle Ports definiert mit KDoc (`MemoryRepositoryPort`, `DocumentPersistencePort`)
+- ✅ In-Memory Dummy implementiert mit Educational Logging
+- ✅ Tests für Dummy (4 Integration Tests inkl. MAX_CONTEXTS Exception)
 - ✅ Domain Services nutzen Ports (nicht konkrete Klassen)
+- ✅ Exception-based limit enforcement (keine stille Eviction)
+
+**Completion Notes (Jan 11, 2026):**
+- `MemoryRepositoryPort` & `DocumentPersistencePort` vollständig implementiert
+- `InMemoryPersistencePort` wirft `IllegalStateException` bei Limit-Überschreitung
+- `@ActiveProfiles("test")` verhindert MCP Server Start in Tests
+- `@DirtiesContext` isoliert Tests voneinander
+- `VersionControlPort` & `CollaborationPort` auf Post-MVP verschoben (YAGNI)
 
 ---
 

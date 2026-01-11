@@ -26,25 +26,34 @@ class InMemoryPersistencePort :
         private const val MAX_DOCUMENTS = 500
     }
 
-    override suspend fun save(context: ExecutionContext) {
-        val key = "${context.projectPath}#${context.gitBranch}"
+    private fun makeContextKey(
+        projectPath: String,
+        gitBranch: String,
+    ) = "$projectPath#$gitBranch"
 
-        // Simple eviction (LRU would be better)
-        if (contexts.size >= MAX_CONTEXTS) {
-            val oldest = contexts.keys.first()
-            contexts.remove(oldest)
-            logger.warn("Context evicted (limit: $MAX_CONTEXTS): $oldest")
+    override suspend fun save(context: ExecutionContext) {
+        val key = makeContextKey(context.projectPath, context.gitBranch)
+
+        // Check limit only for new contexts (not updates)
+        if (!contexts.containsKey(key) && contexts.size >= MAX_CONTEXTS) {
+            logger.error("In-Memory storage limit reached: $MAX_CONTEXTS contexts")
+            logger.error("   To store more contexts, configure a persistent backend:")
+            logger.error("     persistence.backend: git|file|confluence")
+            throw IllegalStateException(
+                "In-Memory storage limit of $MAX_CONTEXTS contexts exceeded. " +
+                    "Configure a persistent backend (git/file/confluence) in application.yml",
+            )
         }
 
         contexts[key] = context
-        logger.info("Context saved: $key")
+        logger.info("Context saved: $key (${contexts.size}/$MAX_CONTEXTS)")
     }
 
     override suspend fun load(
         projectPath: String,
         branch: String,
     ): ExecutionContext? {
-        val key = "$projectPath#$branch"
+        val key = makeContextKey(projectPath, branch)
         return contexts[key].also {
             if (it != null) {
                 logger.info("Context loaded: $key")
@@ -58,7 +67,9 @@ class InMemoryPersistencePort :
         contexts.values.firstOrNull { it.executionId == executionId }
 
     override suspend fun delete(executionId: ExecutionId) {
-        TODO("Not yet implemented")
+        contexts.values
+            .firstOrNull { it.executionId == executionId }
+            ?.let { contexts.remove(makeContextKey(it.projectPath, it.gitBranch)) }
     }
 
     override suspend fun exists(
