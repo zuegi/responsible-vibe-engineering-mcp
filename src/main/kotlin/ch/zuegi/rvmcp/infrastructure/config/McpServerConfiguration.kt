@@ -5,7 +5,7 @@ import ch.zuegi.rvmcp.domain.port.input.CompletePhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ProvideAnswerUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
-import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
+import ch.zuegi.rvmcp.domain.port.output.OldMemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
 import ch.zuegi.rvmcp.shared.rvmcpLogger
 import kotlinx.coroutines.runBlocking
@@ -35,7 +35,7 @@ class McpServerConfiguration {
         executePhaseUseCase: ExecuteProcessPhaseUseCase,
         completePhaseUseCase: CompletePhaseUseCase,
         provideAnswerUseCase: ProvideAnswerUseCase,
-        memoryRepository: MemoryRepositoryPort,
+        memoryRepository: OldMemoryRepositoryPort,
         processRepository: ProcessRepositoryPort,
     ): CommandLineRunner =
         CommandLineRunner {

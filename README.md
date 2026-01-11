@@ -2,6 +2,10 @@
 
 **Engineering-getriebene KI-Entwicklung mit Kotlin, Spring Boot und Kotlin Koog**
 
+Ein Versuch Entwicklung mit Coding Agents ein bisschen mehr unter Kontrolle zu bringen.
+Mir ist bewusst, dass es aktuell schon Coding Agents gibt, welche ein solches Vorgehen schon implementiert haben.
+Das folgende Projekt ist entsprechend auch nicht als Ersatzt gedacht, sondern viel mehr um den Umgang mit Coding Agents und KI zu lernen.
+
 ## Was ist Responsible Vibe MCP?
 
 Ein **MCP (Model Context Protocol) Server**, der KI-Systeme aktiv durch bewährte Software-Engineering-Workflows führt – von der Planung über die Architektur bis zur Implementierung.

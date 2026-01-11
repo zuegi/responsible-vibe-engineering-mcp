@@ -29,7 +29,7 @@ Viele KI-Codier-Tools funktionieren als „Autocompletes on Steroids" – sie du
 - **Keine strukturierte Dokumentation** der Anforderungen und Architektur-Entscheidungen
 - **AI-Coding-Tools fehlt Kontext** früherer Entscheidungen
 
-### Die Lösung
+### Die Lösung / Vision
 
 Responsible Vibe MCP führt KI-Systeme aktiv durch bewährte Engineering-Workflows mit:
 
@@ -49,7 +49,7 @@ Responsible Vibe MCP leitet die KI systematisch durch klar definierte Projektpha
 2. **Architekturentwurf**
 3. **Dokumentation des Projekts**
 4. **Wiederhole Schritte 1-3** (Iterativ verfeinern)
-5. **Implementierung**
+5. **Implementierung** (Übergib die Dokumentation dem Coding Agent)
 6. **Testing**
 7. **Integration & Review**
 
@@ -82,20 +82,20 @@ Die KI wird zum **aktiven Entwicklungspartner**, nicht bloß zum Code-Generator.
 Das Projekt folgt dem **Hexagonal Architecture**-Pattern für maximale Flexibilität:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        DOMAIN (Kern)                        │
-│                                                             │
+┌────────────────────────────────────────────────────────────┐
+│                        DOMAIN (Kern)                       │
+│                                                            │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ Model: EngineeringProcess, ProcessPhase, Context     │  │
 │  │ Services: ExecuteProcessPhaseService, etc.           │  │
 │  │                                                      │  │
-│  │ Ports (Interfaces):                                 │  │
-│  │  - MemoryRepositoryPort                            │  │
-│  │  - DocumentPersistencePort                         │  │
-│  │  - VersionControlPort                              │  │
-│  │  - CollaborationPort                               │  │
+│  │ Ports (Interfaces):                                  │  │
+│  │  - MemoryRepositoryPort                              │  │
+│  │  - DocumentPersistencePort                           │  │
+│  │  - VersionControlPort                                │  │
+│  │  - CollaborationPort                                 │  │
 │  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────┘
                             │
                             │ Ports
                             ▼
@@ -103,8 +103,8 @@ Das Projekt folgt dem **Hexagonal Architecture**-Pattern für maximale Flexibili
 │                    ADAPTERS (Pluggable)                     │
 │                                                             │
 │  INPUT:                        OUTPUT:                      │
-│  ├─ MCP Server                 ├─ In-Memory (MVP)          │
-│  └─ CLI (optional)             ├─ Git (Post-MVP)           │
+│  ├─ MCP Server                 ├─ In-Memory (MVP)           │
+│  └─ CLI (optional)             ├─ Git (Post-MVP)            │
 │                                ├─ Confluence (Post-MVP)     │
 │                                ├─ File-System (Post-MVP)    │
 │                                └─ Koog Workflow Executor    │
@@ -113,7 +113,7 @@ Das Projekt folgt dem **Hexagonal Architecture**-Pattern für maximale Flexibili
 
 **Vorteile:**
 - ✅ **Domain-Logik isoliert** - Framework-unabhängig
-- ✅ **Austauschbare Backends** - User wählt Git, Confluence, oder File-System
+- ✅ **Austauschbare Backends** - User wählt Git, Confluence, Datenbank oder File-System
 - ✅ **Maximale Testbarkeit** - Keine externe Dependencies in Domain
 - ✅ **Technologie-Unabhängigkeit** - Spring Boot, Koog sind austauschbar
 

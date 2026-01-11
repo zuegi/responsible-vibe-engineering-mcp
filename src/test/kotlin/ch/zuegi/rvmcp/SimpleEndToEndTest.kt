@@ -158,9 +158,7 @@ class SimpleEndToEndTest {
             // ===== STEP 4: Complete Phase and Move to Next =====
             println("\n📝 STEP 4: Complete Phase")
             val updatedExecution =
-                runBlocking {
-                    completePhaseService.execute(processExecution, executionContext, phaseResult)
-                }
+                completePhaseService.execute(processExecution, executionContext, phaseResult)
 
             assertThat(updatedExecution.currentPhaseIndex).isEqualTo(1)
             assertThat(updatedExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
@@ -268,13 +266,11 @@ class SimpleEndToEndTest {
 
             // Start process
             var processExecution =
-                runBlocking {
-                    startProcessService.execute(
-                        processId = processId,
-                        projectPath = projectPath,
-                        gitBranch = gitBranch,
-                    )
-                }
+                startProcessService.execute(
+                    processId = processId,
+                    projectPath = projectPath,
+                    gitBranch = gitBranch,
+                )
 
             assertThat(processExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
             println("✅ Process started with ${processExecution.process.totalPhases()} phases")
@@ -292,16 +288,12 @@ class SimpleEndToEndTest {
                 // Execute phase
                 val phase = processExecution.currentPhase()
                 val phaseResult =
-                    runBlocking {
-                        executePhaseService.execute(phase, executionContext)
-                    }
+                    executePhaseService.execute(phase, executionContext)
                 executionContext = executionContext.addPhaseResult(phaseResult)
 
                 // Complete phase (phaseResult already added to context)
                 processExecution =
-                    runBlocking {
-                        completePhaseService.execute(processExecution, executionContext, phaseResult)
-                    }
+                    completePhaseService.execute(processExecution, executionContext, phaseResult)
 
                 println("✅ Phase ${phaseIndex + 1} completed: ${phaseResult.phaseName}")
             }
@@ -338,13 +330,11 @@ class SimpleEndToEndTest {
 
             // Start process
             val processExecution =
-                runBlocking {
-                    startProcessService.execute(
-                        processId = processId,
-                        projectPath = projectPath,
-                        gitBranch = gitBranch,
-                    )
-                }
+                startProcessService.execute(
+                    processId = processId,
+                    projectPath = projectPath,
+                    gitBranch = gitBranch,
+                )
 
             // Replace vibe check evaluator with one that fails required checks
             val failingEvaluator = FailingVibeCheckEvaluator()
@@ -361,9 +351,7 @@ class SimpleEndToEndTest {
             var executionContext = memoryRepository.load(projectPath, gitBranch)!!
             val phase = processExecution.currentPhase()
             val phaseResult =
-                runBlocking {
-                    executePhaseServiceWithFailure.execute(phase, executionContext)
-                }
+                executePhaseServiceWithFailure.execute(phase, executionContext)
             executionContext = executionContext.addPhaseResult(phaseResult)
 
             // Verify phase failed

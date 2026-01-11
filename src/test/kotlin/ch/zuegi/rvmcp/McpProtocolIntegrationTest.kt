@@ -107,13 +107,13 @@ class McpProtocolIntegrationTest {
         // Setup test process
         setupFeatureDevelopmentProcess()
 
-        println("✅ Setup complete")
+        println("Setup complete")
     }
 
     @Test
     fun `should call list_processes tool and get response`() =
         runBlocking {
-            println("\n🔧 TEST: Call list_processes Tool")
+            println("\nTEST: Call list_processes Tool")
 
             // Setup MCP session (simplified - direct tool call simulation)
             val processes = processRepository.findAll()
@@ -126,13 +126,13 @@ class McpProtocolIntegrationTest {
                 println("   - ${process.id.value}: ${process.name}")
             }
 
-            println("✅ list_processes tool works correctly")
+            println("list_processes tool works correctly")
         }
 
     @Test
     fun `should call start_process tool and create execution`() =
         runBlocking {
-            println("\n🚀 TEST: Call start_process Tool")
+            println("\nTEST: Call start_process Tool")
 
             // Simulate MCP tool call via use case
             val processId = ProcessId("feature-development")
@@ -154,13 +154,13 @@ class McpProtocolIntegrationTest {
             println("   Process: ${execution.process.name}")
             println("   Current Phase: ${execution.currentPhase().name}")
 
-            println("✅ start_process tool works correctly")
+            println("start_process tool works correctly")
         }
 
     @Test
     fun `should call get_context tool and retrieve execution context`() =
         runBlocking {
-            println("\n📂 TEST: Call get_context Tool")
+            println("\nTEST: Call get_context Tool")
 
             // First start a process to create context
             val processId = ProcessId("feature-development")
@@ -184,13 +184,13 @@ class McpProtocolIntegrationTest {
             println("   Branch: ${context.gitBranch}")
             println("   Execution ID: ${context.executionId.value}")
 
-            println("✅ get_context tool works correctly")
+            println("get_context tool works correctly")
         }
 
     @Test
     fun `should call execute_phase tool and run workflow`() =
         runBlocking {
-            println("\n⚙️  TEST: Call execute_phase Tool")
+            println("\n TEST: Call execute_phase Tool")
 
             // Setup: Start process
             val processId = ProcessId("feature-development")
@@ -229,13 +229,13 @@ class McpProtocolIntegrationTest {
             println("   Duration: ${durationMs}ms")
             println("   Summary: ${phaseResult.summary.take(100)}...")
 
-            println("✅ execute_phase tool works correctly")
+            println("execute_phase tool works correctly")
         }
 
     @Test
     fun `should call complete_phase tool and advance to next phase`() =
         runBlocking {
-            println("\n📝 TEST: Call complete_phase Tool")
+            println("\nTEST: Call complete_phase Tool")
 
             // Setup: Start process and execute first phase
             val processId = ProcessId("feature-development")
@@ -273,13 +273,13 @@ class McpProtocolIntegrationTest {
             println("   Next Phase: ${result.currentPhase().name}")
             println("   Phase Index: ${result.currentPhaseIndex}")
 
-            println("✅ complete_phase tool works correctly")
+            println("complete_phase tool works correctly")
         }
 
     @Test
     fun `should handle error when process not found`() =
         runBlocking {
-            println("\n❌ TEST: Error Handling - Process Not Found")
+            println("\nTEST: Error Handling - Process Not Found")
 
             // Try to start non-existent process
             val result =
@@ -296,7 +296,7 @@ class McpProtocolIntegrationTest {
             assertThat(result.exceptionOrNull()?.message).contains("non-existent-process")
 
             println("   Error: ${result.exceptionOrNull()?.message}")
-            println("✅ Error handling works correctly")
+            println("Error handling works correctly")
         }
 
     private fun setupFeatureDevelopmentProcess() {
@@ -353,6 +353,6 @@ class McpProtocolIntegrationTest {
             )
 
         processRepository.save(process)
-        println("✅ Feature Development Process setup complete")
+        println("Feature Development Process setup complete")
     }
 }

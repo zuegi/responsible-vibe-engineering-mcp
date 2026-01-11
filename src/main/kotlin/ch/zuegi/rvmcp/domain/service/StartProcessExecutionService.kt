@@ -89,11 +89,10 @@ class StartProcessExecutionService(
     private fun createNewExecutionContext(
         projectPath: String,
         gitBranch: String,
-    ): ExecutionContext {
-        return ExecutionContext(
+    ): ExecutionContext =
+        ExecutionContext(
             executionId = ExecutionId(UUID.randomUUID().toString()),
             projectPath = projectPath,
             gitBranch = gitBranch,
         )
-    }
 }

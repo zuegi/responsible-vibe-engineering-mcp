@@ -40,7 +40,7 @@ class CompletePhaseUseCaseImpl(
 
         val processExecution =
             ProcessExecution(
-                id = executionId,
+                id = context.executionId,
                 process = process,
                 status = ExecutionStatus.IN_PROGRESS,
                 currentPhaseIndex = context.currentPhaseIndex,

@@ -4,7 +4,7 @@ import ch.zuegi.rvmcp.McpStdio
 import ch.zuegi.rvmcp.domain.port.input.CompletePhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
-import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
+import ch.zuegi.rvmcp.domain.port.output.OldMemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
 import ch.zuegi.rvmcp.shared.rvmcpLogger
 import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
@@ -41,7 +41,7 @@ class ResponsibleVibeMcpServer(
     private val executePhaseUseCase: ExecuteProcessPhaseUseCase,
     private val completePhaseUseCase: CompletePhaseUseCase,
     private val provideAnswerUseCase: ch.zuegi.rvmcp.domain.port.input.ProvideAnswerUseCase,
-    private val memoryRepository: MemoryRepositoryPort,
+    private val memoryRepository: OldMemoryRepositoryPort,
     private val processRepository: ProcessRepositoryPort,
 ) {
     private val log by rvmcpLogger()
@@ -641,7 +641,9 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
                             isError = true,
                         )
 
-                val executionId = ch.zuegi.rvmcp.domain.model.id.ExecutionId(executionIdStr)
+                val executionId =
+                    ch.zuegi.rvmcp.domain.model.id
+                        .ExecutionId(executionIdStr)
 
                 // Resume suspended workflow via PendingInteractionManager
                 val resumed =
