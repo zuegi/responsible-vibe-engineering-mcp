@@ -2,7 +2,7 @@ package ch.zuegi.rvmcp.adapter.output.memory
 
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
-import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
+import ch.zuegi.rvmcp.domain.port.output.OldMemoryRepositoryPort
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Data is lost when application restarts.
  */
 @Component
-class InMemoryMemoryRepository : MemoryRepositoryPort {
+class InMemoryOldMemoryRepository : OldMemoryRepositoryPort {
     private val storage = ConcurrentHashMap<String, ExecutionContext>()
 
     override fun save(context: ExecutionContext) {

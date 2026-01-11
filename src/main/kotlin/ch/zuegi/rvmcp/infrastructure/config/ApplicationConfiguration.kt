@@ -44,53 +44,47 @@ class ApplicationConfiguration {
     fun startProcessExecutionService(
         processRepository: ProcessRepositoryPort,
         memoryRepository: MemoryRepositoryPort,
-    ): StartProcessExecutionService {
-        return StartProcessExecutionService(
+    ): StartProcessExecutionService =
+        StartProcessExecutionService(
             processRepository = processRepository,
             memoryRepository = memoryRepository,
         )
-    }
 
     @Bean
     fun executeProcessPhaseService(
         workflowExecutionPort: WorkflowExecutionPort,
         vibeCheckEvaluator: VibeCheckEvaluatorPort,
-    ): ExecuteProcessPhaseService {
-        return ExecuteProcessPhaseService(
+    ): ExecuteProcessPhaseService =
+        ExecuteProcessPhaseService(
             workflowExecutor = workflowExecutionPort,
             vibeCheckEvaluator = vibeCheckEvaluator,
         )
-    }
 
     @Bean
-    fun completePhaseService(memoryRepository: MemoryRepositoryPort): CompletePhaseService {
-        return CompletePhaseService(
+    fun completePhaseService(memoryRepository: MemoryRepositoryPort): CompletePhaseService =
+        CompletePhaseService(
             memoryRepository = memoryRepository,
         )
-    }
 
     // ========== Application Services (Use Case Implementations) ==========
 
     @Bean
-    fun startProcessExecutionUseCase(domainService: StartProcessExecutionService): StartProcessExecutionUseCase {
-        return StartProcessExecutionUseCaseImpl(domainService)
-    }
+    fun startProcessExecutionUseCase(domainService: StartProcessExecutionService): StartProcessExecutionUseCase =
+        StartProcessExecutionUseCaseImpl(domainService)
 
     @Bean
-    fun executeProcessPhaseUseCase(domainService: ExecuteProcessPhaseService): ExecuteProcessPhaseUseCase {
-        return ExecuteProcessPhaseUseCaseImpl(domainService)
-    }
+    fun executeProcessPhaseUseCase(domainService: ExecuteProcessPhaseService): ExecuteProcessPhaseUseCase =
+        ExecuteProcessPhaseUseCaseImpl(domainService)
 
     @Bean
     fun completePhaseUseCase(
         domainService: CompletePhaseService,
         memoryRepository: MemoryRepositoryPort,
         processRepository: ProcessRepositoryPort,
-    ): CompletePhaseUseCase {
-        return CompletePhaseUseCaseImpl(
+    ): CompletePhaseUseCase =
+        CompletePhaseUseCaseImpl(
             domainService = domainService,
             memoryRepository = memoryRepository,
             processRepository = processRepository,
         )
-    }
 }
