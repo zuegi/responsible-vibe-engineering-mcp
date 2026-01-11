@@ -68,7 +68,7 @@ class CompletePhaseService(
      * @param context The execution context
      * @return The failed process execution
      */
-    fun fail(
+    suspend fun fail(
         execution: ProcessExecution,
         context: ExecutionContext,
     ): ProcessExecution {

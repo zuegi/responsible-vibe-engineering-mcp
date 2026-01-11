@@ -3,31 +3,12 @@ package ch.zuegi.rvmcp.domain.port.output
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
 
-/**
- * Port for persisting and retrieving execution contexts (Long-Term Memory).
- *
- * This port is responsible for storing project-level context across sessions,
- * including architectural decisions, phase results, and artifacts.
- * It supports branch-aware storage for parallel feature development.
- */
 interface MemoryRepositoryPort {
-    /**
-     * Saves the execution context to persistent storage.
-     *
-     * @param context The execution context to persist
-     */
-    fun save(context: ExecutionContext)
+    suspend fun save(context: ExecutionContext)
 
-    /**
-     * Loads an execution context for a specific project and git branch.
-     *
-     * @param projectPath The absolute path to the project directory
-     * @param gitBranch The git branch name
-     * @return The execution context if found, null otherwise
-     */
-    fun load(
+    suspend fun load(
         projectPath: String,
-        gitBranch: String,
+        branch: String,
     ): ExecutionContext?
 
     /**
@@ -36,14 +17,14 @@ interface MemoryRepositoryPort {
      * @param executionId The execution ID to find
      * @return The execution context if found, null otherwise
      */
-    fun findByExecutionId(executionId: ExecutionId): ExecutionContext?
+    suspend fun findByExecutionId(executionId: ExecutionId): ExecutionContext?
 
     /**
      * Deletes an execution context by its ID.
      *
      * @param executionId The execution ID to delete
      */
-    fun delete(executionId: ExecutionId)
+    suspend fun delete(executionId: ExecutionId)
 
     /**
      * Checks if an execution context exists for the given project and branch.
@@ -52,7 +33,7 @@ interface MemoryRepositoryPort {
      * @param gitBranch The git branch name
      * @return true if a context exists, false otherwise
      */
-    fun exists(
+    suspend fun exists(
         projectPath: String,
         gitBranch: String,
     ): Boolean

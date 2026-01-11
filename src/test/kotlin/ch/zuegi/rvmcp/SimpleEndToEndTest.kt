@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp
 
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryMemoryRepository
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
 import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.domain.model.id.ProcessId
@@ -9,6 +9,7 @@ import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
+import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
@@ -47,7 +48,7 @@ class SimpleEndToEndTest {
     private lateinit var llmProperties: LlmProperties
 
     private lateinit var processRepository: InMemoryProcessRepository
-    private lateinit var memoryRepository: InMemoryMemoryRepository
+    private lateinit var memoryRepository: MemoryRepositoryPort
     private lateinit var workflowExecutor: KoogWorkflowExecutor
     private lateinit var vibeCheckEvaluator: AutoPassVibeCheckEvaluator
 
@@ -59,7 +60,7 @@ class SimpleEndToEndTest {
     fun setup() {
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
-        memoryRepository = InMemoryMemoryRepository()
+        memoryRepository = InMemoryPersistencePort()
 
         // Initialize workflow executor with Koog
         workflowExecutor =
@@ -94,102 +95,103 @@ class SimpleEndToEndTest {
     }
 
     @Test
-    fun `should execute complete Feature Development workflow end-to-end`() {
-        println("\n" + "=".repeat(80))
-        println("🚀 SIMPLE END-TO-END TEST: Feature Development Process")
-        println("=".repeat(80))
+    fun `should execute complete Feature Development workflow end-to-end`(): Unit =
+        runBlocking {
+            println("\n" + "=".repeat(80))
+            println("🚀 SIMPLE END-TO-END TEST: Feature Development Process")
+            println("=".repeat(80))
 
-        // ===== STEP 1: Start Process Execution =====
-        println("\n📋 STEP 1: Start Process Execution")
-        val processId = ProcessId("feature-development")
-        val projectPath = "/tmp/test-project"
-        val gitBranch = "feature/new-feature"
+            // ===== STEP 1: Start Process Execution =====
+            println("\n📋 STEP 1: Start Process Execution")
+            val processId = ProcessId("feature-development")
+            val projectPath = "/tmp/test-project"
+            val gitBranch = "feature/new-feature"
 
-        val processExecution =
-            runBlocking {
-                startProcessService.execute(
-                    processId = processId,
-                    projectPath = projectPath,
-                    gitBranch = gitBranch,
-                )
-            }
+            val processExecution =
+                runBlocking {
+                    startProcessService.execute(
+                        processId = processId,
+                        projectPath = projectPath,
+                        gitBranch = gitBranch,
+                    )
+                }
 
-        assertThat(processExecution).isNotNull
-        assertThat(processExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
-        assertThat(processExecution.currentPhaseIndex).isEqualTo(0)
-        assertThat(processExecution.process.name).isEqualTo("Feature Development")
+            assertThat(processExecution).isNotNull
+            assertThat(processExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+            assertThat(processExecution.currentPhaseIndex).isEqualTo(0)
+            assertThat(processExecution.process.name).isEqualTo("Feature Development")
 
-        println("✅ Process started successfully")
-        println("   Execution ID: ${processExecution.id.value}")
-        println("   Process: ${processExecution.process.name}")
-        println("   Current Phase: ${processExecution.currentPhase().name}")
+            println("✅ Process started successfully")
+            println("   Execution ID: ${processExecution.id.value}")
+            println("   Process: ${processExecution.process.name}")
+            println("   Current Phase: ${processExecution.currentPhase().name}")
 
-        // ===== STEP 2: Load Execution Context =====
-        println("\n📂 STEP 2: Load Execution Context")
-        var executionContext = memoryRepository.load(projectPath, gitBranch)
-        assertThat(executionContext).isNotNull
-        executionContext!!
+            // ===== STEP 2: Load Execution Context =====
+            println("\n📂 STEP 2: Load Execution Context")
+            var executionContext = memoryRepository.load(projectPath, gitBranch)
+            assertThat(executionContext).isNotNull
+            executionContext!!
 
-        println("✅ Context loaded")
-        println("   Project: ${executionContext.projectPath}")
-        println("   Branch: ${executionContext.gitBranch}")
+            println("✅ Context loaded")
+            println("   Project: ${executionContext.projectPath}")
+            println("   Branch: ${executionContext.gitBranch}")
 
-        // ===== STEP 3: Execute Phase "Requirements Analysis" =====
-        println("\n⚙️  STEP 3: Execute Phase 'Requirements Analysis'")
-        val phase = processExecution.currentPhase()
+            // ===== STEP 3: Execute Phase "Requirements Analysis" =====
+            println("\n⚙️  STEP 3: Execute Phase 'Requirements Analysis'")
+            val phase = processExecution.currentPhase()
 
-        val phaseResult =
-            runBlocking {
-                executePhaseService.execute(phase, executionContext)
-            }
-        executionContext = executionContext.addPhaseResult(phaseResult)
+            val phaseResult =
+                runBlocking {
+                    executePhaseService.execute(phase, executionContext)
+                }
+            executionContext = executionContext.addPhaseResult(phaseResult)
 
-        assertThat(executionContext.phaseHistory).hasSize(1)
-        assertThat(executionContext.phaseHistory.first().phaseName).isEqualTo("Requirements Analysis")
-        assertThat(executionContext.phaseHistory.first().status).isEqualTo(ExecutionStatus.PHASE_COMPLETED)
+            assertThat(executionContext.phaseHistory).hasSize(1)
+            assertThat(executionContext.phaseHistory.first().phaseName).isEqualTo("Requirements Analysis")
+            assertThat(executionContext.phaseHistory.first().status).isEqualTo(ExecutionStatus.PHASE_COMPLETED)
 
-        println("✅ Phase executed successfully")
-        println("   Phase: ${executionContext.phaseHistory.first().phaseName}")
-        println("   Status: ${executionContext.phaseHistory.first().status}")
-        println("   Summary: ${executionContext.phaseHistory.first().summary.take(100)}...")
+            println("✅ Phase executed successfully")
+            println("   Phase: ${executionContext.phaseHistory.first().phaseName}")
+            println("   Status: ${executionContext.phaseHistory.first().status}")
+            println("   Summary: ${executionContext.phaseHistory.first().summary.take(100)}...")
 
-        // ===== STEP 4: Complete Phase and Move to Next =====
-        println("\n📝 STEP 4: Complete Phase")
-        val updatedExecution =
-            runBlocking {
-                completePhaseService.execute(processExecution, executionContext, phaseResult)
-            }
+            // ===== STEP 4: Complete Phase and Move to Next =====
+            println("\n📝 STEP 4: Complete Phase")
+            val updatedExecution =
+                runBlocking {
+                    completePhaseService.execute(processExecution, executionContext, phaseResult)
+                }
 
-        assertThat(updatedExecution.currentPhaseIndex).isEqualTo(1)
-        assertThat(updatedExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+            assertThat(updatedExecution.currentPhaseIndex).isEqualTo(1)
+            assertThat(updatedExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
 
-        println("✅ Phase completed, moved to next phase")
-        println("   Next Phase: ${updatedExecution.currentPhase().name}")
+            println("✅ Phase completed, moved to next phase")
+            println("   Next Phase: ${updatedExecution.currentPhase().name}")
 
-        // ===== STEP 5: Verify Results =====
-        println("\n🔍 STEP 5: Verify Results")
-        val savedContext = memoryRepository.load(projectPath, gitBranch)
-        assertThat(savedContext).isNotNull
-        assertThat(savedContext!!.phaseHistory).hasSize(1)
-        assertThat(savedContext.architecturalDecisions).isNotEmpty
+            // ===== STEP 5: Verify Results =====
+            println("\n🔍 STEP 5: Verify Results")
+            val savedContext = memoryRepository.load(projectPath, gitBranch)
+            assertThat(savedContext).isNotNull
+            assertThat(savedContext!!.phaseHistory).hasSize(1)
+            assertThat(savedContext.architecturalDecisions).isNotEmpty
 
-        println("✅ Results persisted in memory")
-        println("   Phases completed: ${savedContext.phaseHistory.size}")
-        println("   Architectural decisions: ${savedContext.architecturalDecisions.size}")
-        println("   Interactions: ${savedContext.interactions.size}")
+            println("✅ Results persisted in memory")
+            println("   Phases completed: ${savedContext.phaseHistory.size}")
+            println("   Architectural decisions: ${savedContext.architecturalDecisions.size}")
+            println("   Interactions: ${savedContext.interactions.size}")
 
-        // ===== Summary =====
-        println("\n" + "=".repeat(80))
-        println("🎉 END-TO-END TEST SUCCESSFUL!")
-        println("=".repeat(80))
-        println("✅ Architecture validated:")
-        println("   - Domain Services orchestrate flow")
-        println("   - Ports & Adapters pattern works")
-        println("   - Koog Integration executes LLM workflows")
-        println("   - In-Memory persistence functional")
-        println("   - Vibe Checks automated")
-        println("=".repeat(80) + "\n")
-    }
+            // ===== Summary =====
+            println("\n" + "=".repeat(80))
+            println("🎉 END-TO-END TEST SUCCESSFUL!")
+            println("=".repeat(80))
+            println("✅ Architecture validated:")
+            println("   - Domain Services orchestrate flow")
+            println("   - Ports & Adapters pattern works")
+            println("   - Koog Integration executes LLM workflows")
+            println("   - In-Memory persistence functional")
+            println("   - Vibe Checks automated")
+            println("=".repeat(80) + "\n")
+        }
 
     private fun setupFeatureDevelopmentProcess() {
         val process =
@@ -254,128 +256,130 @@ class SimpleEndToEndTest {
     }
 
     @Test
-    fun `should execute all three phases of Feature Development workflow`() {
-        println("\n" + "=".repeat(80))
-        println("🔄 MULTI-PHASE TEST: Complete Feature Development (3 Phases)")
-        println("=".repeat(80))
+    fun `should execute all three phases of Feature Development workflow`(): Unit =
+        runBlocking {
+            println("\n" + "=".repeat(80))
+            println("🔄 MULTI-PHASE TEST: Complete Feature Development (3 Phases)")
+            println("=".repeat(80))
 
-        val processId = ProcessId("feature-development")
-        val projectPath = "/tmp/multi-phase-test"
-        val gitBranch = "feature/complete-flow"
+            val processId = ProcessId("feature-development")
+            val projectPath = "/tmp/multi-phase-test"
+            val gitBranch = "feature/complete-flow"
 
-        // Start process
-        var processExecution =
-            runBlocking {
-                startProcessService.execute(
-                    processId = processId,
-                    projectPath = projectPath,
-                    gitBranch = gitBranch,
+            // Start process
+            var processExecution =
+                runBlocking {
+                    startProcessService.execute(
+                        processId = processId,
+                        projectPath = projectPath,
+                        gitBranch = gitBranch,
+                    )
+                }
+
+            assertThat(processExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
+            println("✅ Process started with ${processExecution.process.totalPhases()} phases")
+
+            // Execute all 3 phases
+            for (phaseIndex in 0 until processExecution.process.totalPhases()) {
+                println(
+                    "\n➡️  Executing Phase ${phaseIndex + 1}/" +
+                        "${processExecution.process.totalPhases()}: ${processExecution.currentPhase().name}",
                 )
+
+                // Load context
+                var executionContext = memoryRepository.load(projectPath, gitBranch)!!
+
+                // Execute phase
+                val phase = processExecution.currentPhase()
+                val phaseResult =
+                    runBlocking {
+                        executePhaseService.execute(phase, executionContext)
+                    }
+                executionContext = executionContext.addPhaseResult(phaseResult)
+
+                // Complete phase (phaseResult already added to context)
+                processExecution =
+                    runBlocking {
+                        completePhaseService.execute(processExecution, executionContext, phaseResult)
+                    }
+
+                println("✅ Phase ${phaseIndex + 1} completed: ${phaseResult.phaseName}")
             }
 
-        assertThat(processExecution.status).isEqualTo(ExecutionStatus.IN_PROGRESS)
-        println("✅ Process started with ${processExecution.process.totalPhases()} phases")
+            // Verify all phases completed
+            assertThat(processExecution.status).isEqualTo(ExecutionStatus.COMPLETED)
 
-        // Execute all 3 phases
-        for (phaseIndex in 0 until processExecution.process.totalPhases()) {
-            println(
-                "\n➡️  Executing Phase ${phaseIndex + 1}/" +
-                    "${processExecution.process.totalPhases()}: ${processExecution.currentPhase().name}",
+            val savedContext = memoryRepository.load(projectPath, gitBranch)!!
+            assertThat(savedContext.phaseHistory).hasSize(3)
+            assertThat(savedContext.phaseHistory.map { it.phaseName }).containsExactly(
+                "Requirements Analysis",
+                "Architecture Design",
+                "Implementation",
             )
 
-            // Load context
-            var executionContext = memoryRepository.load(projectPath, gitBranch)!!
+            println("\n" + "=".repeat(80))
+            println("🎉 MULTI-PHASE TEST SUCCESSFUL!")
+            println("✅ All 3 phases completed")
+            println("✅ Process status: ${processExecution.status}")
+            println("✅ Total decisions: ${savedContext.architecturalDecisions.size}")
+            println("=".repeat(80) + "\n")
+        }
 
-            // Execute phase
+    @Test
+    fun `should handle failed required vibe check correctly`(): Unit =
+        runBlocking {
+            println("\n" + "=".repeat(80))
+            println("❌ ERROR HANDLING TEST: Failed Required Vibe Check")
+            println("=".repeat(80))
+
+            val processId = ProcessId("feature-development")
+            val projectPath = "/tmp/failed-vibe-check-test"
+            val gitBranch = "feature/vibe-check-fail"
+
+            // Start process
+            val processExecution =
+                runBlocking {
+                    startProcessService.execute(
+                        processId = processId,
+                        projectPath = projectPath,
+                        gitBranch = gitBranch,
+                    )
+                }
+
+            // Replace vibe check evaluator with one that fails required checks
+            val failingEvaluator = FailingVibeCheckEvaluator()
+            val executePhaseServiceWithFailure =
+                ExecuteProcessPhaseService(
+                    workflowExecutor = workflowExecutor,
+                    vibeCheckEvaluator = failingEvaluator,
+                )
+
+            println("✅ Process started")
+            println("⚠️  Executing phase with failing required vibe check...")
+
+            // Execute phase (should fail vibe check)
+            var executionContext = memoryRepository.load(projectPath, gitBranch)!!
             val phase = processExecution.currentPhase()
             val phaseResult =
                 runBlocking {
-                    executePhaseService.execute(phase, executionContext)
+                    executePhaseServiceWithFailure.execute(phase, executionContext)
                 }
             executionContext = executionContext.addPhaseResult(phaseResult)
 
-            // Complete phase (phaseResult already added to context)
-            processExecution =
-                runBlocking {
-                    completePhaseService.execute(processExecution, executionContext, phaseResult)
-                }
+            // Verify phase failed
+            assertThat(phaseResult.status).isEqualTo(ExecutionStatus.FAILED)
+            assertThat(phaseResult.vibeCheckResults).isNotEmpty
+            assertThat(phaseResult.vibeCheckResults.any { !it.passed }).isTrue()
 
-            println("✅ Phase ${phaseIndex + 1} completed: ${phaseResult.phaseName}")
+            println("\n✅ Phase correctly marked as FAILED")
+            println("✅ Vibe check results captured: ${phaseResult.vibeCheckResults.size}")
+            println("✅ Failed check: ${phaseResult.vibeCheckResults.first { !it.passed }.check.question}")
+
+            println("\n" + "=".repeat(80))
+            println("🎉 ERROR HANDLING TEST SUCCESSFUL!")
+            println("✅ Failed vibe checks are properly handled")
+            println("=".repeat(80) + "\n")
         }
-
-        // Verify all phases completed
-        assertThat(processExecution.status).isEqualTo(ExecutionStatus.COMPLETED)
-
-        val savedContext = memoryRepository.load(projectPath, gitBranch)!!
-        assertThat(savedContext.phaseHistory).hasSize(3)
-        assertThat(savedContext.phaseHistory.map { it.phaseName }).containsExactly(
-            "Requirements Analysis",
-            "Architecture Design",
-            "Implementation",
-        )
-
-        println("\n" + "=".repeat(80))
-        println("🎉 MULTI-PHASE TEST SUCCESSFUL!")
-        println("✅ All 3 phases completed")
-        println("✅ Process status: ${processExecution.status}")
-        println("✅ Total decisions: ${savedContext.architecturalDecisions.size}")
-        println("=".repeat(80) + "\n")
-    }
-
-    @Test
-    fun `should handle failed required vibe check correctly`() {
-        println("\n" + "=".repeat(80))
-        println("❌ ERROR HANDLING TEST: Failed Required Vibe Check")
-        println("=".repeat(80))
-
-        val processId = ProcessId("feature-development")
-        val projectPath = "/tmp/failed-vibe-check-test"
-        val gitBranch = "feature/vibe-check-fail"
-
-        // Start process
-        val processExecution =
-            runBlocking {
-                startProcessService.execute(
-                    processId = processId,
-                    projectPath = projectPath,
-                    gitBranch = gitBranch,
-                )
-            }
-
-        // Replace vibe check evaluator with one that fails required checks
-        val failingEvaluator = FailingVibeCheckEvaluator()
-        val executePhaseServiceWithFailure =
-            ExecuteProcessPhaseService(
-                workflowExecutor = workflowExecutor,
-                vibeCheckEvaluator = failingEvaluator,
-            )
-
-        println("✅ Process started")
-        println("⚠️  Executing phase with failing required vibe check...")
-
-        // Execute phase (should fail vibe check)
-        var executionContext = memoryRepository.load(projectPath, gitBranch)!!
-        val phase = processExecution.currentPhase()
-        val phaseResult =
-            runBlocking {
-                executePhaseServiceWithFailure.execute(phase, executionContext)
-            }
-        executionContext = executionContext.addPhaseResult(phaseResult)
-
-        // Verify phase failed
-        assertThat(phaseResult.status).isEqualTo(ExecutionStatus.FAILED)
-        assertThat(phaseResult.vibeCheckResults).isNotEmpty
-        assertThat(phaseResult.vibeCheckResults.any { !it.passed }).isTrue()
-
-        println("\n✅ Phase correctly marked as FAILED")
-        println("✅ Vibe check results captured: ${phaseResult.vibeCheckResults.size}")
-        println("✅ Failed check: ${phaseResult.vibeCheckResults.first { !it.passed }.check.question}")
-
-        println("\n" + "=".repeat(80))
-        println("🎉 ERROR HANDLING TEST SUCCESSFUL!")
-        println("✅ Failed vibe checks are properly handled")
-        println("=".repeat(80) + "\n")
-    }
 
     @Test
     fun `should throw exception when process not found`() {

@@ -40,3 +40,4 @@ bin/
 
 # Local configuration (contains sensitive URLs/credentials)
 src/main/resources/application-local.yml
+/src/test/resources/application-test.yml
