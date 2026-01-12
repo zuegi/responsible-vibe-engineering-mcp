@@ -4,7 +4,7 @@ import ch.zuegi.rvmcp.McpStdio
 import ch.zuegi.rvmcp.domain.port.input.CompletePhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
-import ch.zuegi.rvmcp.domain.port.output.OldMemoryRepositoryPort
+import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
 import ch.zuegi.rvmcp.shared.rvmcpLogger
 import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
@@ -41,7 +41,7 @@ class ResponsibleVibeMcpServer(
     private val executePhaseUseCase: ExecuteProcessPhaseUseCase,
     private val completePhaseUseCase: CompletePhaseUseCase,
     private val provideAnswerUseCase: ch.zuegi.rvmcp.domain.port.input.ProvideAnswerUseCase,
-    private val memoryRepository: OldMemoryRepositoryPort,
+    private val memoryRepository: MemoryRepositoryPort,
     private val processRepository: ProcessRepositoryPort,
 ) {
     private val log by rvmcpLogger()
@@ -87,7 +87,7 @@ class ResponsibleVibeMcpServer(
             )
 
         // Connect is a suspend function - this properly starts the async event loop
-        server.connect(transport)
+        server.createSession(transport)
         log.info("MCP Server ready (v0.1.0)")
     }
 
@@ -146,7 +146,10 @@ class ResponsibleVibeMcpServer(
                                 "gitBranch" to
                                     kotlinx.serialization.json.buildJsonObject {
                                         put("type", kotlinx.serialization.json.JsonPrimitive("string"))
-                                        put("description", kotlinx.serialization.json.JsonPrimitive("Git branch name for this execution"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Git branch name for this execution"),
+                                        )
                                     },
                             ),
                         ),
@@ -154,6 +157,7 @@ class ResponsibleVibeMcpServer(
                 ),
         ) { request: CallToolRequest ->
             try {
+                // FIXME Elvis operator (?:) always returns the left operand of non-nullable type 'JsonObject'.
                 val args =
                     request.arguments ?: return@addTool CallToolResult(
                         content = listOf(TextContent(text = "Error: No arguments provided")),
@@ -368,7 +372,10 @@ Example: get_phase_result(jobId: "$jobId")""",
                                 "jobId" to
                                     kotlinx.serialization.json.buildJsonObject {
                                         put("type", kotlinx.serialization.json.JsonPrimitive("string"))
-                                        put("description", kotlinx.serialization.json.JsonPrimitive("Job ID returned from execute_phase"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Job ID returned from execute_phase"),
+                                        )
                                     },
                             ),
                         ),
@@ -606,7 +613,10 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
                                 "executionId" to
                                     kotlinx.serialization.json.buildJsonObject {
                                         put("type", kotlinx.serialization.json.JsonPrimitive("string"))
-                                        put("description", kotlinx.serialization.json.JsonPrimitive("Execution ID of the paused workflow"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Execution ID of the paused workflow"),
+                                        )
                                     },
                                 "answer" to
                                     kotlinx.serialization.json.buildJsonObject {
