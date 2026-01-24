@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Configuration
 class ApplicationConfiguration {
     // ========== Output Adapters ==========
 
+    // FIXME das darf nicht sein, ist nur für Test
     @Bean
     fun vibeCheckEvaluator(): VibeCheckEvaluatorPort {
         // Use AutoPassVibeCheckEvaluator for MCP Server mode (non-interactive)

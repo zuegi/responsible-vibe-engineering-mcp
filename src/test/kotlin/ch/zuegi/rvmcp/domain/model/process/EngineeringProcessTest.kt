@@ -1,36 +1,16 @@
 package ch.zuegi.rvmcp.domain.model.process
 
+import ch.zuegi.rvmcp.createProcessPhase
 import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
-import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
-import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
-import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class EngineeringProcessTest {
-    private fun createTestPhase(
-        name: String,
-        order: Int,
-    ): ProcessPhase =
-        ProcessPhase(
-            name = name,
-            description = "Test phase $name",
-            vibeChecks =
-                listOf(
-                    VibeCheck(
-                        question = "Is everything ok?",
-                        type = VibeCheckType.QUALITY,
-                    ),
-                ),
-            koogWorkflowTemplate = "test-workflow.yml",
-            order = order,
-        )
-
     @Test
     fun `should create valid engineering process`() {
-        val phase1 = createTestPhase("Phase 1", 0)
-        val phase2 = createTestPhase("Phase 2", 1)
+        val phase1 = createProcessPhase("Phase 1", 0)
+        val phase2 = createProcessPhase("Phase 2", 1)
 
         val process =
             EngineeringProcess(
@@ -52,7 +32,7 @@ class EngineeringProcessTest {
                 id = EngineeringProcessId.generate(),
                 name = "",
                 description = "Test",
-                phases = listOf(createTestPhase("Phase 1", 0)),
+                phases = listOf(createProcessPhase("Phase 1", 0)),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Name must not be blank")
@@ -65,7 +45,7 @@ class EngineeringProcessTest {
                 id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "",
-                phases = listOf(createTestPhase("Phase 1", 0)),
+                phases = listOf(createProcessPhase("Phase 1", 0)),
             )
         }.isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("Description must not be blank")
@@ -86,8 +66,8 @@ class EngineeringProcessTest {
 
     @Test
     fun `should fail when phase order is not sequential`() {
-        val phase1 = createTestPhase("Phase 1", 0)
-        val phase2 = createTestPhase("Phase 2", 2) // Wrong order
+        val phase1 = createProcessPhase("Phase 1", 0)
+        val phase2 = createProcessPhase("Phase 2", 2) // Wrong order
 
         assertThatThrownBy {
             EngineeringProcess(
@@ -102,8 +82,8 @@ class EngineeringProcessTest {
 
     @Test
     fun `should get phase by index`() {
-        val phase1 = createTestPhase("Phase 1", 0)
-        val phase2 = createTestPhase("Phase 2", 1)
+        val phase1 = createProcessPhase("Phase 1", 0)
+        val phase2 = createProcessPhase("Phase 2", 1)
 
         val process =
             EngineeringProcess(
@@ -120,9 +100,9 @@ class EngineeringProcessTest {
 
     @Test
     fun `should check if next phase exists`() {
-        val phase1 = createTestPhase("Phase 1", 0)
-        val phase2 = createTestPhase("Phase 2", 1)
-        val phase3 = createTestPhase("Phase 3", 2)
+        val phase1 = createProcessPhase("Phase 1", 0)
+        val phase2 = createProcessPhase("Phase 2", 1)
+        val phase3 = createProcessPhase("Phase 3", 2)
 
         val process =
             EngineeringProcess(
@@ -141,9 +121,9 @@ class EngineeringProcessTest {
     fun `should return total number of phases`() {
         val phases =
             listOf(
-                createTestPhase("Phase 1", 0),
-                createTestPhase("Phase 2", 1),
-                createTestPhase("Phase 3", 2),
+                createProcessPhase("Phase 1", 0),
+                createProcessPhase("Phase 2", 1),
+                createProcessPhase("Phase 3", 2),
             )
 
         val process =

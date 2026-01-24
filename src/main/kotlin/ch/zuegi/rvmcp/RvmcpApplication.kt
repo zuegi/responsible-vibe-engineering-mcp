@@ -33,7 +33,7 @@ object McpStdio {
  */
 fun main(args: Array<String>) {
     // Redirect System.out to System.err for all Spring Boot logs
-    System.setOut(System.err)
+//    System.setOut(System.err)
 
     runApplication<RvmcpApplication>(*args)
 }

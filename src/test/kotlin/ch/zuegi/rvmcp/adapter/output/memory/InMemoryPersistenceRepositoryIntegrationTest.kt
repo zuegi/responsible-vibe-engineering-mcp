@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp.adapter.output.memory
 
-import ch.zuegi.rvmcp.createExecutionExtension
+import ch.zuegi.rvmcp.createExecutionContext
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -27,7 +27,7 @@ class InMemoryPersistenceRepositoryIntegrationTest {
     fun `should save an execution context and load`(): Unit =
         runBlocking {
             // Given
-            val context = createExecutionExtension(projectPath = tempDir.toString())
+            val context = createExecutionContext(projectPath = tempDir.toString())
             // When
             repository.save(context)
 
@@ -40,7 +40,7 @@ class InMemoryPersistenceRepositoryIntegrationTest {
     fun `should delete an execution context and find by executionId`(): Unit =
         runBlocking {
             // Given
-            val context = createExecutionExtension(projectPath = tempDir.toString())
+            val context = createExecutionContext(projectPath = tempDir.toString())
             // When
             repository.save(context)
 
@@ -53,9 +53,9 @@ class InMemoryPersistenceRepositoryIntegrationTest {
     fun `should save multiple execution contexts and delete one`(): Unit =
         runBlocking {
             // Given
-            val context = createExecutionExtension(projectPath = tempDir.toString(), gitBranch = "main")
-            val context1 = createExecutionExtension(projectPath = tempDir.toString(), gitBranch = "main1")
-            val context2 = createExecutionExtension(projectPath = tempDir.toString(), gitBranch = "main2")
+            val context = createExecutionContext(projectPath = tempDir.toString(), gitBranch = "main")
+            val context1 = createExecutionContext(projectPath = tempDir.toString(), gitBranch = "main1")
+            val context2 = createExecutionContext(projectPath = tempDir.toString(), gitBranch = "main2")
             // When
             repository.save(context)
             repository.save(context1)
@@ -80,7 +80,7 @@ class InMemoryPersistenceRepositoryIntegrationTest {
             // Given: Fill repository with 100 contexts
             repeat(100) { index ->
                 val context =
-                    createExecutionExtension(
+                    createExecutionContext(
                         projectPath = "$tempDir/project-$index",
                         gitBranch = "main",
                     )
@@ -89,7 +89,7 @@ class InMemoryPersistenceRepositoryIntegrationTest {
 
             // When/Then: Adding 101st context should throw IllegalStateException
             val context101 =
-                createExecutionExtension(
+                createExecutionContext(
                     projectPath = "$tempDir/project-101",
                     gitBranch = "main",
                 )
