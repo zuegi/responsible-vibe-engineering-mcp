@@ -28,6 +28,7 @@ Viele KI-Codier-Tools funktionieren als „Autocompletes on Steroids" – sie du
 - **LLMs stellen zufällige Fragen** statt systematischer Requirements-Erhebung
 - **Keine strukturierte Dokumentation** der Anforderungen und Architektur-Entscheidungen
 - **AI-Coding-Tools fehlt Kontext** früherer Entscheidungen
+- **Dokumentation als Kontext** fehlende, kontinuierliche Bearbeitung der Dokumentation
 
 ### Die Lösung / Vision
 
@@ -38,6 +39,7 @@ Responsible Vibe MCP führt KI-Systeme aktiv durch bewährte Engineering-Workflo
 - ✅ **Flexiblen Persistence-Backend** (Git, Confluence, File-System - User wählt)
 - ✅ **Persistentem Memory** über Sessions hinweg
 - ✅ **MCP Server Interface** für universelle KI-Integration (Claude, Warp, IDEs)
+- ✅ **Dokumentation in Markdown Files** schliesst die Lücke zwischen menschlicher Absicht und maschinenausführbaren Anweisungen
 
 ---
 

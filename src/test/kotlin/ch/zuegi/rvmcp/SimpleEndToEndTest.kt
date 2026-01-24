@@ -9,8 +9,10 @@ import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
+import ch.zuegi.rvmcp.domain.port.output.DocumentPersistencePort
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
+import ch.zuegi.rvmcp.domain.service.DocumentGenerationService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
@@ -49,18 +51,21 @@ class SimpleEndToEndTest {
 
     private lateinit var processRepository: InMemoryProcessRepository
     private lateinit var memoryRepository: MemoryRepositoryPort
+    private lateinit var documentPersistence: DocumentPersistencePort
     private lateinit var workflowExecutor: KoogWorkflowExecutor
     private lateinit var vibeCheckEvaluator: AutoPassVibeCheckEvaluator
 
     private lateinit var startProcessService: StartProcessExecutionService
     private lateinit var executePhaseService: ExecuteProcessPhaseService
     private lateinit var completePhaseService: CompletePhaseService
+    private lateinit var documentGenerationService: DocumentGenerationService
 
     @BeforeEach
     fun setup() {
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
         memoryRepository = InMemoryPersistencePort()
+        documentPersistence = InMemoryPersistencePort()
 
         // Initialize workflow executor with Koog
         workflowExecutor =
@@ -79,10 +84,16 @@ class SimpleEndToEndTest {
                 memoryRepository,
             )
 
+        documentGenerationService =
+            DocumentGenerationService(
+                documentPersistence = documentPersistence,
+            )
+
         executePhaseService =
             ExecuteProcessPhaseService(
                 workflowExecutor = workflowExecutor,
                 vibeCheckEvaluator = vibeCheckEvaluator,
+                documentGenerationService = documentGenerationService,
             )
 
         completePhaseService =
@@ -342,6 +353,7 @@ class SimpleEndToEndTest {
                 ExecuteProcessPhaseService(
                     workflowExecutor = workflowExecutor,
                     vibeCheckEvaluator = failingEvaluator,
+                    documentGenerationService = documentGenerationService,
                 )
 
             println("✅ Process started")

@@ -11,8 +11,10 @@ import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
+import ch.zuegi.rvmcp.domain.port.output.DocumentPersistencePort
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
+import ch.zuegi.rvmcp.domain.service.DocumentGenerationService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
 import ch.zuegi.rvmcp.infrastructure.config.LlmProperties
@@ -65,6 +67,7 @@ class McpProtocolIntegrationTest {
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
         memoryRepository = InMemoryPersistencePort()
+        val documentPersistence: DocumentPersistencePort = InMemoryPersistencePort()
 
         // Initialize workflow executor with mock UserInteractionPort
         workflowExecutor =
@@ -83,10 +86,16 @@ class McpProtocolIntegrationTest {
                 memoryRepository,
             )
 
+        val documentGenerationService =
+            DocumentGenerationService(
+                documentPersistence = documentPersistence,
+            )
+
         val executePhaseService =
             ExecuteProcessPhaseService(
                 workflowExecutor = workflowExecutor,
                 vibeCheckEvaluator = vibeCheckEvaluator,
+                documentGenerationService = documentGenerationService,
             )
 
         val completePhaseService =
@@ -96,7 +105,7 @@ class McpProtocolIntegrationTest {
 
         // Initialize use cases
         startProcessUseCase = StartProcessExecutionUseCaseImpl(startProcessService)
-        executePhaseUseCase = ExecuteProcessPhaseUseCaseImpl(executePhaseService)
+        executePhaseUseCase = ExecuteProcessPhaseUseCaseImpl(executePhaseService, memoryRepository)
         completePhaseUseCase =
             CompletePhaseUseCaseImpl(
                 completePhaseService,
@@ -136,7 +145,7 @@ class McpProtocolIntegrationTest {
 
             // Simulate MCP tool call via use case
             val processId = ProcessId("feature-development")
-            val projectPath = "/tmp/mcp-test-project"
+            val projectPath = "./tmp/mcp-test-project"
             val gitBranch = "feature/mcp-integration"
 
             val execution =
@@ -164,7 +173,7 @@ class McpProtocolIntegrationTest {
 
             // First start a process to create context
             val processId = ProcessId("feature-development")
-            val projectPath = "/tmp/mcp-context-test"
+            val projectPath = "./tmp/mcp-context-test"
             val gitBranch = "feature/test-context"
 
             startProcessUseCase.execute(
@@ -194,7 +203,7 @@ class McpProtocolIntegrationTest {
 
             // Setup: Start process
             val processId = ProcessId("feature-development")
-            val projectPath = "/tmp/mcp-phase-test"
+            val projectPath = "./tmp/mcp-phase-test"
             val gitBranch = "feature/test-phase"
 
             val execution =
@@ -239,7 +248,7 @@ class McpProtocolIntegrationTest {
 
             // Setup: Start process and execute first phase
             val processId = ProcessId("feature-development")
-            val projectPath = "/tmp/mcp-complete-test"
+            val projectPath = "./tmp/mcp-complete-test"
             val gitBranch = "feature/test-complete"
 
             val execution =
@@ -286,7 +295,7 @@ class McpProtocolIntegrationTest {
                 kotlin.runCatching {
                     startProcessUseCase.execute(
                         processId = ProcessId("non-existent-process"),
-                        projectPath = "/tmp/error-test",
+                        projectPath = "./tmp/error-test",
                         gitBranch = "feature/error",
                     )
                 }

@@ -82,6 +82,12 @@ ${node.on_failure?.let { "**On Failure**: $it" } ?: ""}
                     is HumanInteractionNode -> {
                         """
 ### Step ${index + 1}: ${node.id} [HUMAN_INTERACTION]
+**Action**: Ask user for input
+**Required Tool Call**: `ask_user(question="...")`
+**Process**:
+  1. Call `ask_user(question="${node.prompt}")`
+  2. Wait for user's answer (workflow will pause)
+  3. Use the answer to proceed
 **Prompt**: ${node.prompt}
 ${node.inputs?.let { "**Inputs**: ${it.joinToString()}" } ?: ""}
                     """.trim()
@@ -138,6 +144,14 @@ ${node.onFailure?.let { "**On Failure**: $it" } ?: ""}
                                 """
                                 Step $stepNumber: ${node.id}
                                 - ${node.prompt ?: node.description ?: "Execute this step"}
+                                """.trimIndent()
+                            }
+
+                            is HumanInteractionNode -> {
+                                """
+                                Step $stepNumber: ${node.id}
+                                - Call ask_user(question="${node.prompt}")
+                                - Wait for user response
                                 """.trimIndent()
                             }
 

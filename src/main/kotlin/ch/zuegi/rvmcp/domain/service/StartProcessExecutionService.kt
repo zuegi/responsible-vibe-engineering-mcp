@@ -69,11 +69,12 @@ class StartProcessExecutionService(
                 startedAt = Instant.now(),
             )
 
-        // 4. Update context with process info and persist
+        // 4. Update context with process info, execution, and persist
         val updatedContext =
             executionContext.copy(
                 processId = processId,
                 currentPhaseIndex = 0,
+                currentExecution = processExecution,
             )
         memoryRepository.save(updatedContext)
 
