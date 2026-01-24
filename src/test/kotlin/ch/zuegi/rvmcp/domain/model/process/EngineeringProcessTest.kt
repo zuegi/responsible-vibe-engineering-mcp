@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp.domain.model.process
 
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
 import ch.zuegi.rvmcp.domain.model.vibe.VibeCheck
@@ -34,7 +34,7 @@ class EngineeringProcessTest {
 
         val process =
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Feature Development",
                 description = "Standard feature development process",
                 phases = listOf(phase1, phase2),
@@ -49,7 +49,7 @@ class EngineeringProcessTest {
     fun `should fail when name is blank`() {
         assertThatThrownBy {
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "",
                 description = "Test",
                 phases = listOf(createTestPhase("Phase 1", 0)),
@@ -62,7 +62,7 @@ class EngineeringProcessTest {
     fun `should fail when description is blank`() {
         assertThatThrownBy {
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "",
                 phases = listOf(createTestPhase("Phase 1", 0)),
@@ -75,7 +75,7 @@ class EngineeringProcessTest {
     fun `should fail when phases list is empty`() {
         assertThatThrownBy {
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "Test description",
                 phases = emptyList(),
@@ -91,7 +91,7 @@ class EngineeringProcessTest {
 
         assertThatThrownBy {
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "Test description",
                 phases = listOf(phase1, phase2),
@@ -107,7 +107,7 @@ class EngineeringProcessTest {
 
         val process =
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "Test description",
                 phases = listOf(phase1, phase2),
@@ -126,7 +126,7 @@ class EngineeringProcessTest {
 
         val process =
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "Test description",
                 phases = listOf(phase1, phase2, phase3),
@@ -148,7 +148,7 @@ class EngineeringProcessTest {
 
         val process =
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Test",
                 description = "Test description",
                 phases = phases,

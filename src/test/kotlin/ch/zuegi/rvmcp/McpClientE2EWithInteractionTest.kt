@@ -2,14 +2,14 @@ package ch.zuegi.rvmcp
 
 import ch.zuegi.rvmcp.adapter.output.interaction.McpAwareInteractionAdapter
 import ch.zuegi.rvmcp.adapter.output.interaction.PendingInteractionManager
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistenceRepository
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
 import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.application.usecase.CompletePhaseUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.ExecuteProcessPhaseUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.ProvideAnswerUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.StartProcessExecutionUseCaseImpl
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.ExecutionState
@@ -76,8 +76,8 @@ class McpClientE2EWithInteractionTest {
 
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
-        memoryRepository = InMemoryPersistencePort()
-        val documentPersistence: DocumentPersistencePort = InMemoryPersistencePort()
+        memoryRepository = InMemoryPersistenceRepository()
+        val documentPersistence: DocumentPersistencePort = InMemoryPersistenceRepository()
 
         // Initialize workflow executor with Test UserInteractionPort
         // This port returns immediate test answers without suspending
@@ -117,7 +117,7 @@ class McpClientE2EWithInteractionTest {
 
         // Initialize use cases
         startProcessUseCase = StartProcessExecutionUseCaseImpl(startProcessService)
-        executePhaseUseCase = ExecuteProcessPhaseUseCaseImpl(executePhaseService, memoryRepository)
+        executePhaseUseCase = ExecuteProcessPhaseUseCaseImpl(executePhaseService)
         provideAnswerUseCase = ProvideAnswerUseCaseImpl(memoryRepository)
         completePhaseUseCase =
             CompletePhaseUseCaseImpl(
@@ -141,13 +141,13 @@ class McpClientE2EWithInteractionTest {
     fun testCompleteWorkflowWithUserInteractionPauseAndResume() =
         runBlocking<Unit> {
             // Step 1: MCP Client calls start_process
-            val processId = ProcessId("interactive-feature-dev")
+            val engineeringProcessId = EngineeringProcessId("interactive-feature-dev")
             val projectPath = "./tmp/e2e-interactive-test"
             val gitBranch = "feature/e2e-interaction"
 
             val execution =
                 startProcessUseCase.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -270,13 +270,13 @@ class McpClientE2EWithInteractionTest {
             println("=".repeat(80))
 
             // Start process
-            val processId = ProcessId("interactive-feature-dev")
+            val engineeringProcessId = EngineeringProcessId("interactive-feature-dev")
             val projectPath = "./tmp/e2e-multi-interaction"
             val gitBranch = "feature/multi-interaction"
 
             val execution =
                 startProcessUseCase.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -337,13 +337,13 @@ class McpClientE2EWithInteractionTest {
             println("=".repeat(80))
 
             // Start process
-            val processId = ProcessId("interactive-feature-dev")
+            val engineeringProcessId = EngineeringProcessId("interactive-feature-dev")
             val projectPath = "./tmp/e2e-error-test"
             val gitBranch = "feature/error-test"
 
             val execution =
                 startProcessUseCase.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -371,7 +371,7 @@ class McpClientE2EWithInteractionTest {
     private fun setupProcessWithInteraction() {
         val process =
             EngineeringProcess(
-                id = ProcessId("interactive-feature-dev"),
+                id = EngineeringProcessId("interactive-feature-dev"),
                 name = "Interactive Feature Development",
                 description = "Feature development with user interactions",
                 phases =

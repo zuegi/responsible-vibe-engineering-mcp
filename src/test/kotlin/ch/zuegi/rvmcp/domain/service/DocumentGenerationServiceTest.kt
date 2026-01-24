@@ -1,10 +1,10 @@
 package ch.zuegi.rvmcp.domain.service
 
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistenceRepository
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.document.DocumentType
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
@@ -22,7 +22,7 @@ class DocumentGenerationServiceTest {
 
     @BeforeEach
     fun setup() {
-        documentPersistencePort = InMemoryPersistencePort()
+        documentPersistencePort = InMemoryPersistenceRepository()
         service = DocumentGenerationService(documentPersistencePort)
     }
 
@@ -61,7 +61,7 @@ class DocumentGenerationServiceTest {
                     executionId = ExecutionId.generate(),
                     projectPath = "/Users/test/my-app",
                     gitBranch = "feature/auth",
-                    processId = ProcessId("feature-development"),
+                    engineeringProcessId = EngineeringProcessId("feature-development"),
                     architecturalDecisions =
                         listOf(
                             Decision("Architecture", "Hexagonal Architecture", "Clean separation", LocalDate.now()),

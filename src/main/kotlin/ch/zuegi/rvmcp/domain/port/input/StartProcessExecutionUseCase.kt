@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp.domain.port.input
 
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 
 /**
@@ -16,13 +16,13 @@ interface StartProcessExecutionUseCase {
     /**
      * Starts a new process execution.
      *
-     * @param processId The ID of the engineering process to execute
+     * @param engineeringProcessId The ID of the engineering process to execute
      * @param projectPath The absolute path to the project directory
      * @param gitBranch The git branch name for branch-aware context
      * @return The initialized process execution
      */
     suspend fun execute(
-        processId: ProcessId,
+        engineeringProcessId: EngineeringProcessId,
         projectPath: String,
         gitBranch: String,
     ): ProcessExecution

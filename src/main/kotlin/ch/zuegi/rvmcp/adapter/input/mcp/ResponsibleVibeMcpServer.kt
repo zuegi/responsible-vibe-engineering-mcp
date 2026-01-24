@@ -187,7 +187,7 @@ class ResponsibleVibeMcpServer(
                 val processExecution =
                     startProcessUseCase.execute(
                         ch.zuegi.rvmcp.domain.model.id
-                            .ProcessId(processId),
+                            .EngineeringProcessId(processId),
                         projectPath,
                         gitBranch,
                     )
@@ -277,7 +277,7 @@ Status: ${processExecution.status}""",
                         )
 
                 val processId =
-                    context.processId
+                    context.engineeringProcessId
                         ?: return@addTool CallToolResult(
                             content = listOf(TextContent(text = "Error: No active process found in context. Start a process first.")),
                             isError = true,
@@ -549,7 +549,7 @@ Error: ${job.error}""",
                         )
 
                 val processId =
-                    context.processId
+                    context.engineeringProcessId
                         ?: return@addTool CallToolResult(
                             content = listOf(TextContent(text = "Error: No active process found in context")),
                             isError = true,

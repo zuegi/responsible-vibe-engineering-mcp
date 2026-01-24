@@ -1,12 +1,12 @@
 package ch.zuegi.rvmcp
 
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistenceRepository
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
 import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
 import ch.zuegi.rvmcp.application.usecase.CompletePhaseUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.ExecuteProcessPhaseUseCaseImpl
 import ch.zuegi.rvmcp.application.usecase.StartProcessExecutionUseCaseImpl
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
@@ -66,8 +66,8 @@ class McpProtocolIntegrationTest {
 
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
-        memoryRepository = InMemoryPersistencePort()
-        val documentPersistence: DocumentPersistencePort = InMemoryPersistencePort()
+        memoryRepository = InMemoryPersistenceRepository()
+        val documentPersistence: DocumentPersistencePort = InMemoryPersistenceRepository()
 
         // Initialize workflow executor with mock UserInteractionPort
         workflowExecutor =
@@ -105,7 +105,7 @@ class McpProtocolIntegrationTest {
 
         // Initialize use cases
         startProcessUseCase = StartProcessExecutionUseCaseImpl(startProcessService)
-        executePhaseUseCase = ExecuteProcessPhaseUseCaseImpl(executePhaseService, memoryRepository)
+        executePhaseUseCase = ExecuteProcessPhaseUseCaseImpl(executePhaseService)
         completePhaseUseCase =
             CompletePhaseUseCaseImpl(
                 completePhaseService,
@@ -144,20 +144,20 @@ class McpProtocolIntegrationTest {
             println("\nTEST: Call start_process Tool")
 
             // Simulate MCP tool call via use case
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "./tmp/mcp-test-project"
             val gitBranch = "feature/mcp-integration"
 
             val execution =
                 startProcessUseCase.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
 
             assertThat(execution).isNotNull
             assertThat(execution.id.value).isNotEmpty()
-            assertThat(execution.process.id).isEqualTo(processId)
+            assertThat(execution.process.id).isEqualTo(engineeringProcessId)
 
             println("   Execution ID: ${execution.id.value}")
             println("   Process: ${execution.process.name}")
@@ -172,12 +172,12 @@ class McpProtocolIntegrationTest {
             println("\nTEST: Call get_context Tool")
 
             // First start a process to create context
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "./tmp/mcp-context-test"
             val gitBranch = "feature/test-context"
 
             startProcessUseCase.execute(
-                processId = processId,
+                engineeringProcessId = engineeringProcessId,
                 projectPath = projectPath,
                 gitBranch = gitBranch,
             )
@@ -202,13 +202,13 @@ class McpProtocolIntegrationTest {
             println("\n TEST: Call execute_phase Tool")
 
             // Setup: Start process
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "./tmp/mcp-phase-test"
             val gitBranch = "feature/test-phase"
 
             val execution =
                 startProcessUseCase.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -247,13 +247,13 @@ class McpProtocolIntegrationTest {
             println("\nTEST: Call complete_phase Tool")
 
             // Setup: Start process and execute first phase
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "./tmp/mcp-complete-test"
             val gitBranch = "feature/test-complete"
 
             val execution =
                 startProcessUseCase.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -294,7 +294,7 @@ class McpProtocolIntegrationTest {
             val result =
                 kotlin.runCatching {
                     startProcessUseCase.execute(
-                        processId = ProcessId("non-existent-process"),
+                        engineeringProcessId = EngineeringProcessId("non-existent-process"),
                         projectPath = "./tmp/error-test",
                         gitBranch = "feature/error",
                     )
@@ -311,7 +311,7 @@ class McpProtocolIntegrationTest {
     private fun setupFeatureDevelopmentProcess() {
         val process =
             EngineeringProcess(
-                id = ProcessId("feature-development"),
+                id = EngineeringProcessId("feature-development"),
                 name = "Feature Development",
                 description = "Complete feature development workflow",
                 phases =

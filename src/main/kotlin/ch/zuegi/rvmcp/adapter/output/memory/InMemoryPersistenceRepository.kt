@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 @Component
 @ConditionalOnProperty("persistence.backend", havingValue = "inmemory", matchIfMissing = true)
-class InMemoryPersistencePort :
+class InMemoryPersistenceRepository :
     MemoryRepositoryPort,
     DocumentPersistencePort {
     private val logger by rvmcpLogger()

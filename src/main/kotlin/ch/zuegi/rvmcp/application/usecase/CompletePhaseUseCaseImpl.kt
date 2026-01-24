@@ -30,7 +30,7 @@ class CompletePhaseUseCaseImpl(
                 ?: throw IllegalArgumentException("Execution context not found for execution ID: ${executionId.value}")
 
         val processId =
-            context.processId
+            context.engineeringProcessId
                 ?: throw IllegalStateException("No process ID found in execution context")
 
         // Reconstruct ProcessExecution from context

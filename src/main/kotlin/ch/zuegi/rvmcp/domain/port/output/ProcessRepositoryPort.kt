@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp.domain.port.output
 
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 
 /**
@@ -14,10 +14,10 @@ interface ProcessRepositoryPort {
     /**
      * Finds an engineering process by its ID.
      *
-     * @param processId The process identifier
+     * @param engineeringProcessId The process identifier
      * @return The engineering process if found, null otherwise
      */
-    fun findById(processId: ProcessId): EngineeringProcess?
+    fun findById(engineeringProcessId: EngineeringProcessId): EngineeringProcess?
 
     /**
      * Retrieves all available engineering processes.
@@ -36,7 +36,7 @@ interface ProcessRepositoryPort {
     /**
      * Deletes an engineering process by its ID.
      *
-     * @param processId The process identifier to delete
+     * @param engineeringProcessId The process identifier to delete
      */
-    fun delete(processId: ProcessId)
+    fun delete(engineeringProcessId: EngineeringProcessId)
 }

@@ -16,7 +16,7 @@ import java.nio.file.Path
 @ActiveProfiles("test")
 // FIXME in einem Prototypen vielleicht noch akzeptabel
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class InMemoryPersistencePortIntegrationTest {
+class InMemoryPersistenceRepositoryIntegrationTest {
     @Autowired
     private lateinit var repository: MemoryRepositoryPort
 

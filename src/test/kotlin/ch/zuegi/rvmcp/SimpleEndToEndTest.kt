@@ -1,9 +1,9 @@
 package ch.zuegi.rvmcp
 
-import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistencePort
+import ch.zuegi.rvmcp.adapter.output.memory.InMemoryPersistenceRepository
 import ch.zuegi.rvmcp.adapter.output.process.InMemoryProcessRepository
 import ch.zuegi.rvmcp.adapter.output.workflow.KoogWorkflowExecutor
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
@@ -64,8 +64,8 @@ class SimpleEndToEndTest {
     fun setup() {
         // Initialize repositories
         processRepository = InMemoryProcessRepository()
-        memoryRepository = InMemoryPersistencePort()
-        documentPersistence = InMemoryPersistencePort()
+        memoryRepository = InMemoryPersistenceRepository()
+        documentPersistence = InMemoryPersistenceRepository()
 
         // Initialize workflow executor with Koog
         workflowExecutor =
@@ -114,14 +114,14 @@ class SimpleEndToEndTest {
 
             // ===== STEP 1: Start Process Execution =====
             println("\n📋 STEP 1: Start Process Execution")
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "/tmp/test-project"
             val gitBranch = "feature/new-feature"
 
             val processExecution =
                 runBlocking {
                     startProcessService.execute(
-                        processId = processId,
+                        engineeringProcessId = engineeringProcessId,
                         projectPath = projectPath,
                         gitBranch = gitBranch,
                     )
@@ -205,7 +205,7 @@ class SimpleEndToEndTest {
     private fun setupFeatureDevelopmentProcess() {
         val process =
             EngineeringProcess(
-                id = ProcessId("feature-development"),
+                id = EngineeringProcessId("feature-development"),
                 name = "Feature Development",
                 description = "Complete feature development workflow",
                 phases =
@@ -271,14 +271,14 @@ class SimpleEndToEndTest {
             println("🔄 MULTI-PHASE TEST: Complete Feature Development (3 Phases)")
             println("=".repeat(80))
 
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "/tmp/multi-phase-test"
             val gitBranch = "feature/complete-flow"
 
             // Start process
             var processExecution =
                 startProcessService.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -335,14 +335,14 @@ class SimpleEndToEndTest {
             println("❌ ERROR HANDLING TEST: Failed Required Vibe Check")
             println("=".repeat(80))
 
-            val processId = ProcessId("feature-development")
+            val engineeringProcessId = EngineeringProcessId("feature-development")
             val projectPath = "/tmp/failed-vibe-check-test"
             val gitBranch = "feature/vibe-check-fail"
 
             // Start process
             val processExecution =
                 startProcessService.execute(
-                    processId = processId,
+                    engineeringProcessId = engineeringProcessId,
                     projectPath = projectPath,
                     gitBranch = gitBranch,
                 )
@@ -387,7 +387,7 @@ class SimpleEndToEndTest {
         println("❌ ERROR HANDLING TEST: Process Not Found")
         println("=".repeat(80))
 
-        val nonExistentProcessId = ProcessId("non-existent-process")
+        val nonExistentEngineeringProcessId = EngineeringProcessId("non-existent-process")
         val projectPath = "/tmp/error-test"
         val gitBranch = "feature/error-test"
 
@@ -398,7 +398,7 @@ class SimpleEndToEndTest {
             org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
                 runBlocking {
                     startProcessService.execute(
-                        processId = nonExistentProcessId,
+                        engineeringProcessId = nonExistentEngineeringProcessId,
                         projectPath = projectPath,
                         gitBranch = gitBranch,
                     )
@@ -406,7 +406,7 @@ class SimpleEndToEndTest {
             }
 
         assertThat(exception.message).contains("Process not found")
-        assertThat(exception.message).contains(nonExistentProcessId.value)
+        assertThat(exception.message).contains(nonExistentEngineeringProcessId.value)
 
         println("✅ Exception thrown as expected")
         println("✅ Error message: ${exception.message}")

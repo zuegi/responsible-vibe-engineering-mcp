@@ -1,6 +1,6 @@
 package ch.zuegi.rvmcp.application.usecase
 
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
@@ -15,10 +15,8 @@ class StartProcessExecutionUseCaseImpl(
     private val domainService: StartProcessExecutionService,
 ) : StartProcessExecutionUseCase {
     override suspend fun execute(
-        processId: ProcessId,
+        engineeringProcessId: EngineeringProcessId,
         projectPath: String,
         gitBranch: String,
-    ): ProcessExecution {
-        return domainService.execute(processId, projectPath, gitBranch)
-    }
+    ): ProcessExecution = domainService.execute(engineeringProcessId, projectPath, gitBranch)
 }

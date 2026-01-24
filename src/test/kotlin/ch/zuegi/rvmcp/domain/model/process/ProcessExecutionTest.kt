@@ -1,7 +1,7 @@
 package ch.zuegi.rvmcp.domain.model.process
 
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
@@ -49,7 +49,7 @@ class ProcessExecutionTest {
 
         testProcess =
             EngineeringProcess(
-                id = ProcessId.generate(),
+                id = EngineeringProcessId.generate(),
                 name = "Feature Development",
                 description = "Standard feature development",
                 phases = listOf(phase1, phase2),
