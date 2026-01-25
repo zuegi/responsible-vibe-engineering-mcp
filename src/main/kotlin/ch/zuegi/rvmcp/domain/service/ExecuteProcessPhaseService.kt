@@ -103,7 +103,7 @@ class ExecuteProcessPhaseService(
                 completedAt = Instant.now(),
             )
 
-        // 6. Generate documentation
+        // 6. Generate documentation - and add GeneratedDocumentID to phaseResult
         documentGenerationService.generateAndPersistRequirementsDoc(phaseResult, context)
 
         logger.info("Phase completed: {}", phase.name)

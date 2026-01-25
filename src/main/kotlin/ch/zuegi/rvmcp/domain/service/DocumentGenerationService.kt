@@ -4,6 +4,7 @@ import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
 import ch.zuegi.rvmcp.domain.model.document.DocumentMetadata
 import ch.zuegi.rvmcp.domain.model.document.DocumentType
 import ch.zuegi.rvmcp.domain.model.document.GeneratedDocument
+import ch.zuegi.rvmcp.domain.model.id.GeneratedDocumentId
 import ch.zuegi.rvmcp.domain.model.memory.Decision
 import ch.zuegi.rvmcp.domain.model.phase.PhaseResult
 import ch.zuegi.rvmcp.domain.model.requirement.Requirement
@@ -33,11 +34,14 @@ class DocumentGenerationService(
         val doc = generateRequirementsDoc(phaseResult, context)
 
         // Persist
-        documentPersistence
-            .saveDocument(doc, context)
-            .onFailure { error ->
-                logger.error("Failed to persist document: ${error.message}")
-            }
+        val result =
+            documentPersistence
+                .saveDocument(doc)
+                .onFailure { error ->
+                    logger.error("Failed to persist document: ${error.message}")
+                }
+
+        phaseResult.generatedDocumentIds += result.getOrNull()?.id
 
         return doc
     }
@@ -75,6 +79,8 @@ class DocumentGenerationService(
                 ),
         )
     }
+
+    suspend fun findById(generatedDocumentId: GeneratedDocumentId): GeneratedDocument? = documentPersistence.findById(generatedDocumentId)
 
     /**
      * Extracts requirements from phase result decisions.

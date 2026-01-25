@@ -1,9 +1,9 @@
 package ch.zuegi.rvmcp.adapter.output.memory
 
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
-import ch.zuegi.rvmcp.domain.model.document.DocumentMetadata
 import ch.zuegi.rvmcp.domain.model.document.GeneratedDocument
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
+import ch.zuegi.rvmcp.domain.model.id.GeneratedDocumentId
 import ch.zuegi.rvmcp.domain.port.output.DocumentPersistencePort
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.shared.rvmcpLogger
@@ -19,7 +19,7 @@ class InMemoryPersistenceRepository :
     private val logger by rvmcpLogger()
 
     private val contexts: MutableMap<String, ExecutionContext> = ConcurrentHashMap()
-    private val documents: MutableMap<String, GeneratedDocument> = ConcurrentHashMap()
+    private val documents: MutableMap<GeneratedDocumentId, GeneratedDocument> = ConcurrentHashMap()
 
     companion object {
         private const val MAX_CONTEXTS = 100
@@ -79,34 +79,16 @@ class InMemoryPersistenceRepository :
         TODO("Not yet implemented")
     }
 
-    override suspend fun saveDocument(
-        doc: GeneratedDocument,
-        context: ExecutionContext,
-    ): Result<Unit> {
-        val key = makeKey(doc.filename, context)
-        documents[key] = doc
+    override suspend fun saveDocument(doc: GeneratedDocument): Result<GeneratedDocument> {
+        documents[doc.id!!] = doc
         logger.info("Document saved: ${doc.filename}")
         logger.info("   Type: ${doc.type}, Phase: ${doc.metadata.phaseName}")
         logger.info("   In-Memory Storage Active (ephemeral)")
         logger.info("      To enable persistence, set application.yml:")
         logger.info("        persistence.backend: git|file|confluence")
         logger.warn("    Data will be lost on server restart!")
-        return Result.success(Unit)
+        return Result.success(doc)
     }
 
-    override suspend fun getDocument(
-        filename: String,
-        context: ExecutionContext,
-    ): GeneratedDocument? {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun listDocuments(context: ExecutionContext): List<DocumentMetadata> {
-        TODO("Not yet implemented")
-    }
-
-    private fun makeKey(
-        filename: String,
-        context: ExecutionContext,
-    ): String = "${context.projectPath}#${context.gitBranch}#$filename"
+    override suspend fun findById(generatedDocumentId: GeneratedDocumentId): GeneratedDocument? = documents[generatedDocumentId]
 }

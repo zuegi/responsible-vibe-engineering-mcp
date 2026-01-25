@@ -1,19 +1,10 @@
 package ch.zuegi.rvmcp.domain.port.output
 
-import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
-import ch.zuegi.rvmcp.domain.model.document.DocumentMetadata
 import ch.zuegi.rvmcp.domain.model.document.GeneratedDocument
+import ch.zuegi.rvmcp.domain.model.id.GeneratedDocumentId
 
 interface DocumentPersistencePort {
-    suspend fun saveDocument(
-        doc: GeneratedDocument,
-        context: ExecutionContext,
-    ): Result<Unit>
+    suspend fun saveDocument(doc: GeneratedDocument): Result<GeneratedDocument?>
 
-    suspend fun getDocument(
-        filename: String,
-        context: ExecutionContext,
-    ): GeneratedDocument?
-
-    suspend fun listDocuments(context: ExecutionContext): List<DocumentMetadata>
+    suspend fun findById(generatedDocumentId: GeneratedDocumentId): GeneratedDocument?
 }

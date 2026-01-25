@@ -1,5 +1,6 @@
 package ch.zuegi.rvmcp.domain.model.document
 
+import ch.zuegi.rvmcp.domain.model.id.GeneratedDocumentId
 import java.time.Instant
 
 /**
@@ -9,6 +10,7 @@ import java.time.Instant
  * via [DocumentPersistencePort] to various backends (Git, File, Confluence).
  */
 data class GeneratedDocument(
+    val id: GeneratedDocumentId? = GeneratedDocumentId.generate(),
     /**
      * Relative file path within project (e.g., "docs/requirements.md")
      */

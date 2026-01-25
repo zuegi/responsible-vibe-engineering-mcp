@@ -80,6 +80,8 @@ class DocumentGenerationServiceTest {
             assertThat(document.content).contains("Gathered all functional requirements")
             assertThat(document.metadata.phaseName).isEqualTo("Requirements Analysis")
             assertThat(document.metadata.version).isEqualTo("1.0")
+            // phaseResult should have the same id as the generated document
+            assertThat(phaseResult.generatedDocumentIds).hasSize(1).first().isEqualTo(document.id)
         }
 
     @Test
