@@ -1,10 +1,10 @@
 package ch.zuegi.rvmcp.domain.model.process
 
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 
 data class EngineeringProcess(
-    val id: ProcessId,
+    val id: EngineeringProcessId,
     val name: String,
     val description: String,
     val phases: List<ProcessPhase>,

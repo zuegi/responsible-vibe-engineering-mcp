@@ -23,6 +23,18 @@ object PendingInteractionManager {
     )
 
     /**
+     * Register a pending interaction without suspending.
+     * Used by McpAwareInteractionAdapter to signal pause.
+     */
+    fun registerPendingInteraction(
+        executionId: String,
+        request: InteractionRequest,
+    ) {
+        val deferred = CompletableDeferred<String>()
+        pendingInteractions[executionId] = PendingInteraction(request, deferred)
+    }
+
+    /**
      * Suspend until user provides an answer for this interaction.
      * Returns the answer when available.
      */
@@ -50,21 +62,21 @@ object PendingInteractionManager {
     /**
      * Get pending interaction request without providing answer.
      */
-    fun getPendingInteraction(executionId: String): InteractionRequest? {
-        return pendingInteractions[executionId]?.request
-    }
+    fun getPendingInteraction(executionId: String): InteractionRequest? = pendingInteractions[executionId]?.request
 
     /**
      * Check if there's a pending interaction for this execution.
      */
-    fun hasPendingInteraction(executionId: String): Boolean {
-        return pendingInteractions.containsKey(executionId)
-    }
+    fun hasPendingInteraction(executionId: String): Boolean = pendingInteractions.containsKey(executionId)
 
     /**
      * Cancel a pending interaction (e.g. on workflow failure).
      */
     fun cancel(executionId: String) {
         pendingInteractions.remove(executionId)?.answerDeferred?.cancel()
+    }
+
+    internal fun resetForTest() {
+        pendingInteractions.clear()
     }
 }

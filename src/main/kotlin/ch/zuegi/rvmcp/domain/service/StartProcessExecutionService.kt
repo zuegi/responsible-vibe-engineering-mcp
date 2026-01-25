@@ -1,8 +1,8 @@
 package ch.zuegi.rvmcp.domain.service
 
 import ch.zuegi.rvmcp.domain.model.context.ExecutionContext
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.id.ExecutionId
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
 import ch.zuegi.rvmcp.domain.model.process.ProcessExecution
 import ch.zuegi.rvmcp.domain.model.status.ExecutionStatus
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
@@ -29,28 +29,28 @@ class StartProcessExecutionService(
     /**
      * Starts a new process execution.
      *
-     * @param processId The ID of the engineering process to execute
+     * @param engineeringProcessId The ID of the engineering process to execute
      * @param projectPath The absolute path to the project directory
      * @param gitBranch The git branch name for branch-aware context
      * @return The initialized process execution
      * @throws IllegalArgumentException if the process is not found
      */
     suspend fun execute(
-        processId: ProcessId,
+        engineeringProcessId: EngineeringProcessId,
         projectPath: String,
         gitBranch: String,
     ): ProcessExecution {
         logger.info(
             "Starting process execution - Process ID: {}, Project: {}, Branch: {}",
-            processId.value,
+            engineeringProcessId.value,
             projectPath,
             gitBranch,
         )
 
         // 1. Load process definition
         val process =
-            processRepository.findById(processId)
-                ?: throw IllegalArgumentException("Process not found: ${processId.value}")
+            processRepository.findById(engineeringProcessId)
+                ?: throw IllegalArgumentException("Process not found: ${engineeringProcessId.value}")
 
         logger.info("Process: {}, Phases: {}", process.name, process.totalPhases())
 
@@ -69,11 +69,12 @@ class StartProcessExecutionService(
                 startedAt = Instant.now(),
             )
 
-        // 4. Update context with process info and persist
+        // 4. Update context with process info, execution, and persist
         val updatedContext =
             executionContext.copy(
-                processId = processId,
+                engineeringProcessId = engineeringProcessId,
                 currentPhaseIndex = 0,
+                currentExecution = processExecution,
             )
         memoryRepository.save(updatedContext)
 
@@ -89,11 +90,10 @@ class StartProcessExecutionService(
     private fun createNewExecutionContext(
         projectPath: String,
         gitBranch: String,
-    ): ExecutionContext {
-        return ExecutionContext(
+    ): ExecutionContext =
+        ExecutionContext(
             executionId = ExecutionId(UUID.randomUUID().toString()),
             projectPath = projectPath,
             gitBranch = gitBranch,
         )
-    }
 }

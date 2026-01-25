@@ -1,7 +1,7 @@
 package ch.zuegi.rvmcp.adapter.output.process
 
 import ch.zuegi.rvmcp.adapter.output.workflow.WorkflowTemplateParser
-import ch.zuegi.rvmcp.domain.model.id.ProcessId
+import ch.zuegi.rvmcp.domain.model.id.EngineeringProcessId
 import ch.zuegi.rvmcp.domain.model.phase.ProcessPhase
 import ch.zuegi.rvmcp.domain.model.process.EngineeringProcess
 import ch.zuegi.rvmcp.domain.model.status.VibeCheckType
@@ -70,7 +70,7 @@ class YamlProcessLoader(
             )
 
         return EngineeringProcess(
-            id = ProcessId("feature-development"),
+            id = EngineeringProcessId("feature-development"),
             name = "Feature Development",
             description = "Strukturierter Prozess für neue Features (Fast Test Mode)",
             phases = phases,

@@ -87,7 +87,7 @@ class ResponsibleVibeMcpServer(
             )
 
         // Connect is a suspend function - this properly starts the async event loop
-        server.connect(transport)
+        server.createSession(transport)
         log.info("MCP Server ready (v0.1.0)")
     }
 
@@ -146,7 +146,10 @@ class ResponsibleVibeMcpServer(
                                 "gitBranch" to
                                     kotlinx.serialization.json.buildJsonObject {
                                         put("type", kotlinx.serialization.json.JsonPrimitive("string"))
-                                        put("description", kotlinx.serialization.json.JsonPrimitive("Git branch name for this execution"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Git branch name for this execution"),
+                                        )
                                     },
                             ),
                         ),
@@ -154,6 +157,7 @@ class ResponsibleVibeMcpServer(
                 ),
         ) { request: CallToolRequest ->
             try {
+                // FIXME Elvis operator (?:) always returns the left operand of non-nullable type 'JsonObject'.
                 val args =
                     request.arguments ?: return@addTool CallToolResult(
                         content = listOf(TextContent(text = "Error: No arguments provided")),
@@ -183,7 +187,7 @@ class ResponsibleVibeMcpServer(
                 val processExecution =
                     startProcessUseCase.execute(
                         ch.zuegi.rvmcp.domain.model.id
-                            .ProcessId(processId),
+                            .EngineeringProcessId(processId),
                         projectPath,
                         gitBranch,
                     )
@@ -273,7 +277,7 @@ Status: ${processExecution.status}""",
                         )
 
                 val processId =
-                    context.processId
+                    context.engineeringProcessId
                         ?: return@addTool CallToolResult(
                             content = listOf(TextContent(text = "Error: No active process found in context. Start a process first.")),
                             isError = true,
@@ -368,7 +372,10 @@ Example: get_phase_result(jobId: "$jobId")""",
                                 "jobId" to
                                     kotlinx.serialization.json.buildJsonObject {
                                         put("type", kotlinx.serialization.json.JsonPrimitive("string"))
-                                        put("description", kotlinx.serialization.json.JsonPrimitive("Job ID returned from execute_phase"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Job ID returned from execute_phase"),
+                                        )
                                     },
                             ),
                         ),
@@ -542,7 +549,7 @@ Error: ${job.error}""",
                         )
 
                 val processId =
-                    context.processId
+                    context.engineeringProcessId
                         ?: return@addTool CallToolResult(
                             content = listOf(TextContent(text = "Error: No active process found in context")),
                             isError = true,
@@ -606,7 +613,10 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
                                 "executionId" to
                                     kotlinx.serialization.json.buildJsonObject {
                                         put("type", kotlinx.serialization.json.JsonPrimitive("string"))
-                                        put("description", kotlinx.serialization.json.JsonPrimitive("Execution ID of the paused workflow"))
+                                        put(
+                                            "description",
+                                            kotlinx.serialization.json.JsonPrimitive("Execution ID of the paused workflow"),
+                                        )
                                     },
                                 "answer" to
                                     kotlinx.serialization.json.buildJsonObject {
@@ -641,7 +651,9 @@ Phases Completed: ${updatedContext.phaseHistory.size}""",
                             isError = true,
                         )
 
-                val executionId = ch.zuegi.rvmcp.domain.model.id.ExecutionId(executionIdStr)
+                val executionId =
+                    ch.zuegi.rvmcp.domain.model.id
+                        .ExecutionId(executionIdStr)
 
                 // Resume suspended workflow via PendingInteractionManager
                 val resumed =

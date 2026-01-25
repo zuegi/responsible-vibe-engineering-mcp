@@ -21,6 +21,7 @@ import java.time.Instant
 class ExecuteProcessPhaseService(
     private val workflowExecutor: WorkflowExecutionPort,
     private val vibeCheckEvaluator: VibeCheckEvaluatorPort,
+    private val documentGenerationService: DocumentGenerationService,
 ) {
     private val logger by rvmcpLogger()
 
@@ -74,7 +75,23 @@ class ExecuteProcessPhaseService(
             }
         }
 
-        // 4. Create phase result (including workflow decisions)
+        // 4. Check if workflow is awaiting user input
+        if (workflowResult.awaitingInput) {
+            logger.info("Workflow is awaiting user input, returning paused phase result")
+            return PhaseResult(
+                phaseName = phase.name,
+                status = ExecutionStatus.IN_PROGRESS,
+                summary = workflowResult.summary,
+                vibeCheckResults = emptyList(), // Don't evaluate vibe checks yet
+                decisions = workflowResult.decisions,
+                awaitingInput = true,
+                interactionRequest = workflowResult.interactionRequest,
+                startedAt = startTime,
+                completedAt = null, // Not completed yet
+            )
+        }
+
+        // 5. Create phase result (including workflow decisions)
         val phaseResult =
             PhaseResult(
                 phaseName = phase.name,
@@ -86,7 +103,8 @@ class ExecuteProcessPhaseService(
                 completedAt = Instant.now(),
             )
 
-        // 5. Persistence handled externally
+        // 6. Generate documentation - and add GeneratedDocumentID to phaseResult
+        documentGenerationService.generateAndPersistRequirementsDoc(phaseResult, context)
 
         logger.info("Phase completed: {}", phase.name)
         return phaseResult

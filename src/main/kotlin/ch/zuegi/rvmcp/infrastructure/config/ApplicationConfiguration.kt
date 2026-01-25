@@ -7,11 +7,13 @@ import ch.zuegi.rvmcp.application.usecase.StartProcessExecutionUseCaseImpl
 import ch.zuegi.rvmcp.domain.port.input.CompletePhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.ExecuteProcessPhaseUseCase
 import ch.zuegi.rvmcp.domain.port.input.StartProcessExecutionUseCase
+import ch.zuegi.rvmcp.domain.port.output.DocumentPersistencePort
 import ch.zuegi.rvmcp.domain.port.output.MemoryRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.ProcessRepositoryPort
 import ch.zuegi.rvmcp.domain.port.output.VibeCheckEvaluatorPort
 import ch.zuegi.rvmcp.domain.port.output.WorkflowExecutionPort
 import ch.zuegi.rvmcp.domain.service.CompletePhaseService
+import ch.zuegi.rvmcp.domain.service.DocumentGenerationService
 import ch.zuegi.rvmcp.domain.service.ExecuteProcessPhaseService
 import ch.zuegi.rvmcp.domain.service.StartProcessExecutionService
 import org.springframework.context.annotation.Bean
@@ -31,6 +33,7 @@ import org.springframework.context.annotation.Configuration
 class ApplicationConfiguration {
     // ========== Output Adapters ==========
 
+    // FIXME das darf nicht sein, ist nur für Test
     @Bean
     fun vibeCheckEvaluator(): VibeCheckEvaluatorPort {
         // Use AutoPassVibeCheckEvaluator for MCP Server mode (non-interactive)
@@ -51,13 +54,21 @@ class ApplicationConfiguration {
         )
 
     @Bean
+    fun documentGenerationService(documentPersistence: DocumentPersistencePort): DocumentGenerationService =
+        DocumentGenerationService(
+            documentPersistence = documentPersistence,
+        )
+
+    @Bean
     fun executeProcessPhaseService(
         workflowExecutionPort: WorkflowExecutionPort,
         vibeCheckEvaluator: VibeCheckEvaluatorPort,
+        documentGenerationService: DocumentGenerationService,
     ): ExecuteProcessPhaseService =
         ExecuteProcessPhaseService(
             workflowExecutor = workflowExecutionPort,
             vibeCheckEvaluator = vibeCheckEvaluator,
+            documentGenerationService = documentGenerationService,
         )
 
     @Bean
@@ -73,8 +84,10 @@ class ApplicationConfiguration {
         StartProcessExecutionUseCaseImpl(domainService)
 
     @Bean
-    fun executeProcessPhaseUseCase(domainService: ExecuteProcessPhaseService): ExecuteProcessPhaseUseCase =
-        ExecuteProcessPhaseUseCaseImpl(domainService)
+    fun executeProcessPhaseUseCase(
+        domainService: ExecuteProcessPhaseService,
+        memoryRepository: MemoryRepositoryPort,
+    ): ExecuteProcessPhaseUseCase = ExecuteProcessPhaseUseCaseImpl(domainService)
 
     @Bean
     fun completePhaseUseCase(

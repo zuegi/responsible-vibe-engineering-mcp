@@ -31,10 +31,17 @@ class McpAwareInteractionAdapter : UserInteractionPort {
             contextElement?.executionId
                 ?: throw IllegalStateException("executionId must be set in InteractionContextElement")
 
-        logger.info("Suspending workflow for user interaction (executionId=$executionId)")
+        logger.info("Requesting user interaction (executionId=$executionId)")
 
-        // Suspend coroutine until provideAnswer() is called via MCP
-        return PendingInteractionManager.awaitAnswer(executionId, request)
+        // Set request in context so KoogWorkflowExecutor can detect it
+        contextElement.setRequest(request)
+
+        // Also register in PendingInteractionManager for later resume
+        PendingInteractionManager.registerPendingInteraction(executionId, request)
+
+        // Return placeholder - the workflow will be paused by KoogWorkflowExecutor
+        logger.info("Returning placeholder - workflow will pause")
+        return "[Awaiting user input: ${request.question}]"
     }
 
     override suspend fun askCatalogQuestion(
@@ -50,10 +57,16 @@ class McpAwareInteractionAdapter : UserInteractionPort {
             contextElement?.executionId
                 ?: throw IllegalStateException("executionId must be set in InteractionContextElement")
 
-        logger.info("Suspending workflow for catalog question: $questionId (executionId=$executionId)")
+        logger.info("Requesting catalog question: $questionId (executionId=$executionId)")
 
-        // Suspend coroutine until provideAnswer() is called via MCP
-        return PendingInteractionManager.awaitAnswer(executionId, request)
+        // Set request in context so KoogWorkflowExecutor can detect it
+        contextElement.setRequest(request)
+
+        // Also register in PendingInteractionManager for later resume
+        PendingInteractionManager.registerPendingInteraction(executionId, request)
+
+        // Return placeholder - the workflow will be paused by KoogWorkflowExecutor
+        return "[Awaiting user input for catalog question: $questionId]"
     }
 
     override suspend fun requestApproval(
@@ -73,10 +86,16 @@ class McpAwareInteractionAdapter : UserInteractionPort {
             contextElement?.executionId
                 ?: throw IllegalStateException("executionId must be set in InteractionContextElement")
 
-        logger.info("Suspending workflow for approval (executionId=$executionId)")
+        logger.info("Requesting approval (executionId=$executionId)")
 
-        // Suspend coroutine until provideAnswer() is called via MCP
-        return PendingInteractionManager.awaitAnswer(executionId, request)
+        // Set request in context so KoogWorkflowExecutor can detect it
+        contextElement.setRequest(request)
+
+        // Also register in PendingInteractionManager for later resume
+        PendingInteractionManager.registerPendingInteraction(executionId, request)
+
+        // Return placeholder - the workflow will be paused by KoogWorkflowExecutor
+        return "[Awaiting approval: $question]"
     }
 
     override fun createInteractionRequest(
